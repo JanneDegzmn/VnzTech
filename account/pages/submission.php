@@ -571,6 +571,11 @@ $initialMobile =
     }
 
 
+    function isWholePhone(itemType) {
+        return String(itemType || '').toLowerCase() === 'whole_phone';
+    }
+
+
     /*
     |--------------------------------------------------------------------------
     | RENDER ITEMS
@@ -589,8 +594,7 @@ $initialMobile =
             function(item, index) {
 
                 const itemName =
-                    item.item_type ===
-                    'Whole Phone'
+                    isWholePhone(item.item_type)
 
                         ? (
                             (
@@ -663,8 +667,7 @@ $initialMobile =
 
 
                             ${
-                                item.item_type ===
-                                'Whole Phone'
+                                isWholePhone(item.item_type)
 
                                 ? `
 

@@ -839,6 +839,12 @@ try {
         }
 
 
+        $itemTypeDbValue =
+            $itemType === 'Whole Phone'
+                ? 'whole_phone'
+                : 'scrap_board';
+
+
         /*
         |--------------------------------------------------------------------------
         | BASIC ITEM DATA
@@ -1111,7 +1117,7 @@ try {
 
             $submissionId,
 
-            $itemType,
+            $itemTypeDbValue,
 
             $brand,
 
