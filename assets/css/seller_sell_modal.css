@@ -1,0 +1,1655 @@
+/* =====================================================
+   SELL ITEM MODAL
+   Extracted from account/dashboard.php inline <style>
+====================================================== */
+
+body.seller-modal-open {
+    overflow: hidden;
+}
+
+
+.seller-sell-modal {
+    position: fixed;
+    inset: 0;
+
+    display: none;
+
+    align-items: center;
+    justify-content: center;
+
+    padding: 18px;
+
+    background:
+        rgba(
+            2,
+            6,
+            10,
+            0.82
+        );
+
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+
+    z-index: 99999;
+}
+
+
+.seller-sell-modal.is-open {
+    display: flex;
+}
+
+
+.seller-sell-modal-panel {
+    position: relative;
+
+    width:
+        min(
+            1180px,
+            calc(100vw - 36px)
+        );
+
+    height:
+        min(
+            900px,
+            calc(100vh - 36px)
+        );
+
+    display: flex;
+    flex-direction: column;
+
+    overflow: hidden;
+
+    background: #080b0f;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.09
+        );
+
+    border-radius: 18px;
+
+    box-shadow:
+        0 35px 100px
+        rgba(
+            0,
+            0,
+            0,
+            0.65
+        );
+
+    animation:
+        sellerModalIn
+        0.2s ease;
+}
+
+
+@keyframes sellerModalIn {
+
+    from {
+        opacity: 0;
+
+        transform:
+            translateY(10px)
+            scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+
+        transform:
+            translateY(0)
+            scale(1);
+    }
+
+}
+
+
+.seller-sell-modal-header {
+    flex-shrink: 0;
+
+    height: 58px;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    padding:
+        0
+        18px
+        0
+        22px;
+
+    background:
+        #0c1117;
+
+    border-bottom:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.07
+        );
+}
+
+
+.seller-sell-modal-title {
+    display: flex;
+    align-items: center;
+
+    gap: 10px;
+
+    color: #ffffff;
+
+    font-size: 12px;
+    font-weight: 900;
+
+    letter-spacing: 0.8px;
+}
+
+
+.seller-sell-modal-dot {
+    width: 8px;
+    height: 8px;
+
+    border-radius: 50%;
+
+    background:
+        #0ea5e9;
+
+    box-shadow:
+        0 0 12px
+        rgba(
+            14,
+            165,
+            233,
+            0.55
+        );
+}
+
+
+.seller-sell-modal-close {
+    appearance: none;
+    -webkit-appearance: none;
+
+    width: 34px;
+    height: 34px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 0;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+
+    border-radius: 9px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            0.025
+        );
+
+    color:
+        #94a3b8;
+
+    cursor: pointer;
+
+    font-size: 22px;
+    line-height: 1;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+
+.seller-sell-modal-close:hover {
+    background:
+        rgba(
+            239,
+            68,
+            68,
+            0.08
+        );
+
+    border-color:
+        rgba(
+            239,
+            68,
+            68,
+            0.25
+        );
+
+    color:
+        #ffffff;
+}
+
+
+.seller-sell-modal-body {
+    flex: 1;
+
+    min-height: 0;
+
+    overflow-y: auto;
+    overflow-x: hidden;
+
+    padding: 26px;
+}
+
+
+.seller-form-wrap {
+    width: 100%;
+
+    max-width: 1080px;
+
+    margin: 0 auto;
+}
+
+
+.seller-form-intro {
+    margin-bottom: 24px;
+}
+
+
+.seller-form-intro h2 {
+    margin:
+        0
+        0
+        7px;
+
+    color:
+        #ffffff;
+
+    font-size:
+        24px;
+
+    font-weight:
+        900;
+}
+
+
+.seller-form-intro p {
+    margin: 0;
+
+    color:
+        #94a3b8;
+
+    font-size:
+        13px;
+
+    line-height:
+        1.65;
+}
+
+
+.seller-form-section {
+    margin-bottom:
+        20px;
+
+    padding:
+        20px;
+
+    background:
+        #0d131a;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.07
+        );
+
+    border-radius:
+        14px;
+}
+
+
+.seller-form-section-title {
+    margin-bottom:
+        16px;
+
+    color:
+        #ffffff;
+
+    font-size:
+        13px;
+
+    font-weight:
+        900;
+
+    letter-spacing:
+        0.35px;
+}
+
+
+.seller-form-grid {
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(
+                0,
+                1fr
+            )
+        );
+
+    gap:
+        15px;
+}
+
+
+.seller-form-group {
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        7px;
+}
+
+
+.seller-form-group.full {
+    grid-column:
+        1 / -1;
+}
+
+
+.seller-form-group label {
+    color:
+        #cbd5e1;
+
+    font-size:
+        11px;
+
+    font-weight:
+        800;
+}
+
+
+.seller-form-group input,
+.seller-form-group textarea,
+.seller-form-group select {
+    width:
+        100%;
+
+    padding:
+        11px
+        12px;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+
+    border-radius:
+        9px;
+
+    outline:
+        none;
+
+    background:
+        #080b0f;
+
+    color:
+        #ffffff;
+
+    font-family:
+        inherit;
+
+    font-size:
+        12px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+
+.seller-form-group input:focus,
+.seller-form-group textarea:focus,
+.seller-form-group select:focus {
+    border-color:
+        rgba(
+            14,
+            165,
+            233,
+            0.55
+        );
+
+    box-shadow:
+        0 0 0 3px
+        rgba(
+            14,
+            165,
+            233,
+            0.08
+        );
+}
+
+
+.seller-form-group textarea {
+    min-height:
+        95px;
+
+    resize:
+        vertical;
+}
+
+
+.seller-form-methods {
+    display:
+        flex;
+
+    flex-wrap:
+        wrap;
+
+    gap:
+        10px;
+}
+
+
+.seller-form-method-option {
+    position:
+        relative;
+}
+
+
+.seller-form-method-option input {
+    position:
+        absolute;
+
+    opacity:
+        0;
+
+    pointer-events:
+        none;
+}
+
+
+.seller-form-method-label {
+    display:
+        inline-flex;
+
+    align-items:
+        center;
+
+    min-height:
+        42px;
+
+    padding:
+        0
+        15px;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+
+    border-radius:
+        9px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            0.025
+        );
+
+    color:
+        #94a3b8;
+
+    cursor:
+        pointer;
+
+    font-size:
+        11px;
+
+    font-weight:
+        800;
+
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+
+.seller-form-method-option input:checked
++ .seller-form-method-label {
+
+    background:
+        rgba(
+            14,
+            165,
+            233,
+            0.08
+        );
+
+    border-color:
+        rgba(
+            14,
+            165,
+            233,
+            0.45
+        );
+
+    color:
+        #ffffff;
+
+}
+
+
+/* =====================================================
+   ACCOUNT-SYNCED SELLER INFO
+====================================================== */
+
+.seller-account-info {
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(
+            2,
+            minmax(
+                0,
+                1fr
+            )
+        );
+
+    gap:
+        10px;
+}
+
+
+.seller-account-info-card {
+    min-width:
+        0;
+
+    padding:
+        12px
+        13px;
+
+    background:
+        #080b0f;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.07
+        );
+
+    border-radius:
+        9px;
+}
+
+
+.seller-account-info-card.full-width {
+    grid-column:
+        1 / -1;
+}
+
+
+.seller-account-info-card span {
+    display:
+        block;
+
+    margin-bottom:
+        5px;
+
+    color:
+        #68747f;
+
+    font-size:
+        8px;
+
+    font-weight:
+        900;
+
+    letter-spacing:
+        1.1px;
+
+    text-transform:
+        uppercase;
+}
+
+
+.seller-account-info-card strong {
+    display:
+        block;
+
+    color:
+        #eef3f6;
+
+    font-size:
+        11px;
+
+    font-weight:
+        750;
+
+    line-height:
+        1.5;
+
+    word-break:
+        break-word;
+}
+
+
+.seller-account-sync-note {
+    margin-top:
+        11px;
+
+    padding:
+        10px
+        12px;
+
+    background:
+        rgba(
+            14,
+            165,
+            233,
+            0.035
+        );
+
+    border:
+        1px solid
+        rgba(
+            14,
+            165,
+            233,
+            0.12
+        );
+
+    border-radius:
+        8px;
+
+    color:
+        #71808d;
+
+    font-size:
+        9px;
+
+    line-height:
+        1.55;
+}
+
+
+.seller-account-sync-note a {
+    color:
+        #63c9ef;
+
+    font-weight:
+        800;
+
+    text-decoration:
+        none;
+}
+
+
+.seller-account-sync-note a:hover {
+    color:
+        #ffffff;
+}
+
+
+/* =====================================================
+   ITEM CARD
+====================================================== */
+
+.seller-item-card {
+    margin-top:
+        16px;
+
+    padding:
+        18px;
+
+    background:
+        #080b0f;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.07
+        );
+
+    border-radius:
+        12px;
+}
+
+
+.seller-item-card:first-child {
+    margin-top:
+        0;
+}
+
+
+.seller-item-header {
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    justify-content:
+        space-between;
+
+    gap:
+        12px;
+
+    margin-bottom:
+        16px;
+}
+
+
+.seller-item-title {
+    color:
+        #ffffff;
+
+    font-size:
+        12px;
+
+    font-weight:
+        900;
+}
+
+
+.seller-item-remove {
+    padding:
+        7px
+        10px;
+
+    border:
+        1px solid
+        rgba(
+            239,
+            68,
+            68,
+            0.18
+        );
+
+    border-radius:
+        8px;
+
+    background:
+        rgba(
+            239,
+            68,
+            68,
+            0.05
+        );
+
+    color:
+        #fca5a5;
+
+    cursor:
+        pointer;
+
+    font-family:
+        inherit;
+
+    font-size:
+        10px;
+
+    font-weight:
+        800;
+}
+
+
+.seller-item-remove:hover {
+    background:
+        rgba(
+            239,
+            68,
+            68,
+            0.10
+        );
+
+    color:
+        #ffffff;
+}
+
+
+.seller-item-type-row {
+    display:
+        flex;
+
+    flex-wrap:
+        wrap;
+
+    gap:
+        10px;
+
+    margin-bottom:
+        16px;
+}
+
+
+.seller-type-btn {
+    appearance:
+        none;
+
+    -webkit-appearance:
+        none;
+
+    padding:
+        9px
+        13px;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+
+    border-radius:
+        8px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            0.025
+        );
+
+    color:
+        #94a3b8;
+
+    cursor:
+        pointer;
+
+    font-family:
+        inherit;
+
+    font-size:
+        11px;
+
+    font-weight:
+        800;
+}
+
+
+.seller-type-btn.active {
+    border-color:
+        rgba(
+            14,
+            165,
+            233,
+            0.45
+        );
+
+    background:
+        rgba(
+            14,
+            165,
+            233,
+            0.08
+        );
+
+    color:
+        #ffffff;
+}
+
+
+.seller-phone-fields,
+.seller-scrap-fields {
+    width:
+        100%;
+}
+
+
+.seller-photo-preview {
+    display:
+        grid;
+
+    grid-template-columns:
+        repeat(
+            auto-fill,
+            minmax(
+                110px,
+                1fr
+            )
+        );
+
+    gap:
+        10px;
+
+    margin-top:
+        12px;
+}
+
+
+.seller-photo-preview-item {
+    position:
+        relative;
+
+    aspect-ratio:
+        1;
+
+    overflow:
+        hidden;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+
+    border-radius:
+        9px;
+
+    background:
+        #05070a;
+}
+
+
+.seller-photo-preview-item img {
+    width:
+        100%;
+
+    height:
+        100%;
+
+    display:
+        block;
+
+    object-fit:
+        cover;
+}
+
+
+.seller-add-item {
+    width:
+        100%;
+
+    margin-top:
+        14px;
+
+    padding:
+        12px;
+
+    border:
+        1px dashed
+        rgba(
+            14,
+            165,
+            233,
+            0.30
+        );
+
+    border-radius:
+        9px;
+
+    background:
+        rgba(
+            14,
+            165,
+            233,
+            0.04
+        );
+
+    color:
+        #38bdf8;
+
+    cursor:
+        pointer;
+
+    font-family:
+        inherit;
+
+    font-size:
+        11px;
+
+    font-weight:
+        900;
+}
+
+
+.seller-add-item:hover {
+    background:
+        rgba(
+            14,
+            165,
+            233,
+            0.08
+        );
+}
+
+
+.seller-form-disclaimer {
+    margin-bottom:
+        18px;
+
+    padding:
+        14px
+        15px;
+
+    border:
+        1px solid
+        rgba(
+            245,
+            158,
+            11,
+            0.15
+        );
+
+    border-radius:
+        9px;
+
+    background:
+        rgba(
+            245,
+            158,
+            11,
+            0.04
+        );
+
+    color:
+        #cbd5e1;
+
+    font-size:
+        11px;
+
+    line-height:
+        1.65;
+}
+
+
+.seller-form-submit-row {
+    display:
+        flex;
+
+    justify-content:
+        flex-end;
+
+    gap:
+        10px;
+}
+
+
+.seller-form-submit {
+    min-width:
+        180px;
+
+    padding:
+        12px
+        17px;
+
+    border:
+        0;
+
+    border-radius:
+        9px;
+
+    background:
+        #0ea5e9;
+
+    color:
+        #ffffff;
+
+    cursor:
+        pointer;
+
+    font-family:
+        inherit;
+
+    font-size:
+        11px;
+
+    font-weight:
+        900;
+
+    letter-spacing:
+        0.3px;
+}
+
+
+.seller-form-submit:hover {
+    background:
+        #0284c7;
+}
+
+
+.seller-form-message {
+    display:
+        none;
+
+    margin-bottom:
+        18px;
+
+    padding:
+        12px
+        14px;
+
+    border-radius:
+        9px;
+
+    font-size:
+        11px;
+
+    line-height:
+        1.5;
+}
+
+
+.seller-form-message.show {
+    display:
+        block;
+}
+
+
+.seller-form-message.error {
+    border:
+        1px solid
+        rgba(
+            239,
+            68,
+            68,
+            0.20
+        );
+
+    background:
+        rgba(
+            239,
+            68,
+            68,
+            0.05
+        );
+
+    color:
+        #fca5a5;
+}
+
+
+.seller-form-message.success {
+    border:
+        1px solid
+        rgba(
+            34,
+            197,
+            94,
+            0.20
+        );
+
+    background:
+        rgba(
+            34,
+            197,
+            94,
+            0.05
+        );
+
+    color:
+        #86efac;
+}
+
+
+/* =====================================================
+   COMPACT FORM SPACING
+====================================================== */
+
+.seller-form-section {
+    margin-bottom:
+        16px;
+
+    padding:
+        18px;
+}
+
+
+.seller-form-section-title {
+    margin-bottom:
+        14px;
+}
+
+
+.seller-form-grid {
+    gap:
+        13px;
+}
+
+
+.seller-item-card {
+    margin-top:
+        13px;
+
+    padding:
+        15px;
+}
+
+
+.seller-item-header {
+    margin-bottom:
+        13px;
+}
+
+
+.seller-item-type-row {
+    margin-bottom:
+        13px;
+}
+
+
+.seller-asking-price-group {
+    margin-top:
+        14px;
+}
+
+
+.seller-additional-group {
+    margin-top:
+        14px;
+}
+
+
+.seller-additional-group textarea {
+    min-height:
+        82px;
+}
+
+
+.seller-photo-block {
+    margin-top:
+        16px;
+
+    padding-top:
+        15px;
+
+    border-top:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.06
+        );
+}
+
+
+.seller-photo-heading {
+    display:
+        flex;
+
+    flex-direction:
+        column;
+
+    gap:
+        5px;
+
+    margin-bottom:
+        10px;
+}
+
+
+.seller-photo-heading strong {
+    color:
+        #cbd5e1;
+
+    font-size:
+        10px;
+
+    font-weight:
+        900;
+}
+
+
+.seller-photo-heading small {
+    color:
+        #64748b;
+
+    font-size:
+        9px;
+
+    line-height:
+        1.5;
+}
+
+
+.seller-photo-block > input[type="file"] {
+    width:
+        100%;
+
+    min-height:
+        40px;
+
+    padding:
+        6px
+        9px;
+
+    background:
+        #090d12;
+
+    border:
+        1px solid
+        var(--border-light);
+
+    border-radius:
+        8px;
+
+    color:
+        var(--muted);
+
+    font-size:
+        10px;
+
+    cursor:
+        pointer;
+}
+
+
+.seller-photo-block > input[type="file"]::file-selector-button {
+    margin-right:
+        9px;
+
+    padding:
+        6px
+        10px;
+
+    border:
+        1px solid
+        var(--border-light);
+
+    border-radius:
+        7px;
+
+    background:
+        rgba(
+            255,
+            255,
+            255,
+            0.045
+        );
+
+    color:
+        #d6dde3;
+
+    cursor:
+        pointer;
+
+    font-family:
+        inherit;
+
+    font-size:
+        9px;
+
+    font-weight:
+        800;
+}
+
+
+.seller-photo-block > input[type="file"]::file-selector-button:hover {
+    background:
+        rgba(
+            14,
+            165,
+            233,
+            0.08
+        );
+
+    border-color:
+        rgba(
+            14,
+            165,
+            233,
+            0.28
+        );
+
+    color:
+        #ffffff;
+}
+
+
+.seller-photo-preview {
+    margin-top:
+        11px;
+}
+
+
+.seller-price-input {
+    height:
+        40px;
+
+    display:
+        flex;
+
+    align-items:
+        center;
+
+    overflow:
+        hidden;
+
+    background:
+        #080b0f;
+
+    border:
+        1px solid
+        rgba(
+            255,
+            255,
+            255,
+            0.08
+        );
+
+    border-radius:
+        8px;
+}
+
+
+.seller-price-input > span {
+    padding-left:
+        11px;
+
+    color:
+        #64748b;
+
+    font-size:
+        11px;
+
+    font-weight:
+        900;
+}
+
+
+.seller-price-input input {
+    height:
+        100%;
+
+    padding:
+        0
+        10px;
+
+    border:
+        0;
+
+    background:
+        transparent;
+
+    box-shadow:
+        none;
+}
+
+
+.seller-price-input input:focus {
+    background:
+        transparent;
+
+    box-shadow:
+        none;
+}
+
+
+.seller-asking-price-group > small {
+    display:
+        block;
+
+    margin-top:
+        7px;
+
+    color:
+        #64748b;
+
+    font-size:
+        9px;
+
+    line-height:
+        1.6;
+}
+
+
+/* =====================================================
+   STORAGE / SELECT
+====================================================== */
+
+.seller-item-card select {
+    appearance:
+        auto;
+
+    -webkit-appearance:
+        menulist;
+
+    -moz-appearance:
+        auto;
+
+    color-scheme:
+        dark;
+
+    cursor:
+        pointer;
+}
+
+
+.seller-item-card select option {
+    background:
+        #0d1319;
+
+    color:
+        #eef3f6;
+}
+
+
+.seller-item-card select:disabled,
+.seller-item-card input:disabled,
+.seller-item-card textarea:disabled {
+    opacity:
+        0.55;
+
+    cursor:
+        not-allowed;
+}
+
+
+/* =====================================================
+   RESPONSIVE
+====================================================== */
+
+@media (max-width: 800px) {
+
+    .seller-sell-modal {
+        padding:
+            0;
+    }
+
+
+    .seller-sell-modal-panel {
+        width:
+            100%;
+
+        height:
+            100%;
+
+        border-radius:
+            0;
+
+        border:
+            0;
+    }
+
+
+    .seller-sell-modal-body {
+        padding:
+            18px;
+    }
+
+
+    .seller-form-grid {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .seller-form-group.full {
+        grid-column:
+            auto;
+    }
+
+
+    .seller-account-info {
+        grid-template-columns:
+            1fr;
+    }
+
+
+    .seller-account-info-card.full-width {
+        grid-column:
+            auto;
+    }
+
+}
+
+
+@media (max-width: 560px) {
+
+    .seller-form-submit-row {
+        flex-direction:
+            column;
+    }
+
+
+    .seller-form-submit {
+        width:
+            100%;
+    }
+
+}

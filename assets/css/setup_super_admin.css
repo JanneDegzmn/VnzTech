@@ -1,0 +1,142 @@
+/* =========================================
+   VNZ TECH - SUPER ADMIN SETUP
+========================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 20px;
+
+    background: #0a0a0a;
+    color: #ffffff;
+
+    font-family: Arial, sans-serif;
+}
+
+.setup-container {
+    width: 100%;
+    max-width: 480px;
+
+    padding: 30px;
+
+    background: #151515;
+
+    border: 1px solid #2a2a2a;
+    border-radius: 14px;
+
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.setup-container h1 {
+    margin: 0 0 8px;
+}
+
+.subtitle {
+    margin-bottom: 25px;
+
+    color: #999999;
+}
+
+.form-group {
+    margin-bottom: 17px;
+}
+
+.form-group label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.form-group input {
+    width: 100%;
+
+    padding: 12px 13px;
+
+    background: #0d0d0d;
+    color: #ffffff;
+
+    border: 1px solid #333333;
+    border-radius: 8px;
+
+    outline: none;
+
+    font-size: 14px;
+}
+
+.form-group input:focus {
+    border-color: #666666;
+}
+
+.setup-button {
+    width: 100%;
+
+    padding: 13px;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: #ffffff;
+    color: #000000;
+
+    font-size: 14px;
+    font-weight: bold;
+
+    cursor: pointer;
+
+    transition: opacity 0.2s ease;
+}
+
+.setup-button:hover {
+    opacity: 0.9;
+}
+
+.message {
+    padding: 12px;
+
+    margin-bottom: 20px;
+
+    border-radius: 8px;
+
+    font-size: 14px;
+}
+
+.message.success {
+    background: #12351f;
+    border: 1px solid #245f38;
+
+    color: #8ff0aa;
+}
+
+.message.error {
+    background: #351414;
+    border: 1px solid #672525;
+
+    color: #ff9999;
+}
+
+.warning {
+    margin-top: 20px;
+    padding: 12px;
+
+    background: #2a2110;
+
+    border: 1px solid #594615;
+    border-radius: 8px;
+
+    color: #e7c875;
+
+    font-size: 13px;
+    line-height: 1.5;
+}

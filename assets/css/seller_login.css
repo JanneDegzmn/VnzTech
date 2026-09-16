@@ -1,0 +1,357 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(14, 165, 233, 0.18),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at bottom left,
+            rgba(14, 165, 233, 0.10),
+            transparent 30%
+        ),
+        #090c10;
+
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 24px 16px;
+}
+
+.login-wrapper {
+    width: 100%;
+    max-width: 440px;
+}
+
+/* =========================================================
+   BACK TO HOME
+   ========================================================= */
+
+.page-back {
+    display: flex;
+    align-items: center;
+
+    margin-bottom: 14px;
+}
+
+.page-back a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color: #6f7c88;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.page-back a:hover {
+    color: #ffffff;
+    transform: translateX(-3px);
+}
+
+/* =========================================================
+   BRAND
+   ========================================================= */
+
+.brand {
+    text-align: center;
+
+    margin-bottom: 22px;
+}
+
+.brand h1 {
+    font-size: 30px;
+
+    font-weight: 900;
+
+    letter-spacing: 2px;
+}
+
+.brand p {
+    margin-top: 7px;
+
+    color: #8d99a4;
+
+    font-size: 13px;
+}
+
+/* =========================================================
+   LOGIN CARD
+   ========================================================= */
+
+.login-card {
+    background: rgba(16, 20, 25, 0.97);
+
+    border: 1px solid #242c34;
+
+    border-radius: 18px;
+
+    padding: 30px;
+
+    box-shadow:
+        0 25px 70px rgba(0, 0, 0, 0.45);
+}
+
+.login-card h2 {
+    font-size: 24px;
+
+    margin-bottom: 7px;
+}
+
+.subtitle {
+    color: #88949f;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+    margin-bottom: 24px;
+}
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.message {
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    margin-bottom: 18px;
+
+    font-size: 13px;
+
+    line-height: 1.45;
+}
+
+.message.error {
+    color: #ffb7b7;
+
+    background: rgba(220, 38, 38, 0.12);
+
+    border: 1px solid rgba(220, 38, 38, 0.35);
+}
+
+.message.success {
+    color: #b7f3c9;
+
+    background: rgba(34, 197, 94, 0.12);
+
+    border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+/* =========================================================
+   FORM FIELDS
+   ========================================================= */
+
+.field {
+    margin-bottom: 18px;
+}
+
+.field label {
+    display: block;
+
+    font-size: 13px;
+
+    font-weight: 700;
+
+    margin-bottom: 7px;
+}
+
+.field input {
+    width: 100%;
+
+    padding: 12px 13px;
+
+    background: #0d1217;
+
+    color: #ffffff;
+
+    border: 1px solid #29323b;
+
+    border-radius: 10px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.field input:focus {
+    border-color: #0ea5e9;
+
+    box-shadow:
+        0 0 0 3px rgba(14, 165, 233, 0.10);
+}
+
+/* =========================================================
+   EXTRA ROW
+   ========================================================= */
+
+.extra-row {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    margin: 4px 0 20px;
+}
+
+.remember {
+    display: flex;
+
+    align-items: center;
+
+    gap: 8px;
+
+    color: #89949f;
+
+    font-size: 12px;
+
+    cursor: pointer;
+}
+
+.remember input {
+    accent-color: #0ea5e9;
+
+    cursor: pointer;
+}
+
+.forgot {
+    color: #38bdf8;
+
+    font-size: 12px;
+
+    text-decoration: none;
+}
+
+.forgot:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   LOGIN BUTTON
+   ========================================================= */
+
+.login-button {
+    width: 100%;
+
+    border: 0;
+
+    border-radius: 11px;
+
+    padding: 13px 16px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0ea5e9,
+            #0284c7
+        );
+
+    color: #ffffff;
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.5px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        filter 0.2s ease;
+}
+
+.login-button:hover {
+    filter: brightness(1.07);
+
+    transform: translateY(-1px);
+}
+
+.login-button:active {
+    transform: translateY(0);
+}
+
+/* =========================================================
+   REGISTER LINK
+   ========================================================= */
+
+.register-link {
+    text-align: center;
+
+    margin-top: 20px;
+
+    color: #7f8b96;
+
+    font-size: 13px;
+}
+
+.register-link a {
+    color: #38bdf8;
+
+    text-decoration: none;
+
+    font-weight: 700;
+}
+
+.register-link a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 480px) {
+
+    body {
+        padding: 20px 14px;
+    }
+
+    .login-card {
+        padding: 23px 18px;
+    }
+
+    .brand h1 {
+        font-size: 26px;
+    }
+
+    .extra-row {
+        align-items: flex-start;
+
+        gap: 12px;
+    }
+
+    .page-back a {
+        font-size: 11px;
+    }
+}

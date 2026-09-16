@@ -1,0 +1,720 @@
+/* =========================================================
+   VNZ TECH
+   ADMIN SUBMISSIONS
+========================================================= */
+
+.submissions-page {
+    width: 100%;
+    min-height: 100%;
+    color: #f5f5f5;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.submissions-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 30px;
+    margin-bottom: 28px;
+}
+
+.submissions-heading {
+    min-width: 0;
+}
+
+.submissions-kicker {
+    margin-bottom: 8px;
+    color: #666;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.submissions-heading h1 {
+    margin: 0;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.submissions-heading p {
+    margin: 8px 0 0;
+    color: #858585;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   TOTAL CARD
+========================================================= */
+
+.submissions-count-card {
+    min-width: 155px;
+    padding: 17px 20px;
+    border: 1px solid #292929;
+    border-radius: 10px;
+    background: #111;
+    text-align: right;
+}
+
+.submissions-count-card span {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.submissions-count-card strong {
+    color: #fff;
+    font-size: 25px;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   FILTER CARD
+========================================================= */
+
+.submissions-filter-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 18px;
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.submission-search {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+}
+
+.search-symbol {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    z-index: 2;
+    transform: translateY(-50%);
+    color: #707070;
+    font-size: 20px;
+    pointer-events: none;
+}
+
+.submission-search input {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px 0 40px;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    outline: none;
+    background: #111;
+    color: #eee;
+    font-family: inherit;
+    font-size: 13px;
+    box-sizing: border-box;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+.submission-search input::placeholder {
+    color: #5e5e5e;
+}
+
+.submission-search input:focus {
+    border-color: #494949;
+    background: #151515;
+}
+
+
+/* =========================================================
+   SELECT FILTERS
+========================================================= */
+
+.submission-filter-select {
+    width: 175px;
+    height: 44px;
+    flex-shrink: 0;
+    padding: 0 12px;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    outline: none;
+    background: #111;
+    color: #ddd;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.submission-filter-select:focus {
+    border-color: #494949;
+}
+
+.submission-filter-select option {
+    background: #111;
+    color: #fff;
+}
+
+
+/* =========================================================
+   CLEAR BUTTON
+========================================================= */
+
+.clear-submission-filters {
+    height: 44px;
+    padding: 0 17px;
+    flex-shrink: 0;
+    border: 1px solid #2d2d2d;
+    border-radius: 8px;
+    background: transparent;
+    color: #777;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.clear-submission-filters:hover {
+    border-color: #555;
+    background: #181818;
+    color: #fff;
+}
+
+
+/* =========================================================
+   MAIN CARD
+========================================================= */
+
+.submissions-card {
+    overflow: hidden;
+    border: 1px solid #252525;
+    border-radius: 12px;
+    background: #101010;
+}
+
+
+/* =========================================================
+   CARD HEADER
+========================================================= */
+
+.submissions-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 75px;
+    padding: 15px 20px;
+    border-bottom: 1px solid #242424;
+    box-sizing: border-box;
+}
+
+.submissions-card-header h2 {
+    margin: 0 0 4px;
+    color: #eee;
+    font-size: 15px;
+    font-weight: 750;
+}
+
+.submissions-card-header span {
+    color: #666;
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   TABLE WRAPPER
+========================================================= */
+
+.submissions-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.submissions-table {
+    width: 100%;
+    min-width: 1080px;
+    border-collapse: collapse;
+}
+
+.submissions-table thead {
+    background: #0d0d0d;
+}
+
+.submissions-table th {
+    height: 43px;
+    padding: 0 16px;
+    border-bottom: 1px solid #252525;
+    color: #626262;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.25px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.submissions-table td {
+    padding: 15px 16px;
+    border-bottom: 1px solid #1f1f1f;
+    vertical-align: middle;
+}
+
+.submissions-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.submissions-table tbody tr:hover {
+    background: #151515;
+}
+
+.submissions-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+
+/* =========================================================
+   REFERENCE
+========================================================= */
+
+.reference-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.reference-cell strong {
+    color: #fff;
+    font-size: 12px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.reference-cell span {
+    color: #626262;
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   SELLER
+========================================================= */
+
+.seller-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 135px;
+}
+
+.seller-cell strong {
+    color: #eee;
+    font-size: 12px;
+    font-weight: 650;
+}
+
+.seller-cell span {
+    color: #686868;
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   ITEM
+========================================================= */
+
+.item-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-width: 245px;
+}
+
+.item-cell strong {
+    color: #eee;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.item-cell span {
+    overflow: hidden;
+    color: #666;
+    font-size: 10px;
+    line-height: 1.5;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   QUANTITY
+========================================================= */
+
+.quantity-cell {
+    color: #ddd;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+
+/* =========================================================
+   ASKING PRICE
+========================================================= */
+
+.asking-price-cell {
+    color: #eee;
+    font-size: 12px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.submission-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 25px;
+    padding: 4px 9px;
+    border: 1px solid #303030;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+
+/* NEW */
+
+.status-new {
+    border-color: #3b3b3b;
+    background: #181818;
+    color: #e6e6e6;
+}
+
+
+/* REVIEW */
+
+.status-review {
+    border-color: #4a4030;
+    background: #1a1712;
+    color: #d4bd91;
+}
+
+
+/* OFFER PENDING */
+
+.status-pending {
+    border-color: #494231;
+    background: #191712;
+    color: #d0bb8d;
+}
+
+
+/* OFFER SENT */
+
+.status-offer {
+    border-color: #3d3d3d;
+    background: #171717;
+    color: #c9c9c9;
+}
+
+
+/* ACCEPTED */
+
+.status-accepted {
+    border-color: #344336;
+    background: #141914;
+    color: #a9c5ad;
+}
+
+
+/* DECLINED */
+
+.status-declined {
+    border-color: #453638;
+    background: #191516;
+    color: #c8a8aa;
+}
+
+
+/* CANCELLED */
+
+.status-cancelled {
+    border-color: #393939;
+    background: #171717;
+    color: #8b8b8b;
+}
+
+
+/* COMPLETED */
+
+.status-completed {
+    border-color: #39443b;
+    background: #151915;
+    color: #b2c8b6;
+}
+
+
+/* DEFAULT */
+
+.status-default {
+    color: #999;
+}
+
+
+/* =========================================================
+   DATE
+========================================================= */
+
+.submission-date {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    color: #bdbdbd;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.submission-time {
+    color: #606060;
+    font-size: 9px;
+}
+
+
+/* =========================================================
+   VIEW BUTTON
+========================================================= */
+
+.view-submission-button {
+    height: 31px;
+    padding: 0 13px;
+    border: 1px solid #363636;
+    border-radius: 6px;
+    background: #181818;
+    color: #ddd;
+    font-family: inherit;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.view-submission-button:hover {
+    border-color: #666;
+    background: #242424;
+    color: #fff;
+}
+
+
+/* =========================================================
+   EMPTY DATABASE STATE
+========================================================= */
+
+.submissions-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    min-height: 330px;
+    padding: 50px 20px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.empty-symbol {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 17px;
+    border: 1px solid #303030;
+    border-radius: 50%;
+    background: #151515;
+    color: #777;
+    font-size: 24px;
+    font-weight: 300;
+}
+
+.submissions-empty h3 {
+    margin: 0 0 7px;
+    color: #ddd;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.submissions-empty p {
+    max-width: 410px;
+    margin: 0;
+    color: #626262;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   FILTERED EMPTY
+========================================================= */
+
+.filtered-submissions-empty {
+    padding: 65px 20px;
+    text-align: center;
+}
+
+.filtered-submissions-empty > div {
+    margin-bottom: 12px;
+    color: #555;
+    font-size: 26px;
+}
+
+.filtered-submissions-empty h3 {
+    margin: 0 0 7px;
+    color: #ddd;
+    font-size: 15px;
+}
+
+.filtered-submissions-empty p {
+    margin: 0;
+    color: #626262;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   ACCESS DENIED
+========================================================= */
+
+.submission-access-denied {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 22px;
+    border: 1px solid #302727;
+    border-radius: 10px;
+    background: #151111;
+}
+
+.access-denied-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border: 1px solid #4a3636;
+    border-radius: 50%;
+    color: #c7a6a6;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.submission-access-denied h2 {
+    margin: 0 0 5px;
+    color: #e1d4d4;
+    font-size: 15px;
+}
+
+.submission-access-denied p {
+    margin: 0;
+    color: #766a6a;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1000px) {
+
+    .submissions-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .submissions-count-card {
+        width: 100%;
+        box-sizing: border-box;
+        text-align: left;
+    }
+
+    .submissions-filter-card {
+        flex-wrap: wrap;
+    }
+
+    .submission-search {
+        flex: 1 1 100%;
+    }
+
+    .submission-filter-select {
+        flex: 1;
+        width: auto;
+    }
+
+}
+
+
+@media (max-width: 650px) {
+
+    .submissions-heading h1 {
+        font-size: 27px;
+    }
+
+    .submissions-heading p {
+        font-size: 12px;
+    }
+
+    .submissions-filter-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .submission-search {
+        width: 100%;
+        flex: none;
+    }
+
+    .submission-filter-select {
+        width: 100%;
+        flex: none;
+    }
+
+    .clear-submission-filters {
+        width: 100%;
+    }
+
+    .submissions-card-header {
+        padding: 15px;
+    }
+
+}

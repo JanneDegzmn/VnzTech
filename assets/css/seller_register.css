@@ -1,0 +1,424 @@
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(0, 132, 201, 0.18),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at bottom left,
+            rgba(0, 132, 201, 0.10),
+            transparent 30%
+        ),
+        #090c10;
+
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px 16px;
+}
+
+.register-wrapper {
+    width: 100%;
+    max-width: 520px;
+}
+
+/* =========================================================
+   BACK TO HOME
+   ========================================================= */
+
+.page-back {
+    margin-bottom: 14px;
+}
+
+.page-back a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color: #6f7c88;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.page-back a:hover {
+    color: #ffffff;
+    transform: translateX(-3px);
+}
+
+/* =========================================================
+   BRAND
+   ========================================================= */
+
+.brand {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.brand h1 {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.brand p {
+    color: #8f9aa5;
+    margin-top: 7px;
+    font-size: 14px;
+}
+
+/* =========================================================
+   REGISTER CARD
+   ========================================================= */
+
+.register-card {
+    background: rgba(16, 20, 25, 0.96);
+
+    border: 1px solid #242b33;
+    border-radius: 18px;
+
+    padding: 28px;
+
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.45);
+}
+
+.register-card h2 {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    color: #89949f;
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.message {
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    margin-bottom: 18px;
+
+    font-size: 14px;
+}
+
+.message.error {
+    background: rgba(220, 38, 38, 0.12);
+
+    border: 1px solid rgba(220, 38, 38, 0.35);
+
+    color: #ffb4b4;
+}
+
+.message.success {
+    background: rgba(34, 197, 94, 0.12);
+
+    border: 1px solid rgba(34, 197, 94, 0.35);
+
+    color: #b8f5ca;
+}
+
+/* =========================================================
+   PROFILE UPLOAD
+   ========================================================= */
+
+.profile-upload {
+    display: flex;
+    align-items: center;
+
+    gap: 16px;
+
+    margin-bottom: 24px;
+}
+
+.avatar-preview {
+    width: 76px;
+    height: 76px;
+
+    border-radius: 50%;
+
+    border: 2px solid #2c3944;
+
+    background: #11161c;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    flex-shrink: 0;
+
+    color: #73808c;
+
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.upload-content label {
+    display: inline-block;
+
+    margin-bottom: 6px;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.upload-content p {
+    color: #77838f;
+
+    font-size: 12px;
+
+    margin-bottom: 8px;
+}
+
+.upload-content input {
+    width: 100%;
+
+    color: #aeb8c2;
+
+    font-size: 12px;
+}
+
+/* =========================================================
+   FORM FIELDS
+   ========================================================= */
+
+.field {
+    margin-bottom: 17px;
+}
+
+.field label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+.field input,
+.field select {
+    width: 100%;
+
+    border: 1px solid #29323b;
+
+    background: #0d1217;
+
+    color: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 12px 13px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.field input:focus,
+.field select:focus {
+    border-color: #0ea5e9;
+
+    box-shadow:
+        0 0 0 3px rgba(14, 165, 233, 0.10);
+}
+
+.hint {
+    color: #67737e;
+
+    font-size: 11px;
+
+    margin-top: 6px;
+
+    line-height: 1.4;
+}
+
+/* =========================================================
+   PASSWORD ROW
+   ========================================================= */
+
+.password-row {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 12px;
+}
+
+/* =========================================================
+   TERMS
+   ========================================================= */
+
+.terms {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 9px;
+
+    margin: 6px 0 20px;
+}
+
+.terms input {
+    margin-top: 3px;
+
+    accent-color: #0ea5e9;
+}
+
+.terms label {
+    color: #8c98a3;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+.terms a {
+    color: #38bdf8;
+
+    text-decoration: none;
+}
+
+.terms a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   SUBMIT BUTTON
+   ========================================================= */
+
+.submit-button {
+    width: 100%;
+
+    border: 0;
+
+    border-radius: 11px;
+
+    padding: 13px 16px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0ea5e9,
+            #0284c7
+        );
+
+    color: white;
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.4px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        filter 0.2s ease;
+}
+
+.submit-button:hover {
+    transform: translateY(-1px);
+
+    filter: brightness(1.07);
+}
+
+/* =========================================================
+   LOGIN LINK
+   ========================================================= */
+
+.login-link {
+    text-align: center;
+
+    margin-top: 20px;
+
+    color: #7f8b96;
+
+    font-size: 13px;
+}
+
+.login-link a {
+    color: #38bdf8;
+
+    font-weight: 700;
+
+    text-decoration: none;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 560px) {
+
+    body {
+        padding: 22px 14px;
+    }
+
+    .register-card {
+        padding: 22px 18px;
+    }
+
+    .password-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .brand h1 {
+        font-size: 26px;
+    }
+
+    .page-back {
+        margin-bottom: 14px;
+    }
+
+    .page-back a {
+        font-size: 11px;
+    }
+}

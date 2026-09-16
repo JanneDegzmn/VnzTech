@@ -1,0 +1,2080 @@
+/* =========================================================
+   VNZ TECH — SELLER TRACKING
+   Editorial / Industrial Tracking Interface
+========================================================= */
+
+:root {
+    --bg: #06080b;
+    --panel: #0d1217;
+    --panel-2: #11171e;
+    --panel-3: #171e26;
+    --line: #222b35;
+    --line-light: #303b47;
+    --white: #f5f6f8;
+    --soft: #a8b1bc;
+    --muted: #65717f;
+    --success: #77ddb1;
+    --danger: #ff9696;
+}
+
+/* =========================================================
+   RESET
+========================================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+
+    color: var(--white);
+
+    background:
+        radial-gradient(
+            circle at 85% 5%,
+            rgba(255, 255, 255, 0.045),
+            transparent 28%
+        ),
+        var(--bg);
+
+    font-family:
+        Inter,
+        system-ui,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+
+    -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+
+/* =========================================================
+   PAGE
+========================================================= */
+
+.tracking-page {
+    min-height: 100vh;
+
+    display: flex;
+    flex-direction: column;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.tracking-header {
+    width: min(
+        1250px,
+        calc(100% - 40px)
+    );
+
+    min-height: 82px;
+
+    margin: 0 auto;
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    gap: 25px;
+}
+
+.tracking-header-left {
+    display: flex;
+    align-items: center;
+
+    min-width: 0;
+}
+
+
+/* =========================================================
+   BRAND
+========================================================= */
+
+.brand {
+    color: #ffffff;
+
+    text-decoration: none;
+
+    font-size: 17px;
+
+    font-weight: 950;
+
+    letter-spacing: 2.6px;
+
+    white-space: nowrap;
+}
+
+.brand span {
+    color: #8994a1;
+}
+
+
+/* =========================================================
+   HEADER ACTIONS
+========================================================= */
+
+.tracking-header-actions {
+    display: flex;
+
+    align-items: center;
+
+    justify-content: flex-end;
+
+    gap: 24px;
+
+    flex-wrap: wrap;
+}
+
+
+/* =========================================================
+   BACK TO HOME
+========================================================= */
+
+.back-home-link {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 34px;
+
+    padding: 0 12px;
+
+    color: #a3adb8;
+
+    background: #11171e;
+
+    border: 1px solid #27313b;
+
+    border-radius: 6px;
+
+    text-decoration: none;
+
+    font-size: 10px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.6px;
+
+    white-space: nowrap;
+
+    transition:
+        color 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.back-home-link:hover {
+    color: #ffffff;
+
+    background: #181f27;
+
+    border-color: #46525f;
+
+    transform: translateX(-2px);
+}
+
+
+/* =========================================================
+   SELL LINK
+========================================================= */
+
+.sell-link {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 34px;
+
+    padding: 0 13px;
+
+    color: #071016;
+
+    background: #8fd9f7;
+
+    border: 1px solid #8fd9f7;
+
+    border-radius: 6px;
+
+    text-decoration: none;
+
+    font-size: 10px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.6px;
+
+    white-space: nowrap;
+
+    transition:
+        color 0.2s ease,
+        background 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.sell-link:hover {
+    color: #000000;
+
+    background: #ffffff;
+
+    border-color: #ffffff;
+
+    transform: translateX(2px);
+}
+
+
+/* =========================================================
+   MAIN
+========================================================= */
+
+.tracking-main {
+    width: min(
+        1000px,
+        calc(100% - 40px)
+    );
+
+    margin: 0 auto;
+
+    padding:
+        90px 0
+        110px;
+
+    flex: 1;
+}
+
+
+/* =========================================================
+   INTRO
+========================================================= */
+
+.tracking-intro {
+    max-width: 730px;
+}
+
+.eyebrow,
+.section-label {
+    display: block;
+
+    color: #687482;
+
+    font-size: 8px;
+
+    font-weight: 950;
+
+    letter-spacing: 1.8px;
+}
+
+.tracking-intro h1 {
+    margin: 15px 0;
+
+    color: #ffffff;
+
+    font-size: clamp(
+        53px,
+        8vw,
+        90px
+    );
+
+    line-height: 0.9;
+
+    letter-spacing: -4px;
+}
+
+.tracking-intro h1 span {
+    display: block;
+
+    color: #737f8c;
+}
+
+.tracking-intro p {
+    max-width: 640px;
+
+    margin: 0;
+
+    color: #737f8d;
+
+    font-size: 13px;
+
+    line-height: 1.7;
+}
+
+
+/* =========================================================
+   SEARCH
+========================================================= */
+
+.tracking-search-card {
+    margin-top: 45px;
+
+    padding: 24px;
+
+    background: #0d1217;
+
+    border: 1px solid #222b35;
+
+    border-radius: 9px;
+}
+
+.tracking-form-grid {
+    display: grid;
+
+    grid-template-columns:
+        1fr 1fr;
+
+    gap: 12px;
+}
+
+.form-field label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #8e99a6;
+
+    font-size: 9px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.8px;
+}
+
+.form-field input {
+    width: 100%;
+
+    height: 48px;
+
+    padding: 0 14px;
+
+    outline: none;
+
+    color: #ffffff;
+
+    background: #090d12;
+
+    border: 1px solid #29333e;
+
+    border-radius: 7px;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.form-field input:focus {
+    border-color: #687482;
+
+    background: #0c1116;
+
+    box-shadow:
+        0 0 0 2px rgba(255, 255, 255, 0.02);
+}
+
+.form-field input::placeholder {
+    color: #46525f;
+}
+
+
+/* =========================================================
+   TRACK BUTTON
+========================================================= */
+
+.track-button {
+    width: 100%;
+
+    min-height: 48px;
+
+    margin-top: 13px;
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 12px;
+
+    color: #07090b;
+
+    background: #f5f6f8;
+
+    border: 0;
+
+    border-radius: 7px;
+
+    font-size: 10px;
+
+    font-weight: 950;
+
+    transition:
+        background 0.2s ease,
+        transform 0.2s ease,
+        opacity 0.2s ease;
+}
+
+.track-button:hover {
+    background: #ffffff;
+
+    transform: translateY(-1px);
+}
+
+.track-button:disabled {
+    opacity: 0.55;
+
+    cursor: wait;
+
+    transform: none;
+}
+
+.track-button span {
+    font-size: 16px;
+}
+
+
+/* =========================================================
+   MESSAGE
+========================================================= */
+
+.track-message {
+    margin-top: 12px;
+
+    padding: 12px 14px;
+
+    border-radius: 7px;
+
+    font-size: 10px;
+
+    line-height: 1.5;
+}
+
+.track-message.error {
+    color: #e49393;
+
+    background: #171113;
+
+    border: 1px solid #4a292d;
+}
+
+.track-message.success {
+    color: #83d9b5;
+
+    background: #0e1714;
+
+    border: 1px solid #29483d;
+}
+
+
+/* =========================================================
+   RESULT
+========================================================= */
+
+.result-area {
+    margin-top: 16px;
+}
+
+.result-header {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    margin-bottom: 12px;
+}
+
+.result-header h2 {
+    margin: 9px 0 0;
+
+    color: #ffffff;
+
+    font-family: Consolas, monospace;
+
+    font-size: 28px;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.result-status {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    min-height: 31px;
+
+    padding: 6px 10px;
+
+    border: 1px solid transparent;
+
+    border-radius: 6px;
+
+    font-size: 8px;
+
+    font-weight: 950;
+
+    letter-spacing: 0.7px;
+
+    text-transform: uppercase;
+}
+
+.status-new,
+.status-review {
+    color: #f2c964;
+
+    background: rgba(
+        242,
+        201,
+        100,
+        0.07
+    );
+
+    border-color:
+        rgba(
+            242,
+            201,
+            100,
+            0.22
+        );
+}
+
+.status-offer {
+    color: #69d7aa;
+
+    background: rgba(
+        105,
+        215,
+        170,
+        0.07
+    );
+
+    border-color:
+        rgba(
+            105,
+            215,
+            170,
+            0.22
+        );
+}
+
+.status-pending {
+    color: #c69eff;
+
+    background: rgba(
+        198,
+        158,
+        255,
+        0.07
+    );
+
+    border-color:
+        rgba(
+            198,
+            158,
+            255,
+            0.22
+        );
+}
+
+.status-accepted {
+    color: #72dfae;
+
+    background: rgba(
+        114,
+        223,
+        174,
+        0.07
+    );
+
+    border-color:
+        rgba(
+            114,
+            223,
+            174,
+            0.22
+        );
+}
+
+.status-declined {
+    color: #ff8a8a;
+
+    background: rgba(
+        255,
+        138,
+        138,
+        0.07
+    );
+
+    border-color:
+        rgba(
+            255,
+            138,
+            138,
+            0.18
+        );
+}
+
+.status-cancelled,
+.status-default {
+    color: #9ba6b3;
+
+    background: rgba(
+        155,
+        166,
+        179,
+        0.07
+    );
+
+    border-color:
+        rgba(
+            155,
+            166,
+            179,
+            0.18
+        );
+}
+
+.status-completed {
+    color: #69d5ef;
+
+    background: rgba(
+        105,
+        213,
+        239,
+        0.07
+    );
+
+    border-color:
+        rgba(
+            105,
+            213,
+            239,
+            0.20
+        );
+}
+
+
+/* =========================================================
+   RESULT CARDS
+========================================================= */
+
+.seller-result-card,
+.items-result-card,
+.no-offer-card,
+.offer-result-card {
+    margin-top: 12px;
+
+    padding: 22px;
+
+    background: #0d1217;
+
+    border: 1px solid #222b35;
+
+    border-radius: 9px;
+}
+
+.seller-result-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(2, 1fr);
+
+    gap: 1px;
+
+    margin-top: 17px;
+
+    overflow: hidden;
+
+    background: #222b35;
+}
+
+.seller-result-grid > div {
+    min-height: 70px;
+
+    padding: 14px;
+
+    background: #090e13;
+}
+
+.seller-result-grid small,
+.result-item-grid small {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: #5f6b78;
+
+    font-size: 8px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.8px;
+}
+
+.seller-result-grid strong,
+.result-item-grid strong {
+    color: #e9edf1;
+
+    font-size: 11px;
+
+    line-height: 1.45;
+}
+
+
+/* =========================================================
+   ITEMS
+========================================================= */
+
+.result-items {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 9px;
+
+    margin-top: 15px;
+}
+
+.result-item {
+    padding: 17px;
+
+    background: #090e13;
+
+    border: 1px solid #252e38;
+
+    border-radius: 7px;
+}
+
+.result-item-top {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    gap: 15px;
+}
+
+.result-item-top > div {
+    display: flex;
+
+    align-items: center;
+
+    gap: 11px;
+}
+
+.result-item-number {
+    width: 31px;
+
+    height: 31px;
+
+    display: grid;
+
+    place-items: center;
+
+    flex-shrink: 0;
+
+    color: #8994a1;
+
+    background: #171d24;
+
+    border: 1px solid #2b3540;
+
+    border-radius: 6px;
+
+    font-family: Consolas, monospace;
+
+    font-size: 8px;
+
+    font-weight: 900;
+}
+
+.result-item-top small {
+    display: block;
+
+    color: #5f6b78;
+
+    font-size: 8px;
+
+    font-weight: 900;
+
+    letter-spacing: 1px;
+}
+
+.result-item-top strong {
+    display: block;
+
+    margin-top: 3px;
+
+    color: #ffffff;
+
+    font-size: 13px;
+}
+
+.result-quantity {
+    color: #9ca6b2;
+
+    font-size: 8px;
+
+    font-weight: 900;
+}
+
+.result-item-grid {
+    display: grid;
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
+    gap: 1px;
+
+    margin-top: 15px;
+
+    background: #202933;
+}
+
+.result-item-grid > div {
+    min-height: 65px;
+
+    padding: 12px;
+
+    background: #0d1217;
+}
+
+.board-code {
+    color: #6bd8ff !important;
+
+    font-family: Consolas, monospace;
+}
+
+
+/* =========================================================
+   OFFER
+========================================================= */
+
+.offer-result-card {
+    border-color: #2b3944;
+
+    background:
+        linear-gradient(
+            180deg,
+            #11181f 0%,
+            #0d1217 100%
+        );
+}
+
+.offer-header {
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    gap: 20px;
+}
+
+.offer-header h2 {
+    margin: 9px 0 0;
+
+    color: #ffffff;
+
+    font-size: clamp(
+        38px,
+        7vw,
+        60px
+    );
+
+    line-height: 0.9;
+
+    letter-spacing: -2px;
+}
+
+.offer-message {
+    margin-top: 22px;
+
+    padding: 15px;
+
+    background: #0a0f14;
+
+    border: 1px solid #26303a;
+
+    border-radius: 7px;
+}
+
+.offer-message span {
+    display: block;
+
+    margin-bottom: 7px;
+
+    color: #667280;
+
+    font-size: 8px;
+
+    font-weight: 950;
+
+    letter-spacing: 1px;
+}
+
+.offer-message p {
+    margin: 0;
+
+    color: #abb4be;
+
+    font-size: 12px;
+
+    line-height: 1.65;
+}
+
+.response-warning {
+    margin-top: 15px;
+
+    padding: 11px 13px;
+
+    color: #827b62;
+
+    background: #14130f;
+
+    border: 1px solid #353327;
+
+    border-radius: 6px;
+
+    font-size: 9px;
+
+    line-height: 1.5;
+}
+
+
+/* =========================================================
+   OFFER ACTIONS
+========================================================= */
+
+.offer-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    gap: 8px;
+
+    margin-top: 16px;
+}
+
+.accept-offer-btn,
+.decline-offer-btn,
+.counter-offer-btn {
+    min-height: 43px;
+
+    padding: 0 16px;
+
+    border-radius: 7px;
+
+    font-size: 9px;
+
+    font-weight: 950;
+
+    cursor: pointer;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.accept-offer-btn {
+    color: #07090b;
+
+    background: #ffffff;
+
+    border: 1px solid #ffffff;
+}
+
+.accept-offer-btn:hover {
+    background: #eeeeee;
+
+    transform: translateY(-1px);
+}
+
+.decline-offer-btn {
+    color: #b5bec8;
+
+    background: #151b22;
+
+    border: 1px solid #303b46;
+}
+
+.decline-offer-btn:hover {
+    color: #ffffff;
+
+    border-color: #697482;
+
+    transform: translateY(-1px);
+}
+
+.counter-offer-btn {
+    color: #c6ced7;
+
+    background:
+        linear-gradient(
+            180deg,
+            #1b232c 0%,
+            #151b22 100%
+        );
+
+    border: 1px solid #39444f;
+}
+
+.counter-offer-btn:hover {
+    color: #ffffff;
+
+    background: #202831;
+
+    border-color: #7b8997;
+
+    transform: translateY(-1px);
+}
+
+.counter-offer-btn.counter-open {
+    color: #ffffff;
+
+    border-color: #7b8997;
+}
+
+.accept-offer-btn:disabled,
+.decline-offer-btn:disabled,
+.counter-offer-btn:disabled {
+    opacity: 0.5;
+
+    cursor: wait;
+
+    transform: none;
+}
+
+
+/* =========================================================
+   COUNTER FORM
+========================================================= */
+
+.counter-form {
+    margin-top: 16px;
+
+    padding: 20px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #0b1015 0%,
+            #080c11 100%
+        );
+
+    border: 1px solid #35414d;
+
+    border-radius: 9px;
+
+    box-shadow:
+        inset 0 1px 0
+            rgba(
+                255,
+                255,
+                255,
+                0.025
+            ),
+        0 12px 35px
+            rgba(
+                0,
+                0,
+                0,
+                0.18
+            );
+}
+
+.counter-form-heading {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 20px;
+
+    padding-bottom: 14px;
+
+    border-bottom: 1px solid #202a34;
+}
+
+.counter-form-heading > div:first-child span {
+    display: block;
+
+    margin-bottom: 6px;
+
+    color: #697583;
+
+    font-size: 8px;
+
+    font-weight: 950;
+
+    letter-spacing: 1.4px;
+}
+
+.counter-form-heading > div:first-child strong {
+    display: block;
+
+    color: #ffffff;
+
+    font-size: 16px;
+
+    font-weight: 900;
+
+    letter-spacing: -0.2px;
+}
+
+.counter-reference {
+    color: #687482;
+
+    font-family: Consolas, monospace;
+
+    font-size: 8px;
+
+    font-weight: 900;
+
+    letter-spacing: 0.8px;
+
+    padding-top: 3px;
+}
+
+.counter-form-description {
+    max-width: 680px;
+
+    margin-top: 14px;
+
+    color: #6f7b88;
+
+    font-size: 10px;
+
+    line-height: 1.65;
+}
+
+.counter-field {
+    margin-top: 16px;
+}
+
+.counter-field > label {
+    display: flex;
+
+    align-items: center;
+
+    gap: 7px;
+
+    margin-bottom: 7px;
+
+    color: #8b96a3;
+
+    font-size: 8px;
+
+    font-weight: 950;
+
+    letter-spacing: 1px;
+}
+
+.counter-field > label span {
+    color: #4e5965;
+
+    font-size: 7px;
+
+    letter-spacing: 0.6px;
+}
+
+
+/* =========================================================
+   COUNTER MONEY
+========================================================= */
+
+.counter-money {
+    height: 54px;
+
+    display: flex;
+
+    align-items: center;
+
+    overflow: hidden;
+
+    background: #070b0f;
+
+    border: 1px solid #2d3944;
+
+    border-radius: 7px;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.counter-money:hover {
+    border-color: #3b4855;
+}
+
+.counter-money:focus-within {
+    border-color: #748291;
+
+    background: #0a0f14;
+
+    box-shadow:
+        0 0 0 3px
+            rgba(
+                255,
+                255,
+                255,
+                0.025
+            );
+}
+
+.counter-money > span {
+    padding-left: 14px;
+
+    color: #7f8b98;
+
+    font-size: 15px;
+
+    font-weight: 950;
+}
+
+.counter-money input {
+    width: 100%;
+
+    height: 100%;
+
+    padding:
+        0
+        14px
+        0
+        8px;
+
+    outline: none;
+
+    color: #ffffff;
+
+    background: transparent;
+
+    border: 0;
+
+    font-size: 18px;
+
+    font-weight: 900;
+}
+
+.counter-money input::placeholder {
+    color: #3e4853;
+}
+
+.counter-money input:focus {
+    box-shadow: none;
+}
+
+
+/* =========================================================
+   COUNTER TEXTAREA
+========================================================= */
+
+.counter-field textarea {
+    width: 100%;
+
+    min-height: 105px;
+
+    padding: 13px;
+
+    resize: vertical;
+
+    outline: none;
+
+    color: #ffffff;
+
+    background: #070b0f;
+
+    border: 1px solid #2d3944;
+
+    border-radius: 7px;
+
+    font-size: 11px;
+
+    line-height: 1.6;
+
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.counter-field textarea:hover {
+    border-color: #3b4855;
+}
+
+.counter-field textarea:focus {
+    border-color: #748291;
+
+    background: #0a0f14;
+
+    box-shadow:
+        0 0 0 3px
+            rgba(
+                255,
+                255,
+                255,
+                0.025
+            );
+}
+
+.counter-field textarea::placeholder {
+    color: #48545f;
+}
+
+.counter-character-note {
+    margin-top: 6px;
+
+    color: #4e5a66;
+
+    font-size: 8px;
+
+    text-align: right;
+}
+
+
+/* =========================================================
+   COUNTER FORM BUTTONS
+========================================================= */
+
+.counter-form-actions {
+    display: flex;
+
+    justify-content: flex-end;
+
+    align-items: center;
+
+    gap: 8px;
+
+    margin-top: 18px;
+
+    padding-top: 15px;
+
+    border-top: 1px solid #202a34;
+}
+
+.cancel-counter-btn,
+.send-counter-btn {
+    min-height: 43px;
+
+    padding: 0 16px;
+
+    border-radius: 7px;
+
+    font-size: 8px;
+
+    font-weight: 950;
+
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.cancel-counter-btn {
+    color: #8994a1;
+
+    background: #141a21;
+
+    border: 1px solid #293440;
+}
+
+.cancel-counter-btn:hover {
+    color: #ffffff;
+
+    border-color: #697482;
+
+    transform: translateY(-1px);
+}
+
+.send-counter-btn {
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
+
+    color: #07090b;
+
+    background: #f5f6f8;
+
+    border: 1px solid #f5f6f8;
+}
+
+.send-counter-btn:hover {
+    color: #000000;
+
+    background: #ffffff;
+
+    transform: translateY(-1px);
+}
+
+.send-counter-btn span {
+    font-size: 13px;
+}
+
+.send-counter-btn:disabled,
+.cancel-counter-btn:disabled {
+    opacity: 0.5;
+
+    cursor: wait;
+
+    transform: none;
+}
+
+
+/* =========================================================
+   SELLER COUNTER CARD
+========================================================= */
+
+.seller-counter-card {
+    border-color: #39434d;
+}
+
+.seller-counter-card .offer-header h2 {
+    color: #e7edf2;
+}
+
+
+/* =========================================================
+   NEGOTIATION FINISHED
+========================================================= */
+
+.negotiation-finished-card {
+    position: relative;
+
+    overflow: hidden;
+
+    padding: 28px;
+
+    background:
+        linear-gradient(
+            145deg,
+            #111920 0%,
+            #0d1318 52%,
+            #090e13 100%
+        );
+
+    border: 1px solid #303b45;
+
+    border-radius: 10px;
+
+    box-shadow:
+        0 18px 45px
+            rgba(
+                0,
+                0,
+                0,
+                0.22
+            );
+}
+
+.negotiation-finished-card::before {
+    content: "";
+
+    position: absolute;
+
+    top: 0;
+    left: 0;
+    right: 0;
+
+    height: 2px;
+
+    background:
+        linear-gradient(
+            90deg,
+            #69d7aa 0%,
+            #3e8f72 42%,
+            transparent 100%
+        );
+}
+
+
+/* =========================================================
+   FINISHED HEADER
+========================================================= */
+
+.finished-offer-header {
+    display: flex;
+
+    align-items: flex-start;
+
+    justify-content: space-between;
+
+    gap: 20px;
+}
+
+.finished-offer-header .section-label {
+    color: #667481;
+}
+
+.finished-offer-header h2 {
+    margin: 8px 0 0;
+
+    color: #ffffff;
+
+    font-size: 28px;
+
+    line-height: 1.05;
+
+    font-weight: 950;
+
+    letter-spacing: -0.8px;
+}
+
+.finished-offer-header .result-status {
+    flex-shrink: 0;
+
+    padding:
+        7px 11px;
+
+    font-size: 8px;
+
+    font-weight: 950;
+
+    letter-spacing: 0.8px;
+}
+
+
+/* =========================================================
+   FINAL AMOUNT
+========================================================= */
+
+.finished-offer-amount {
+    margin-top: 30px;
+
+    color: #f5f7f8;
+
+    font-size: clamp(
+        52px,
+        7vw,
+        76px
+    );
+
+    line-height: 0.82;
+
+    font-weight: 950;
+
+    letter-spacing: -4px;
+}
+
+
+/* =========================================================
+   FINAL MESSAGE
+========================================================= */
+
+.negotiation-finished-card .offer-message {
+    margin-top: 27px;
+
+    padding: 17px 18px;
+
+    background:
+        linear-gradient(
+            180deg,
+            #0c1217 0%,
+            #080d12 100%
+        );
+
+    border: 1px solid #27323c;
+
+    border-radius: 8px;
+}
+
+.negotiation-finished-card .offer-message span {
+    display: block;
+
+    margin-bottom: 9px;
+
+    color: #6c7885;
+
+    font-size: 8px;
+
+    font-weight: 950;
+
+    letter-spacing: 1.15px;
+}
+
+.negotiation-finished-card .offer-message p {
+    margin: 0;
+
+    color: #d4d9de;
+
+    font-size: 13px;
+
+    line-height: 1.65;
+
+    font-weight: 500;
+}
+
+
+/* =========================================================
+   FINAL NOTICE
+========================================================= */
+
+.finished-offer-note {
+    margin-top: 18px;
+
+    padding: 15px 16px;
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+
+    background:
+        rgba(
+            105,
+            215,
+            170,
+            0.045
+        );
+
+    border:
+        1px solid
+        rgba(
+            105,
+            215,
+            170,
+            0.16
+        );
+
+    border-radius: 7px;
+}
+
+.finished-offer-note strong {
+    color: #9ed9be;
+
+    font-size: 10px;
+
+    font-weight: 950;
+}
+
+.finished-offer-note span {
+    color: #687b72;
+
+    font-size: 9px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   FINAL — ACCEPTED
+========================================================= */
+
+.finished-accepted {
+    border-color: #315143;
+}
+
+.finished-accepted::before {
+    background:
+        linear-gradient(
+            90deg,
+            #69d7aa 0%,
+            #397b60 45%,
+            transparent 100%
+        );
+}
+
+
+/* =========================================================
+   FINAL — DECLINED
+========================================================= */
+
+.finished-declined {
+    border-color: #493238;
+}
+
+.finished-declined::before {
+    background:
+        linear-gradient(
+            90deg,
+            #b86f79 0%,
+            #71434a 45%,
+            transparent 100%
+        );
+}
+
+.finished-declined .finished-offer-note {
+    background:
+        rgba(
+            184,
+            111,
+            121,
+            0.045
+        );
+
+    border-color:
+        rgba(
+            184,
+            111,
+            121,
+            0.16
+        );
+}
+
+.finished-declined .finished-offer-note strong {
+    color: #cc9ba1;
+}
+
+
+/* =========================================================
+   FINAL — CANCELLED
+========================================================= */
+
+.finished-cancelled {
+    border-color: #3b4047;
+}
+
+.finished-cancelled::before {
+    background:
+        linear-gradient(
+            90deg,
+            #78828d 0%,
+            #4a535d 45%,
+            transparent 100%
+        );
+}
+
+
+/* =========================================================
+   FINAL — COMPLETED
+========================================================= */
+
+.finished-completed {
+    border-color: #304a58;
+}
+
+.finished-completed::before {
+    background:
+        linear-gradient(
+            90deg,
+            #67d7ef 0%,
+            #3d8090 45%,
+            transparent 100%
+        );
+}
+
+
+/* =========================================================
+   NO OFFER
+========================================================= */
+
+.no-offer-card span {
+    display: block;
+
+    color: #65717f;
+
+    font-size: 8px;
+
+    font-weight: 950;
+
+    letter-spacing: 1.4px;
+}
+
+.no-offer-card strong {
+    display: block;
+
+    margin-top: 8px;
+
+    color: #ffffff;
+
+    font-size: 19px;
+}
+
+.no-offer-card p {
+    max-width: 620px;
+
+    margin: 8px 0 0;
+
+    color: #697583;
+
+    font-size: 11px;
+
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   FOOTER
+========================================================= */
+
+.tracking-footer {
+    width: min(
+        1250px,
+        calc(100% - 40px)
+    );
+
+    margin: 0 auto;
+
+    padding:
+        28px 0
+        35px;
+
+    display: flex;
+
+    align-items: flex-end;
+
+    justify-content: space-between;
+
+    gap: 30px;
+
+    border-top: 1px solid #171d24;
+
+    color: #46515e;
+
+    font-size: 8px;
+}
+
+.tracking-footer div {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 5px;
+}
+
+.tracking-footer strong {
+    color: #a6afb9;
+
+    font-size: 11px;
+
+    letter-spacing: 1.5px;
+}
+
+.tracking-footer span {
+    color: #4d5966;
+}
+
+
+/* =========================================================
+   MOBILE / TABLET
+========================================================= */
+
+@media (max-width: 700px) {
+
+    .tracking-header,
+    .tracking-footer,
+    .tracking-main {
+        width: calc(100% - 24px);
+    }
+
+    .tracking-header {
+        min-height: 72px;
+
+        gap: 15px;
+    }
+
+    .tracking-header-actions {
+        gap: 16px;
+    }
+
+    .back-home-link,
+    .sell-link {
+        font-size: 9px;
+
+        min-height: 32px;
+
+        padding: 0 10px;
+    }
+
+    .tracking-main {
+        padding-top: 70px;
+
+        padding-bottom: 80px;
+    }
+
+    .tracking-intro h1 {
+        font-size: 48px;
+
+        letter-spacing: -2.8px;
+    }
+
+    .tracking-form-grid,
+    .seller-result-grid,
+    .result-item-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .result-header,
+    .offer-header {
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+
+    .result-item-top {
+        align-items: flex-start;
+    }
+
+    .offer-actions {
+        flex-direction: column;
+    }
+
+    .accept-offer-btn,
+    .decline-offer-btn,
+    .counter-offer-btn {
+        width: 100%;
+    }
+
+    .counter-form {
+        padding: 16px;
+    }
+
+    .counter-form-heading {
+        flex-direction: column;
+
+        gap: 8px;
+    }
+
+    .counter-reference {
+        padding-top: 0;
+    }
+
+    .counter-form-actions {
+        flex-direction: column;
+    }
+
+    .cancel-counter-btn,
+    .send-counter-btn {
+        width: 100%;
+    }
+
+    .finished-offer-header {
+        flex-direction: column;
+
+        gap: 12px;
+    }
+
+    .finished-offer-header h2 {
+        font-size: 23px;
+    }
+
+    .finished-offer-amount {
+        margin-top: 24px;
+
+        font-size: 55px;
+
+        letter-spacing: -3px;
+    }
+
+    .negotiation-finished-card {
+        padding: 20px;
+    }
+
+    .negotiation-finished-card .offer-message {
+        margin-top: 22px;
+
+        padding: 14px;
+    }
+
+    .negotiation-finished-card .offer-message p {
+        font-size: 12px;
+    }
+
+    .tracking-footer {
+        flex-direction: column;
+
+        align-items: flex-start;
+    }
+}
+
+
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 500px) {
+
+    .tracking-header {
+        align-items: flex-start;
+
+        flex-direction: column;
+
+        padding:
+            14px 0;
+    }
+
+    .tracking-header-actions {
+        width: 100%;
+
+        justify-content: space-between;
+
+        gap: 16px;
+    }
+
+    .tracking-main {
+        padding-top: 55px;
+    }
+}
+
+
+/* =========================================================
+   VERY SMALL MOBILE
+========================================================= */
+
+@media (max-width: 360px) {
+
+    .tracking-header-actions {
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 8px;
+    }
+
+    .tracking-intro h1 {
+        font-size: 42px;
+
+        letter-spacing: -2.4px;
+    }
+
+    .tracking-search-card {
+        padding: 17px;
+    }
+
+    .seller-result-card,
+    .items-result-card,
+    .no-offer-card,
+    .offer-result-card {
+        padding: 17px;
+    }
+}

@@ -1,0 +1,3142 @@
+<?php
+
+require_once __DIR__ . '/../backend/database.php';
+require_once __DIR__ . '/../backend/session.php';
+
+
+/*
+|--------------------------------------------------------------------------
+| AUTHENTICATION
+|--------------------------------------------------------------------------
+*/
+
+if (
+    empty($_SESSION['user_logged_in']) ||
+    empty($_SESSION['user_id'])
+) {
+    header(
+        'Location: /VNZ-TECH/account/login.php'
+    );
+
+    exit;
+}
+
+
+$userId = (int) $_SESSION['user_id'];
+
+
+if ($userId <= 0) {
+
+    session_unset();
+    session_destroy();
+
+    header(
+        'Location: /VNZ-TECH/account/login.php'
+    );
+
+    exit;
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| CURRENT SELLER ACCOUNT
+|--------------------------------------------------------------------------
+*/
+
+try {
+
+    $sellerAccountStmt = $pdo->prepare("
+        SELECT
+            id,
+            full_name,
+            mobile,
+            email,
+            address,
+            profile_picture,
+            language,
+            is_active
+        FROM users
+        WHERE id = ?
+        LIMIT 1
+    ");
+
+    $sellerAccountStmt->execute([
+        $userId
+    ]);
+
+    $sellerAccount =
+        $sellerAccountStmt->fetch();
+
+
+    if (!$sellerAccount) {
+
+        session_unset();
+        session_destroy();
+
+        header(
+            'Location: /VNZ-TECH/account/login.php'
+        );
+
+        exit;
+    }
+
+
+    if (
+        (int) $sellerAccount['is_active'] !== 1
+    ) {
+
+        session_unset();
+        session_destroy();
+
+        header(
+            'Location: /VNZ-TECH/account/login.php'
+        );
+
+        exit;
+    }
+
+} catch (Throwable $e) {
+
+    http_response_code(500);
+
+    exit(
+        'Unable to load seller account.'
+    );
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| PAGE
+|--------------------------------------------------------------------------
+*/
+
+$page =
+    strtolower(
+        trim(
+            $_GET['page'] ?? 'dashboard'
+        )
+    );
+
+
+/*
+|--------------------------------------------------------------------------
+| ALLOWED PAGES
+|--------------------------------------------------------------------------
+*/
+
+$allowedPages = [
+    'dashboard',
+    'submissions',
+    'submission',
+    'profile',
+    'transactions',
+    'transaction',
+    'settings'
+];
+
+
+if (
+    !in_array(
+        $page,
+        $allowedPages,
+        true
+    )
+) {
+
+    $page =
+        'dashboard';
+
+}
+
+
+/*
+|--------------------------------------------------------------------------
+| PAGE TITLES
+|--------------------------------------------------------------------------
+*/
+
+$pageTitles = [
+    'dashboard' => 'Dashboard',
+    'submissions' => 'My Submissions',
+    'submission' => 'Submission Details',
+    'profile' => 'Profile',
+    'transactions' => 'Transactions',
+    'transaction' => 'Transaction Details',
+    'settings' => 'Settings'
+];
+
+
+/*
+|--------------------------------------------------------------------------
+| Initial Alert (from full-page redirects, e.g. submit_submission.php)
+|--------------------------------------------------------------------------
+|
+| Backend endpoints that can't respond with JSON (because they do a
+| full page redirect, like submit_submission.php after a multipart
+| form POST) communicate errors back to the user via ?error=... on
+| the redirect URL. Previously this value was silently ignored by
+| the frontend - it sat in the URL but nothing rendered it, so the
+| user had no idea why their action didn't go through.
+|
+| This is read once here and handed to JS below, which shows it in
+| a reusable alert modal (#sellerAlertModal) instead of leaving it
+| invisible in the query string.
+|
+*/
+
+$initialAlertMessage =
+    isset($_GET['error'])
+        ? trim((string) $_GET['error'])
+        : '';
+
+?>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        <?= htmlspecialchars(
+            $pageTitles[$page]
+                ?? 'Dashboard',
+            ENT_QUOTES,
+            'UTF-8'
+        ) ?>
+        | VNZ TECH
+    </title>
+
+
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/seller_dashboard.css"
+    >
+
+</head>
+
+
+<body>
+
+
+<div class="dashboard-layout">
+
+
+    <!-- =====================================================
+         SIDEBAR
+    ====================================================== -->
+
+    <aside class="dashboard-sidebar">
+
+        <div class="sidebar-brand">
+
+            <div class="brand-logo">
+                VNZ
+            </div>
+
+
+            <div class="brand-text">
+
+                <strong>
+                    VNZ TECH
+                </strong>
+
+                <span>
+                    SELLER PORTAL
+                </span>
+
+            </div>
+
+        </div>
+
+
+        <nav class="sidebar-nav">
+
+            <button
+                type="button"
+                class="nav-item <?= $page === 'dashboard' ? 'active' : '' ?>"
+                data-page="dashboard"
+            >
+
+                <span class="nav-icon">
+                    ⌂
+                </span>
+
+                <span>
+                    Dashboard
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item <?= in_array($page, ['submissions', 'submission'], true) ? 'active' : '' ?>"
+                data-page="submissions"
+            >
+
+                <span class="nav-icon">
+                    ▣
+                </span>
+
+                <span>
+                    My Submissions
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item"
+                disabled
+            >
+
+                <span class="nav-icon">
+                    ◈
+                </span>
+
+                <span>
+                    Offers
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item <?= $page === 'transactions' ? 'active' : '' ?>"
+                data-page="transactions"
+            >
+                <span class="nav-icon">▤</span>
+                <span>Transactions</span>
+            </button>
+
+
+            <div class="sidebar-divider"></div>
+
+
+            <button
+                type="button"
+                class="nav-item <?= $page === 'profile' ? 'active' : '' ?>"
+                data-page="profile"
+            >
+
+                <span class="nav-icon">
+                    ◎
+                </span>
+
+                <span>
+                    Profile
+                </span>
+
+            </button>
+
+
+            <button
+                type="button"
+                class="nav-item <?= $page === 'settings' ? 'active' : '' ?>"
+                data-page="settings"
+            >
+
+                <span class="nav-icon">
+                    ⚙
+                </span>
+
+                <span>
+                    Settings
+                </span>
+
+            </button>
+
+        </nav>
+
+
+        <div class="sidebar-bottom">
+
+            <a
+                href="/VNZ-TECH/account/logout.php"
+                class="logout-button"
+            >
+
+                <span class="nav-icon">
+                    ↪
+                </span>
+
+                <span>
+                    Logout
+                </span>
+
+            </a>
+
+        </div>
+
+    </aside>
+
+
+    <!-- =====================================================
+         MAIN CONTENT
+    ====================================================== -->
+
+    <main class="dashboard-main">
+
+        <div id="contentArea">
+
+            <div class="content-loading">
+                Loading...
+            </div>
+
+        </div>
+
+    </main>
+
+</div>
+
+
+<!-- =====================================================
+     SELL ITEM MODAL
+====================================================== -->
+
+<div
+    id="sellerSellModal"
+    class="seller-sell-modal"
+    aria-hidden="true"
+>
+
+    <div class="seller-sell-modal-panel">
+
+
+        <div class="seller-sell-modal-header">
+
+            <div class="seller-sell-modal-title">
+
+                <span class="seller-sell-modal-dot"></span>
+
+                SELL TO VNZ TECH
+
+            </div>
+
+
+            <button
+                type="button"
+                id="sellerSellModalClose"
+                class="seller-sell-modal-close"
+                aria-label="Close"
+            >
+                ×
+            </button>
+
+        </div>
+
+
+        <div class="seller-sell-modal-body">
+
+            <div class="seller-form-wrap">
+
+
+                <div class="seller-form-intro">
+
+                    <h2>
+                        Sell an Item
+                    </h2>
+
+                    <p>
+                        Submit your phone or scrap item details
+                        and our team will review your submission.
+                    </p>
+
+                </div>
+
+
+                <div
+                    id="sellerFormMessage"
+                    class="seller-form-message"
+                ></div>
+
+
+                <form
+                    id="sellerSubmissionForm"
+                    action="/VNZ-TECH/backend/submit_submission.php"
+                    method="POST"
+                    enctype="multipart/form-data"
+                >
+                    <input
+                        type="hidden"
+                        name="submission_source"
+                        value="account"
+                    >
+
+                    <div class="seller-form-section">
+
+
+                    <div class="seller-form-section">
+
+                        <div class="seller-form-section-title">
+                            Seller Information
+                        </div>
+
+
+                        <div class="seller-account-info">
+
+
+                            <div class="seller-account-info-card">
+
+                                <span>
+                                    Full Name
+                                </span>
+
+                                <strong>
+
+                                    <?= htmlspecialchars(
+                                        $sellerAccount['full_name'] ?? '',
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+
+                                </strong>
+
+                            </div>
+
+
+                            <div class="seller-account-info-card">
+
+                                <span>
+                                    Email
+                                </span>
+
+                                <strong>
+
+                                    <?= htmlspecialchars(
+                                        $sellerAccount['email'] ?? '',
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+
+                                </strong>
+
+                            </div>
+
+
+                            <div class="seller-account-info-card">
+
+                                <span>
+                                    Mobile
+                                </span>
+
+                                <strong>
+
+                                    <?= !empty(
+                                        $sellerAccount['mobile']
+                                    )
+                                        ? htmlspecialchars(
+                                            $sellerAccount['mobile'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        )
+                                        : 'Not provided'
+                                    ?>
+
+                                </strong>
+
+                            </div>
+
+
+                            <div class="seller-account-info-card">
+
+                                <span>
+                                    Address
+                                </span>
+
+                                <strong>
+
+                                    <?php if (
+                                        !empty(
+                                            $sellerAccount['address']
+                                        )
+                                    ): ?>
+
+                                        <?= htmlspecialchars(
+                                            $sellerAccount['address'],
+                                            ENT_QUOTES,
+                                            'UTF-8'
+                                        ) ?>
+
+                                    <?php else: ?>
+
+                                        Please complete your address
+                                        in Profile.
+
+                                    <?php endif; ?>
+
+                                </strong>
+
+                            </div>
+
+
+                        </div>
+
+
+                        <div class="seller-account-sync-note">
+
+                            Seller information is automatically
+                            synced with your VNZ TECH account.
+
+                            To change your name, mobile number,
+                            or address, update your
+                            <a
+                                href="?page=profile"
+                                data-seller-page="profile"
+                            >
+                                Profile
+                            </a>.
+
+                        </div>
+
+
+                        <input
+                            type="hidden"
+                            name="seller_name"
+                            value="<?= htmlspecialchars(
+                                $sellerAccount['full_name'] ?? '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>"
+                        >
+
+
+                        <input
+                            type="hidden"
+                            name="seller_mobile"
+                            value="<?= htmlspecialchars(
+                                $sellerAccount['mobile'] ?? '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>"
+                        >
+
+
+                        <input
+                            type="hidden"
+                            name="seller_address"
+                            value="<?= htmlspecialchars(
+                                $sellerAccount['address'] ?? '',
+                                ENT_QUOTES,
+                                'UTF-8'
+                            ) ?>"
+                        >
+
+
+                        <div
+                            class="seller-form-group full"
+                            style="margin-top: 15px;"
+                        >
+
+                            <label>
+                                Selling Method
+                            </label>
+
+
+                            <div class="seller-form-methods">
+
+
+                                <div
+                                    class="seller-form-method-option"
+                                >
+
+                                    <input
+                                        type="radio"
+                                        id="method_per_piece"
+                                        name="selling_method"
+                                        value="per_piece"
+                                        checked
+                                    >
+
+
+                                    <label
+                                        for="method_per_piece"
+                                        class="seller-form-method-label"
+                                    >
+                                        Sell Per Piece
+                                    </label>
+
+                                </div>
+
+
+                                <div
+                                    class="seller-form-method-option"
+                                >
+
+                                    <input
+                                        type="radio"
+                                        id="method_wholesale"
+                                        name="selling_method"
+                                        value="wholesale"
+                                    >
+
+
+                                    <label
+                                        for="method_wholesale"
+                                        class="seller-form-method-label"
+                                    >
+                                        Wholesale / Bulk
+                                    </label>
+
+                                </div>
+
+
+                            </div>
+
+                        </div>
+
+
+                    </div>
+
+
+                    <div class="seller-form-section">
+
+                        <div class="seller-form-section-title">
+
+                            Item Details
+
+                        </div>
+
+
+                        <div
+                            id="sellerItemsContainer"
+                        ></div>
+
+
+                        <button
+                            type="button"
+                            class="seller-add-item"
+                            id="sellerAddItemBtn"
+                        >
+                            + Add Another Item
+                        </button>
+
+                    </div>
+
+
+                    <div class="seller-form-section">
+
+                        <div class="seller-form-section-title">
+
+                            Additional Information
+
+                        </div>
+
+
+                        <div class="seller-form-group">
+
+                            <label for="seller_notes">
+
+                                Seller Notes
+
+                            </label>
+
+
+                            <textarea
+                                id="seller_notes"
+                                name="seller_notes"
+                                placeholder="Anything else you want our team to know..."
+                            ></textarea>
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="seller-form-disclaimer">
+
+                        By submitting this form, you confirm that
+                        the information and photos you provide are
+                        accurate to the best of your knowledge.
+
+                        VNZ TECH will review your submission and
+                        may contact you regarding an offer.
+
+                    </div>
+
+
+                    <div class="seller-form-submit-row">
+
+                        <button
+                            type="submit"
+                            class="seller-form-submit"
+                            id="sellerSubmitBtn"
+                        >
+
+                            SUBMIT ITEM FOR REVIEW
+
+                        </button>
+
+                    </div>
+
+
+                </form>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     GLOBAL ALERT MODAL
+====================================================== -->
+
+<div
+    id="sellerAlertModal"
+    class="seller-alert-modal"
+    aria-hidden="true"
+>
+
+    <div class="seller-alert-modal-panel">
+
+        <div class="seller-alert-modal-icon">
+            !
+        </div>
+
+        <h3 id="sellerAlertModalTitle">
+            Heads up
+        </h3>
+
+        <p id="sellerAlertModalMessage"></p>
+
+        <div class="seller-alert-modal-actions">
+
+            <button
+                type="button"
+                id="sellerAlertModalPrimary"
+                class="seller-alert-modal-primary"
+                style="display: none;"
+            ></button>
+
+            <button
+                type="button"
+                id="sellerAlertModalDismiss"
+                class="seller-alert-modal-dismiss"
+            >
+                Close
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<style>
+
+.seller-alert-modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+}
+
+.seller-alert-modal.is-open {
+    display: flex;
+}
+
+.seller-alert-modal-panel {
+    background: #12141c;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    padding: 28px;
+    max-width: 380px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.seller-alert-modal-icon {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: #f5b301;
+    color: #12141c;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+}
+
+.seller-alert-modal-panel h3 {
+    color: #fff;
+    margin: 0 0 8px;
+    font-size: 18px;
+}
+
+.seller-alert-modal-panel p {
+    color: #b7bcc9;
+    font-size: 14px;
+    line-height: 1.5;
+    margin: 0 0 20px;
+    white-space: pre-line;
+}
+
+.seller-alert-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.seller-alert-modal-primary {
+    background: #2f7dff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.seller-alert-modal-dismiss {
+    background: transparent;
+    color: #9aa0ac;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 12px;
+    cursor: pointer;
+}
+
+</style>
+
+
+<!-- =====================================================
+     PHOTO LIGHTBOX
+====================================================== -->
+
+<div
+    id="transactionPhotoLightbox"
+    class="transaction-photo-lightbox"
+    aria-hidden="true"
+>
+
+    <div
+        class="transaction-photo-lightbox-backdrop"
+        data-close-photo-lightbox
+    ></div>
+
+    <button
+        type="button"
+        class="transaction-photo-lightbox-close"
+        data-close-photo-lightbox
+        aria-label="Close"
+    >
+        ×
+    </button>
+
+    <img
+        src=""
+        alt=""
+        class="transaction-photo-lightbox-img"
+    >
+
+</div>
+
+<script>
+
+(function () {
+
+
+    /* =====================================================
+       PAGE SYSTEM
+    ====================================================== */
+
+    const contentArea =
+        document.getElementById(
+            'contentArea'
+        );
+
+
+    const navItems =
+        document.querySelectorAll(
+            '.sidebar-nav .nav-item[data-page]'
+        );
+
+
+    const pageTitles = {
+
+        dashboard:
+            'Dashboard',
+
+        submissions:
+            'My Submissions',
+
+        submission:
+            'Submission Details',
+
+        transactions:
+            'Transactions',
+
+        profile:
+            'Profile',
+
+        transaction:
+            'Transaction Details',
+
+        settings:
+            'Settings'
+
+    };
+
+
+    function setActiveNavigation(
+        page
+    ) {
+
+        navItems.forEach(
+            item => {
+
+                const itemPage =
+                    item.dataset.page;
+
+
+                item.classList.toggle(
+                    'active',
+
+                    itemPage === page
+                        ||
+                    (
+                        page === 'submission'
+                        &&
+                        itemPage === 'submissions'
+                    )
+                );
+
+            }
+        );
+
+    }
+
+
+    function updatePageTitle(
+        page
+    ) {
+
+        const title =
+            pageTitles[page]
+            ||
+            'Dashboard';
+
+
+        document.title =
+            title +
+            ' | VNZ TECH';
+
+    }
+
+
+    function executeScripts(
+        container
+    ) {
+
+        const scripts =
+            container.querySelectorAll(
+                'script'
+            );
+
+
+        scripts.forEach(
+            oldScript => {
+
+                const newScript =
+                    document.createElement(
+                        'script'
+                    );
+
+
+                Array.from(
+                    oldScript.attributes
+                ).forEach(
+                    attribute => {
+
+                        newScript.setAttribute(
+                            attribute.name,
+                            attribute.value
+                        );
+
+                    }
+                );
+
+
+                newScript.textContent =
+                    oldScript.textContent;
+
+
+                oldScript.parentNode.replaceChild(
+                    newScript,
+                    oldScript
+                );
+
+            }
+        );
+
+    }
+
+
+    async function loadPage(
+        page,
+        pushState = true,
+        params = {}
+    ) {
+
+        if (
+            !pageTitles[page]
+        ) {
+
+            page =
+                'dashboard';
+
+        }
+
+
+        setActiveNavigation(
+            page
+        );
+
+
+        updatePageTitle(
+            page
+        );
+
+
+        contentArea.innerHTML = `
+            <div class="content-loading">
+                Loading...
+            </div>
+        `;
+
+
+        try {
+
+            const queryParams =
+                new URLSearchParams();
+
+
+            Object.keys(
+                params
+            ).forEach(
+                key => {
+
+                    if (
+                        params[key] !== null &&
+                        params[key] !== undefined &&
+                        params[key] !== ''
+                    ) {
+
+                        queryParams.set(
+                            key,
+                            params[key]
+                        );
+
+                    }
+
+                }
+            );
+
+
+            let url =
+                'pages/' +
+                page +
+                '.php';
+
+
+            const queryString =
+                queryParams.toString();
+
+
+            if (
+                queryString !== ''
+            ) {
+
+                url +=
+                    '?' +
+                    queryString;
+
+            }
+
+
+            const response =
+                await fetch(
+                    url,
+                    {
+                        method:
+                            'GET',
+
+                        headers: {
+                            'X-Requested-With':
+                                'XMLHttpRequest'
+                        },
+
+                        credentials:
+                            'same-origin',
+
+                        cache:
+                            'no-store'
+                    }
+                );
+
+
+            if (
+                !response.ok
+            ) {
+
+                throw new Error(
+                    'HTTP error: ' +
+                    response.status
+                );
+
+            }
+
+
+            const html =
+                await response.text();
+
+
+            contentArea.innerHTML =
+                html;
+
+
+            executeScripts(
+                contentArea
+            );
+
+
+            if (
+                pushState
+            ) {
+
+                const browserParams =
+                    new URLSearchParams();
+
+
+                browserParams.set(
+                    'page',
+                    page
+                );
+
+
+                Object.keys(
+                    params
+                ).forEach(
+                    key => {
+
+                        if (
+                            params[key] !== null &&
+                            params[key] !== undefined &&
+                            params[key] !== ''
+                        ) {
+
+                            browserParams.set(
+                                key,
+                                params[key]
+                            );
+
+                        }
+
+                    }
+                );
+
+
+                const newUrl =
+                    window.location.pathname +
+                    '?' +
+                    browserParams.toString();
+
+
+                window.history.pushState(
+                    {
+                        page:
+                            page,
+
+                        params:
+                            params
+                    },
+                    '',
+                    newUrl
+                );
+
+            }
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                error
+            );
+
+
+            contentArea.innerHTML = `
+                <div class="portal-error">
+
+                    <h2>
+                        Unable to load this page
+                    </h2>
+
+                    <p>
+                        Something went wrong while loading
+                        this section.
+                    </p>
+
+                    <button
+                        type="button"
+                        onclick="window.loadSellerPage('dashboard')"
+                    >
+                        Back to Dashboard
+                    </button>
+
+                </div>
+            `;
+
+        }
+
+    }
+
+
+    navItems.forEach(
+        item => {
+
+            item.addEventListener(
+                'click',
+                function () {
+
+                    const page =
+                        this.dataset.page;
+
+
+                    loadPage(
+                        page
+                    );
+
+                }
+            );
+
+        }
+    );
+
+
+    contentArea.addEventListener(
+        'click',
+        function (
+            event
+        ) {
+
+            const link =
+                event.target.closest(
+                    'a[data-seller-page]'
+                );
+
+
+            if (!link) {
+                return;
+            }
+
+
+            event.preventDefault();
+
+
+            const targetPage =
+                link.dataset.sellerPage ||
+                'dashboard';
+
+
+            const params = {};
+
+
+            const url =
+                new URL(
+                    link.href,
+                    window.location.origin
+                );
+
+
+            url.searchParams.forEach(
+                (
+                    value,
+                    key
+                ) => {
+
+                    if (
+                        key !== 'page'
+                    ) {
+
+                        params[key] =
+                            value;
+
+                    }
+
+                }
+            );
+
+
+            loadPage(
+                targetPage,
+                true,
+                params
+            );
+
+        }
+    );
+
+
+    window.loadSellerPage =
+        loadPage;
+
+
+    window.addEventListener(
+        'popstate',
+        function () {
+
+            const urlParams =
+                new URLSearchParams(
+                    window.location.search
+                );
+
+
+            const currentPage =
+                urlParams.get(
+                    'page'
+                ) ||
+                'dashboard';
+
+
+            const params = {};
+
+
+            urlParams.forEach(
+                (
+                    value,
+                    key
+                ) => {
+
+                    if (
+                        key !== 'page'
+                    ) {
+
+                        params[key] =
+                            value;
+
+                    }
+
+                }
+            );
+
+
+            loadPage(
+                currentPage,
+                false,
+                params
+            );
+
+        }
+    );
+
+
+    /* =====================================================
+       SELL ITEM MODAL
+    ====================================================== */
+
+    const sellerSellModal =
+        document.getElementById(
+            'sellerSellModal'
+        );
+
+
+    const sellerSellModalClose =
+        document.getElementById(
+            'sellerSellModalClose'
+        );
+
+
+    const sellerItemsContainer =
+        document.getElementById(
+            'sellerItemsContainer'
+        );
+
+
+    const sellerAddItemBtn =
+        document.getElementById(
+            'sellerAddItemBtn'
+        );
+
+
+    const sellerSubmissionForm =
+        document.getElementById(
+            'sellerSubmissionForm'
+        );
+
+
+    const sellerFormMessage =
+        document.getElementById(
+            'sellerFormMessage'
+        );
+
+
+    const sellerSubmitBtn =
+        document.getElementById(
+            'sellerSubmitBtn'
+        );
+
+
+    let sellerItemIndex =
+        0;
+
+
+    const issueList = [
+
+        'No Power',
+        'No Display',
+        'Bootloop',
+        'LCD Damaged',
+        'Touch Problem',
+        'Battery Problem',
+        'Charging Problem',
+        'Camera Problem',
+        'Speaker Problem',
+        'Microphone Problem',
+        'Water Damage',
+        'Board Problem',
+        'Multiple Issues',
+        'Other'
+
+    ];
+
+
+    const damageLevels = [
+
+        {
+            value:
+                '1',
+
+            label:
+                '1 — Minor'
+        },
+
+        {
+            value:
+                '2',
+
+            label:
+                '2 — Moderate'
+        },
+
+        {
+            value:
+                '3',
+
+            label:
+                '3 — Major'
+        },
+
+        {
+            value:
+                '4',
+
+            label:
+                '4 — Dead / Critical'
+        },
+
+        {
+            value:
+                '5',
+
+            label:
+                '5 — For Scrap'
+        }
+
+    ];
+
+
+    function openSellerSellModal() {
+
+        if (
+            !sellerSellModal
+        ) {
+            return;
+        }
+
+
+        sellerSellModal.classList.add(
+            'is-open'
+        );
+
+
+        sellerSellModal.setAttribute(
+            'aria-hidden',
+            'false'
+        );
+
+
+        document.body.classList.add(
+            'seller-modal-open'
+        );
+
+
+        if (
+            sellerItemsContainer &&
+            sellerItemsContainer.children.length === 0
+        ) {
+
+            addSellerItem();
+
+        }
+
+    }
+
+
+    function closeSellerSellModal() {
+
+        if (
+            !sellerSellModal
+        ) {
+            return;
+        }
+
+
+        sellerSellModal.classList.remove(
+            'is-open'
+        );
+
+
+        sellerSellModal.setAttribute(
+            'aria-hidden',
+            'true'
+        );
+
+
+        document.body.classList.remove(
+            'seller-modal-open'
+        );
+
+    }
+
+
+    window.openSellerSellModal =
+        openSellerSellModal;
+
+
+    window.closeSellerSellModal =
+        closeSellerSellModal;
+
+
+    if (
+        sellerSellModalClose
+    ) {
+
+        sellerSellModalClose.addEventListener(
+            'click',
+            closeSellerSellModal
+        );
+
+    }
+
+
+    if (
+        sellerSellModal
+    ) {
+
+        sellerSellModal.addEventListener(
+            'click',
+            function (
+                event
+            ) {
+
+                if (
+                    event.target ===
+                    sellerSellModal
+                ) {
+
+                    closeSellerSellModal();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    document.addEventListener(
+        'keydown',
+        function (
+            event
+        ) {
+
+            if (
+                event.key === 'Escape' &&
+                sellerSellModal &&
+                sellerSellModal.classList.contains(
+                    'is-open'
+                )
+            ) {
+
+                closeSellerSellModal();
+
+            }
+
+        }
+    );
+
+
+    /*
+     * Seller Portal sell links
+     */
+
+    document.addEventListener(
+        'click',
+        function (
+            event
+        ) {
+
+            const trigger =
+                event.target.closest(
+                    'a[href*="/sell.php"], [data-open-sell-modal]'
+                );
+
+
+            if (!trigger) {
+                return;
+            }
+
+
+            if (
+                trigger.closest(
+                    '#sellerSellModal'
+                )
+            ) {
+                return;
+            }
+
+
+            event.preventDefault();
+
+
+            openSellerSellModal();
+
+        }
+    );
+
+
+    /* =====================================================
+       ADD SELLER ITEM
+    ====================================================== */
+
+    function addSellerItem() {
+
+        if (
+            !sellerItemsContainer
+        ) {
+            return;
+        }
+
+
+        const index =
+            sellerItemIndex++;
+
+
+        const itemCard =
+            document.createElement(
+                'div'
+            );
+
+
+        itemCard.className =
+            'seller-item-card';
+
+
+        itemCard.dataset.index =
+            index;
+
+
+        itemCard.innerHTML = `
+
+            <div class="seller-item-header">
+
+                <div class="seller-item-title">
+                    Item ${index + 1}
+                </div>
+
+                <button
+                    type="button"
+                    class="seller-item-remove"
+                    data-remove-item
+                >
+                    Remove
+                </button>
+
+            </div>
+
+
+            <div class="seller-item-type-row">
+
+                <button
+                    type="button"
+                    class="seller-type-btn active"
+                    data-item-type="phone"
+                >
+                    WHOLE PHONE
+                </button>
+
+
+                <button
+                    type="button"
+                    class="seller-type-btn"
+                    data-item-type="scrap"
+                >
+                    SCRAP BOARD
+                </button>
+
+            </div>
+
+
+            <input
+                type="hidden"
+                name="items[${index}][item_type]"
+                value="Whole Phone"
+                data-item-type-input
+            >
+
+
+            <div
+                class="seller-phone-fields"
+                data-phone-fields
+            >
+
+                <div class="seller-form-grid">
+
+
+                    <div class="seller-form-group">
+
+                        <label>
+                            Brand
+                        </label>
+
+                        <input
+                            type="text"
+                            name="items[${index}][brand]"
+                            maxlength="100"
+                            placeholder="Samsung / Apple / Xiaomi..."
+                        >
+
+                    </div>
+
+
+                    <div class="seller-form-group">
+
+                        <label>
+                            Model
+                        </label>
+
+                        <input
+                            type="text"
+                            name="items[${index}][model]"
+                            maxlength="150"
+                            placeholder="A52 / iPhone 11 / Redmi Note..."
+                        >
+
+                    </div>
+
+
+                    <div class="seller-form-group">
+
+                        <label>
+                            Storage
+                        </label>
+
+                        <select
+                            name="items[${index}][storage]"
+                        >
+
+                            <option value="">
+                                Unknown / N/A
+                            </option>
+
+                            <option value="16GB">
+                                16GB
+                            </option>
+
+                            <option value="32GB">
+                                32GB
+                            </option>
+
+                            <option value="64GB">
+                                64GB
+                            </option>
+
+                            <option value="128GB">
+                                128GB
+                            </option>
+
+                            <option value="256GB">
+                                256GB
+                            </option>
+
+                            <option value="512GB">
+                                512GB
+                            </option>
+
+                            <option value="1TB">
+                                1TB
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="seller-form-group">
+
+                        <label>
+                            Quantity
+                        </label>
+
+                        <input
+                            type="number"
+                            name="items[${index}][quantity]"
+                            min="1"
+                            max="100000"
+                            value="1"
+                            required
+                        >
+
+                    </div>
+
+
+                    <div class="seller-form-group full">
+
+                        <label>
+                            Main Issue
+                        </label>
+
+                        <select
+                            name="items[${index}][issue]"
+                            data-issue-select
+                            required
+                        >
+
+                            <option value="">
+                                Select issue
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="seller-form-group full">
+
+                        <label>
+                            Issue Details
+                        </label>
+
+                        <textarea
+                            name="items[${index}][issue_details]"
+                            maxlength="1000"
+                            placeholder="Describe the issue..."
+                        ></textarea>
+
+                    </div>
+
+
+                    <div class="seller-form-group">
+
+                        <label>
+                            Damage / Condition
+                        </label>
+
+                        <select
+                            name="items[${index}][damage_level]"
+                            data-damage-select
+                            required
+                        >
+
+                            <option value="">
+                                Select condition
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="seller-scrap-fields"
+                data-scrap-fields
+                style="display: none;"
+            >
+
+                <div class="seller-form-grid">
+
+
+                    <div class="seller-form-group">
+
+                        <label>
+                            Board Code / Marking
+                        </label>
+
+                        <input
+                            type="text"
+                            name="items[${index}][board_code]"
+                            maxlength="150"
+                            placeholder="Board code / marking"
+                            data-board-code
+                        >
+
+                    </div>
+
+
+                    <div class="seller-form-group">
+
+                        <label>
+                            Brand
+                        </label>
+
+                        <input
+                            type="text"
+                            name="items[${index}][brand]"
+                            maxlength="100"
+                            placeholder="Apple / Samsung..."
+                        >
+
+                    </div>
+
+
+                    <div class="seller-form-group">
+
+                        <label>
+                            Board / Model
+                        </label>
+
+                        <input
+                            type="text"
+                            name="items[${index}][model]"
+                            maxlength="150"
+                            placeholder="Board model if known"
+                        >
+
+                    </div>
+
+
+                    <div class="seller-form-group">
+
+                        <label>
+                            Storage
+                        </label>
+
+                        <select
+                            name="items[${index}][storage]"
+                        >
+
+                            <option value="">
+                                N/A / Unknown
+                            </option>
+
+                            <option value="16GB">
+                                16GB
+                            </option>
+
+                            <option value="32GB">
+                                32GB
+                            </option>
+
+                            <option value="64GB">
+                                64GB
+                            </option>
+
+                            <option value="128GB">
+                                128GB
+                            </option>
+
+                            <option value="256GB">
+                                256GB
+                            </option>
+
+                            <option value="512GB">
+                                512GB
+                            </option>
+
+                            <option value="1TB">
+                                1TB
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="seller-form-group">
+
+                        <label>
+                            Condition
+                        </label>
+
+                        <select
+                            name="items[${index}][damage_level]"
+                            data-board-damage
+                            required
+                        >
+
+                            <option value="">
+                                Select condition
+                            </option>
+
+                        </select>
+
+                    </div>
+
+
+                    <div class="seller-form-group">
+
+                        <label>
+                            Quantity
+                        </label>
+
+                        <input
+                            type="number"
+                            name="items[${index}][quantity]"
+                            min="1"
+                            max="100000"
+                            value="1"
+                            data-scrap-quantity
+                            required
+                        >
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+
+            <div
+                class="
+                    seller-form-group
+                    seller-asking-price-group
+                "
+            >
+
+                <label>
+                    Seller Asking Price
+                </label>
+
+
+                <div class="seller-price-input">
+
+                    <span>
+                        ₱
+                    </span>
+
+
+                    <input
+                        type="number"
+                        name="items[${index}][seller_asking_price]"
+                        min="0"
+                        max="999999999"
+                        step="0.01"
+                        placeholder="0.00"
+                        required
+                    >
+
+                </div>
+
+
+                <small>
+
+                    Your requested price.
+                    Final VNZ TECH offer is subject
+                    to inspection and verification.
+
+                </small>
+
+            </div>
+
+
+            <div
+                class="
+                    seller-form-group
+                    seller-additional-group
+                "
+            >
+
+                <label>
+                    Additional Information
+                </label>
+
+
+                <textarea
+                    name="items[${index}][additional_information]"
+                    maxlength="1500"
+                    placeholder="Missing parts, repair history, accessories, etc."
+                ></textarea>
+
+            </div>
+
+
+            <div class="seller-photo-block">
+
+
+                <div class="seller-photo-heading">
+
+                    <strong>
+                        Photos
+                    </strong>
+
+
+                    <small>
+                        JPG, PNG, WEBP · Max 10 photos · 5MB each
+                    </small>
+
+                </div>
+
+
+                <input
+                    type="file"
+                    name="photos[${index}][]"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    required
+                    data-photo-input
+                >
+
+
+                <div
+                    class="seller-photo-preview"
+                    data-photo-preview
+                ></div>
+
+
+            </div>
+
+        `;
+
+
+        sellerItemsContainer.appendChild(
+            itemCard
+        );
+
+
+        setupSellerItem(
+            itemCard
+        );
+
+    }
+
+
+    /* =====================================================
+       SETUP ITEM
+    ====================================================== */
+
+    function setupSellerItem(
+        itemCard
+    ) {
+
+        const phoneButton =
+            itemCard.querySelector(
+                '[data-item-type="phone"]'
+            );
+
+
+        const scrapButton =
+            itemCard.querySelector(
+                '[data-item-type="scrap"]'
+            );
+
+
+        const itemTypeInput =
+            itemCard.querySelector(
+                '[data-item-type-input]'
+            );
+
+
+        const phoneFields =
+            itemCard.querySelector(
+                '[data-phone-fields]'
+            );
+
+
+        const scrapFields =
+            itemCard.querySelector(
+                '[data-scrap-fields]'
+            );
+
+
+        const phoneInputs =
+            phoneFields.querySelectorAll(
+                'input, select, textarea'
+            );
+
+
+        const scrapInputs =
+            scrapFields.querySelectorAll(
+                'input, select, textarea'
+            );
+
+
+        const issueSelect =
+            itemCard.querySelector(
+                '[data-issue-select]'
+            );
+
+
+        const damageSelect =
+            itemCard.querySelector(
+                '[data-damage-select]'
+            );
+
+
+        const boardDamage =
+            itemCard.querySelector(
+                '[data-board-damage]'
+            );
+
+
+        const boardCode =
+            itemCard.querySelector(
+                '[data-board-code]'
+            );
+
+
+        issueList.forEach(
+            issue => {
+
+                const option =
+                    document.createElement(
+                        'option'
+                    );
+
+
+                option.value =
+                    issue;
+
+
+                option.textContent =
+                    issue;
+
+
+                issueSelect.appendChild(
+                    option
+                );
+
+            }
+        );
+
+
+        damageLevels.forEach(
+            level => {
+
+                const option =
+                    document.createElement(
+                        'option'
+                    );
+
+
+                option.value =
+                    level.value;
+
+
+                option.textContent =
+                    level.label;
+
+
+                damageSelect.appendChild(
+                    option
+                );
+
+
+                const boardOption =
+                    document.createElement(
+                        'option'
+                    );
+
+
+                boardOption.value =
+                    level.value;
+
+
+                boardOption.textContent =
+                    level.label;
+
+
+                boardDamage.appendChild(
+                    boardOption
+                );
+
+            }
+        );
+
+
+        function setType(
+            type
+        ) {
+
+            const isPhone =
+                type === 'phone';
+
+
+            itemTypeInput.value =
+                isPhone
+                    ? 'Whole Phone'
+                    : 'Scrap Board';
+
+
+            phoneButton.classList.toggle(
+                'active',
+                isPhone
+            );
+
+
+            scrapButton.classList.toggle(
+                'active',
+                !isPhone
+            );
+
+
+            phoneFields.style.display =
+                isPhone
+                    ? ''
+                    : 'none';
+
+
+            scrapFields.style.display =
+                isPhone
+                    ? 'none'
+                    : '';
+
+
+            phoneInputs.forEach(
+                input => {
+
+                    input.disabled =
+                        !isPhone;
+
+                }
+            );
+
+
+            scrapInputs.forEach(
+                input => {
+
+                    input.disabled =
+                        isPhone;
+
+                }
+            );
+
+
+            issueSelect.required =
+                isPhone;
+
+
+            damageSelect.required =
+                isPhone;
+
+
+            boardDamage.required =
+                !isPhone;
+
+
+            boardCode.required =
+                !isPhone;
+
+        }
+
+
+        phoneButton.addEventListener(
+            'click',
+            function () {
+
+                setType(
+                    'phone'
+                );
+
+            }
+        );
+
+
+        scrapButton.addEventListener(
+            'click',
+            function () {
+
+                setType(
+                    'scrap'
+                );
+
+            }
+        );
+
+
+        const removeButton =
+            itemCard.querySelector(
+                '[data-remove-item]'
+            );
+
+
+        removeButton.addEventListener(
+            'click',
+            function () {
+
+                const cards =
+                    sellerItemsContainer.querySelectorAll(
+                        '.seller-item-card'
+                    );
+
+
+                if (
+                    cards.length <= 1
+                ) {
+
+                    return;
+
+                }
+
+
+                itemCard.remove();
+
+            }
+        );
+
+
+        const photoInput =
+            itemCard.querySelector(
+                '[data-photo-input]'
+            );
+
+
+        const photoPreview =
+            itemCard.querySelector(
+                '[data-photo-preview]'
+            );
+
+
+        if (
+            photoInput &&
+            photoPreview
+        ) {
+
+            photoInput.addEventListener(
+                'change',
+                function () {
+
+                    photoPreview.innerHTML =
+                        '';
+
+
+                    Array.from(
+                        this.files
+                    )
+                    .slice(
+                        0,
+                        10
+                    )
+                    .forEach(
+                        file => {
+
+                            if (
+                                !file.type.startsWith(
+                                    'image/'
+                                )
+                            ) {
+
+                                return;
+
+                            }
+
+
+                            const reader =
+                                new FileReader();
+
+
+                            reader.onload =
+                                function (
+                                    event
+                                ) {
+
+                                    const wrapper =
+                                        document.createElement(
+                                            'div'
+                                        );
+
+
+                                    wrapper.className =
+                                        'seller-photo-preview-item';
+
+
+                                    const image =
+                                        document.createElement(
+                                            'img'
+                                        );
+
+
+                                    image.src =
+                                        event.target.result;
+
+
+                                    image.alt =
+                                        'Selected photo';
+
+
+                                    wrapper.appendChild(
+                                        image
+                                    );
+
+
+                                    photoPreview.appendChild(
+                                        wrapper
+                                    );
+
+                                };
+
+
+                            reader.readAsDataURL(
+                                file
+                            );
+
+                        }
+                    );
+
+                }
+            );
+
+        }
+
+
+        setType(
+            'phone'
+        );
+
+    }
+
+
+    /* =====================================================
+       ADD ITEM BUTTON
+    ====================================================== */
+
+    if (
+        sellerAddItemBtn
+    ) {
+
+        sellerAddItemBtn.addEventListener(
+            'click',
+            function () {
+
+                addSellerItem();
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       SELL BUTTONS
+    ====================================================== */
+
+    document.addEventListener(
+        'click',
+        function (
+            event
+        ) {
+
+            const sellButton =
+                event.target.closest(
+                    '.sell-button'
+                );
+
+
+            if (!sellButton) {
+                return;
+            }
+
+
+            event.preventDefault();
+
+
+            openSellerSellModal();
+
+        }
+    );
+
+
+    /* =====================================================
+       FORM SUBMIT
+    ====================================================== */
+
+    if (
+        sellerSubmissionForm
+    ) {
+
+        sellerSubmissionForm.addEventListener(
+            'submit',
+            function () {
+
+                if (
+                    sellerSubmitBtn
+                ) {
+
+                    sellerSubmitBtn.disabled =
+                        true;
+
+
+                    sellerSubmitBtn.textContent =
+                        'SUBMITTING...';
+
+                }
+
+            }
+        );
+
+    }
+
+
+    /* =====================================================
+       GLOBAL ALERT MODAL
+    ====================================================== */
+
+    const sellerAlertModal =
+        document.getElementById(
+            'sellerAlertModal'
+        );
+
+
+    const sellerAlertModalMessage =
+        document.getElementById(
+            'sellerAlertModalMessage'
+        );
+
+
+    const sellerAlertModalPrimary =
+        document.getElementById(
+            'sellerAlertModalPrimary'
+        );
+
+
+    const sellerAlertModalDismiss =
+        document.getElementById(
+            'sellerAlertModalDismiss'
+        );
+
+
+    function showSellerAlertModal(
+        message,
+        options
+    ) {
+
+        options =
+            options || {};
+
+
+        if (
+            !sellerAlertModal ||
+            !sellerAlertModalMessage
+        ) {
+            return;
+        }
+
+
+        sellerAlertModalMessage.textContent =
+            message;
+
+
+        if (
+            options.actionLabel &&
+            options.actionPage
+        ) {
+
+            sellerAlertModalPrimary.style.display =
+                '';
+
+
+            sellerAlertModalPrimary.textContent =
+                options.actionLabel;
+
+
+            sellerAlertModalPrimary.onclick =
+                function () {
+
+                    closeSellerAlertModal();
+
+
+                    loadPage(
+                        options.actionPage
+                    );
+
+                };
+
+        } else {
+
+            sellerAlertModalPrimary.style.display =
+                'none';
+
+
+            sellerAlertModalPrimary.onclick =
+                null;
+
+        }
+
+
+        sellerAlertModal.classList.add(
+            'is-open'
+        );
+
+
+        sellerAlertModal.setAttribute(
+            'aria-hidden',
+            'false'
+        );
+
+    }
+
+
+    function closeSellerAlertModal() {
+
+        if (
+            !sellerAlertModal
+        ) {
+            return;
+        }
+
+
+        sellerAlertModal.classList.remove(
+            'is-open'
+        );
+
+
+        sellerAlertModal.setAttribute(
+            'aria-hidden',
+            'true'
+        );
+
+    }
+
+
+    if (
+        sellerAlertModalDismiss
+    ) {
+
+        sellerAlertModalDismiss.addEventListener(
+            'click',
+            closeSellerAlertModal
+        );
+
+    }
+
+
+    if (
+        sellerAlertModal
+    ) {
+
+        sellerAlertModal.addEventListener(
+            'click',
+            function (
+                event
+            ) {
+
+                if (
+                    event.target ===
+                    sellerAlertModal
+                ) {
+
+                    closeSellerAlertModal();
+
+                }
+
+            }
+        );
+
+    }
+
+
+    document.addEventListener(
+        'keydown',
+        function (
+            event
+        ) {
+
+            if (
+                event.key === 'Escape' &&
+                sellerAlertModal &&
+                sellerAlertModal.classList.contains(
+                    'is-open'
+                )
+            ) {
+
+                closeSellerAlertModal();
+
+            }
+
+        }
+    );
+
+
+    window.showSellerAlertModal =
+        showSellerAlertModal;
+
+
+    /* =====================================================
+       INITIAL ITEM
+    ====================================================== */
+
+    addSellerItem();
+
+
+    /* =====================================================
+       INITIAL PAGE
+    ====================================================== */
+
+    const initialParams =
+        new URLSearchParams(
+            window.location.search
+        );
+
+
+    const initialPage =
+        initialParams.get(
+            'page'
+        ) ||
+        'dashboard';
+
+
+    const initialExtraParams = {};
+
+
+    initialParams.forEach(
+        (
+            value,
+            key
+        ) => {
+
+            if (
+                key !== 'page'
+            ) {
+
+                initialExtraParams[key] =
+                    value;
+
+            }
+
+        }
+    );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Surface the ?error= redirect message (see PHP $initialAlertMessage)
+    |--------------------------------------------------------------------------
+    |
+    | If the user got here via a full-page redirect that failed
+    | (e.g. submit_submission.php rejecting an incomplete profile),
+    | show it as an actionable modal instead of leaving it invisible
+    | in the URL. Profile-related messages get a "Go to Profile"
+    | shortcut; everything else just gets a dismissible notice.
+    |
+    */
+
+    const initialAlertMessage =
+        <?= json_encode($initialAlertMessage) ?>;
+
+
+    if (
+        initialAlertMessage
+    ) {
+
+        delete initialExtraParams.error;
+
+
+        const isProfileRelated =
+            /profile/i.test(
+                initialAlertMessage
+            );
+
+
+        showSellerAlertModal(
+            initialAlertMessage,
+            isProfileRelated
+                ? {
+                    actionLabel:
+                        'Go to Profile',
+
+                    actionPage:
+                        'profile'
+                }
+                : {}
+        );
+
+
+        const cleanParams =
+            new URLSearchParams(
+                window.location.search
+            );
+
+
+        cleanParams.delete(
+            'error'
+        );
+
+
+        const cleanQuery =
+            cleanParams.toString();
+
+
+        const cleanUrl =
+            window.location.pathname +
+            (
+                cleanQuery
+                    ? '?' + cleanQuery
+                    : ''
+            );
+
+
+        window.history.replaceState(
+            {},
+            '',
+            cleanUrl
+        );
+
+    }
+
+
+    loadPage(
+        pageTitles[initialPage]
+            ? initialPage
+            : 'dashboard',
+
+        false,
+
+        initialExtraParams
+    );
+     
+        /* =====================================================
+       PHOTO LIGHTBOX
+    ====================================================== */
+
+    const photoLightbox =
+        document.getElementById(
+            'transactionPhotoLightbox'
+        );
+
+    const photoLightboxImg =
+        photoLightbox
+            ? photoLightbox.querySelector(
+                '.transaction-photo-lightbox-img'
+            )
+            : null;
+
+
+    function openPhotoLightbox(src, alt) {
+
+        if (!photoLightbox || !photoLightboxImg) {
+            return;
+        }
+
+        photoLightboxImg.src = src;
+        photoLightboxImg.alt = alt || '';
+
+        photoLightbox.classList.add('is-open');
+        photoLightbox.setAttribute('aria-hidden', 'false');
+
+        document.body.classList.add(
+            'transaction-photo-lightbox-open'
+        );
+
+    }
+
+
+    function closePhotoLightbox() {
+
+        if (!photoLightbox) {
+            return;
+        }
+
+        photoLightbox.classList.remove('is-open');
+        photoLightbox.setAttribute('aria-hidden', 'true');
+
+        document.body.classList.remove(
+            'transaction-photo-lightbox-open'
+        );
+
+        if (photoLightboxImg) {
+            photoLightboxImg.src = '';
+        }
+
+    }
+
+
+    document.addEventListener('click', function (event) {
+
+        const photoLink =
+            event.target.closest(
+                '.transaction-photo-link'
+            );
+
+        if (photoLink) {
+
+            event.preventDefault();
+
+            const img =
+                photoLink.querySelector('img');
+
+            openPhotoLightbox(
+                photoLink.getAttribute('href'),
+                img ? img.alt : ''
+            );
+
+            return;
+        }
+
+        if (event.target.closest('[data-close-photo-lightbox]')) {
+            closePhotoLightbox();
+        }
+
+    });
+
+
+    document.addEventListener('keydown', function (event) {
+
+        if (
+            event.key === 'Escape'
+            &&
+            photoLightbox
+            &&
+            photoLightbox.classList.contains('is-open')
+        ) {
+
+            closePhotoLightbox();
+
+        }
+
+    });
+
+})();
+
+</script>
+
+
+</body>
+</html>
