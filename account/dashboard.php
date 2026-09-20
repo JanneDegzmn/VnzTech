@@ -468,13 +468,22 @@ $initialAlertMessage =
                     method="POST"
                     enctype="multipart/form-data"
                 >
+
+                    <!--
+                        Marks this as an AUTHENTICATED ACCOUNT-PORTAL
+                        submission. The backend only attaches a
+                        submission to the logged-in seller's account
+                        when this value is "account" AND a valid
+                        session exists — see backend/submit_submission.php.
+                        Without this field, this submission would be
+                        (correctly, but unintentionally) treated as
+                        a guest submission instead.
+                    -->
                     <input
                         type="hidden"
                         name="submission_source"
                         value="account"
                     >
-
-                    <div class="seller-form-section">
 
 
                     <div class="seller-form-section">
@@ -2743,6 +2752,14 @@ $initialAlertMessage =
         );
 
 
+    let currentSellerAlertOnClose =
+        null;
+
+
+    let sellerAlertQueue =
+        [];
+
+
     function showSellerAlertModal(
         message,
         options
@@ -2758,6 +2775,13 @@ $initialAlertMessage =
         ) {
             return;
         }
+
+
+        currentSellerAlertOnClose =
+            typeof options.onClose ===
+                'function'
+                ? options.onClose
+                : null;
 
 
         sellerAlertModalMessage.textContent =
@@ -2784,7 +2808,10 @@ $initialAlertMessage =
 
 
                     loadPage(
-                        options.actionPage
+                        options.actionPage,
+                        true,
+                        options.actionParams ||
+                            {}
                     );
 
                 };
@@ -2814,6 +2841,63 @@ $initialAlertMessage =
     }
 
 
+    /*
+    |--------------------------------------------------------------------------
+    | ALERT QUEUE
+    |--------------------------------------------------------------------------
+    |
+    | Only one #sellerAlertModal exists in the DOM. When several
+    | alerts need to be shown (e.g. multiple unseen admin decisions,
+    | or an existing ?error= redirect plus new results), queue them
+    | and show one at a time as each gets dismissed.
+    |
+    */
+
+    function enqueueSellerAlert(
+        message,
+        options
+    ) {
+
+        sellerAlertQueue.push({
+            message: message,
+            options: options || {}
+        });
+
+
+        if (
+            !sellerAlertModal.classList.contains(
+                'is-open'
+            )
+        ) {
+
+            showNextQueuedSellerAlert();
+
+        }
+
+    }
+
+
+    function showNextQueuedSellerAlert() {
+
+        if (
+            sellerAlertQueue.length === 0
+        ) {
+            return;
+        }
+
+
+        const next =
+            sellerAlertQueue.shift();
+
+
+        showSellerAlertModal(
+            next.message,
+            next.options
+        );
+
+    }
+
+
     function closeSellerAlertModal() {
 
         if (
@@ -2832,6 +2916,26 @@ $initialAlertMessage =
             'aria-hidden',
             'true'
         );
+
+
+        const onClose =
+            currentSellerAlertOnClose;
+
+
+        currentSellerAlertOnClose =
+            null;
+
+
+        if (
+            typeof onClose === 'function'
+        ) {
+
+            onClose();
+
+        }
+
+
+        showNextQueuedSellerAlert();
 
     }
 
@@ -2893,6 +2997,180 @@ $initialAlertMessage =
 
         }
     );
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | UNSEEN ADMIN-DECIDED RESULTS (Accept / Decline popup)
+    |--------------------------------------------------------------------------
+    |
+    | Checks backend/get_unseen_results.php on every dashboard load.
+    | Only ever returns submissions where Admin accepted/declined the
+    | seller's own counter-offer (see admin_respond_offer.php) — the
+    | seller has no other way of knowing this happened yet.
+    |
+    | Each result is enqueued as its own alert so multiple unseen
+    | results show one after another instead of overwriting the
+    | modal. Each is marked seen (backend/mark_result_seen.php) the
+    | moment its alert is dismissed, however the person dismisses it
+    | (X button, backdrop click, Escape, or the action button).
+    |
+    */
+
+    async function checkUnseenResults() {
+
+        try {
+
+            const response =
+                await fetch(
+                    '/VNZ-TECH/backend/get_unseen_results.php'
+                );
+
+
+            const data =
+                await response.json();
+
+
+            if (
+                !data.success ||
+                !Array.isArray(
+                    data.results
+                ) ||
+                data.results.length === 0
+            ) {
+                return;
+            }
+
+
+            data.results.forEach(
+                function (result) {
+
+                    const isAccepted =
+                        result.status ===
+                        'accepted';
+
+
+                    const amountText =
+                        result.offer_amount
+                            ? '₱' +
+                                Number(
+                                    result.offer_amount
+                                ).toLocaleString(
+                                    'en-PH',
+                                    {
+                                        minimumFractionDigits: 2,
+                                        maximumFractionDigits: 2
+                                    }
+                                )
+                            : '';
+
+
+                    const message =
+                        isAccepted
+
+                            ? (
+                                'Magandang balita! Na-accept ng VNZ TECH ang submission mo (' +
+                                result.reference_number +
+                                ')' +
+                                (
+                                    amountText
+                                        ? ' sa halagang ' + amountText + '.'
+                                        : '.'
+                                )
+                            )
+
+                            : (
+                                'Na-decline ng VNZ TECH ang submission mo (' +
+                                result.reference_number +
+                                ').' +
+                                (
+                                    result.admin_feedback
+                                        ? ' ' + result.admin_feedback
+                                        : ''
+                                )
+                            );
+
+
+                    enqueueSellerAlert(
+                        message,
+                        {
+                            actionLabel:
+                                'View Submission',
+
+                            actionPage:
+                                'submission',
+
+                            actionParams: {
+                                ref: result.reference_number
+                            },
+
+                            onClose:
+                                function () {
+
+                                    markResultSeen(
+                                        result.id
+                                    );
+
+                                }
+                        }
+                    );
+
+                }
+            );
+
+        } catch (error) {
+
+            /*
+             * Logged (not alerted) — this is a background
+             * convenience check, not a blocking part of the page,
+             * but we still want visibility in the console for
+             * debugging.
+             */
+
+            console.warn(
+                'checkUnseenResults failed:',
+                error
+            );
+
+        }
+
+    }
+
+
+    async function markResultSeen(
+        submissionId
+    ) {
+
+        try {
+
+            const body =
+                new FormData();
+
+
+            body.append(
+                'submission_id',
+                submissionId
+            );
+
+
+            await fetch(
+                '/VNZ-TECH/backend/mark_result_seen.php',
+                {
+                    method: 'POST',
+                    body
+                }
+            );
+
+        } catch (error) {
+
+            console.warn(
+                'markResultSeen failed:',
+                error
+            );
+
+        }
+
+    }
 
 
     window.showSellerAlertModal =
@@ -2975,7 +3253,7 @@ $initialAlertMessage =
             );
 
 
-        showSellerAlertModal(
+        enqueueSellerAlert(
             initialAlertMessage,
             isProfileRelated
                 ? {
@@ -3020,6 +3298,42 @@ $initialAlertMessage =
         );
 
     }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Check for unseen Admin Accept/Decline results
+    |--------------------------------------------------------------------------
+    |
+    | Runs after the ?error= alert above so both queue correctly —
+    | if an error alert is already open, this just adds to the
+    | queue and waits its turn.
+    |
+    */
+
+    checkUnseenResults();
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | REAL-TIME POLLING
+    |--------------------------------------------------------------------------
+    |
+    | Re-checks in the background every 20 seconds so a seller who
+    | is already sitting on the dashboard sees the popup as soon as
+    | Admin accepts/declines their counter-offer, without needing to
+    | reload the page.
+    |
+    */
+
+    const UNSEEN_RESULTS_POLL_INTERVAL_MS =
+        4000;
+
+
+    setInterval(
+        checkUnseenResults,
+        UNSEEN_RESULTS_POLL_INTERVAL_MS
+    );
 
 
     loadPage(

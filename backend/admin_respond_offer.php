@@ -1,46 +1,82 @@
 <?php
 
 require_once __DIR__ . '/database.php';
-require_once __DIR__ . '/session.php';
-require_once __DIR__ . '/auth.php';
-require_once __DIR__ . '/csrf.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-ob_start();
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
 
-
-/*
-|--------------------------------------------------------------------------
-| JSON RESPONSE
-|--------------------------------------------------------------------------
-*/
-
-function jsonResponse(
-    bool $success,
-    string $message,
-    int $httpCode = 200,
-    array $extra = []
-) {
-    if (ob_get_length()) {
-        ob_clean();
-    }
-
-    http_response_code($httpCode);
-
-    echo json_encode(
-        array_merge(
-            [
-                'success' => $success,
-                'message' => $message
-            ],
-            $extra
-        )
-    );
+    echo json_encode([
+        'success' => false,
+        'message' => 'Method not allowed.'
+    ]);
 
     exit;
 }
 
+function normalizeReference($value)
+{
+    $value = trim((string) $value);
+
+    if ($value === '') {
+        return '';
+    }
+
+    if ($value[0] !== '#') {
+        $value = '#' . $value;
+    }
+
+    return strtoupper($value);
+}
+
+function normalizeMobile($value)
+{
+    return preg_replace('/\D+/', '', (string) $value);
+}
+
+function findEnumValue(
+    PDO $pdo,
+    string $table,
+    string $column,
+    string $wantedValue
+) {
+    $stmt = $pdo->query("
+        SHOW COLUMNS
+        FROM `$table`
+        LIKE '$column'
+    ");
+
+    $columnInfo = $stmt->fetch();
+
+    if (!$columnInfo) {
+        return null;
+    }
+
+    $type = strtolower((string) $columnInfo['Type']);
+
+    if (!str_starts_with($type, 'enum(')) {
+        return $wantedValue;
+    }
+
+    preg_match_all(
+        "/'((?:[^'\\\\]|\\\\.)*)'/",
+        $type,
+        $matches
+    );
+
+    $values = $matches[1] ?? [];
+
+    foreach ($values as $value) {
+        $decoded = stripslashes($value);
+
+        if (strtolower($decoded) === strtolower($wantedValue)) {
+            return $decoded;
+        }
+    }
+
+    return null;
+}
 
 /*
 |--------------------------------------------------------------------------
@@ -52,10 +88,6 @@ function jsonResponse(
 |
 | Example:
 | #TX-260911-4827
-|
-| Mirrors the same generator used in respond_offer.php so that
-| transaction references stay consistent regardless of who
-| accepted the offer (seller or admin).
 |
 */
 function generateTransactionReference(PDO $pdo)
@@ -86,553 +118,269 @@ function generateTransactionReference(PDO $pdo)
     );
 }
 
+$offerId = isset($_POST['offer_id'])
+    ? (int) $_POST['offer_id']
+    : 0;
+
+$response = strtolower(
+    trim(
+        (string) ($_POST['response'] ?? '')
+    )
+);
+
+$reference = normalizeReference(
+    $_POST['reference'] ?? ''
+);
+
+$mobile = normalizeMobile(
+    $_POST['mobile'] ?? ''
+);
+
+if ($offerId <= 0) {
+    http_response_code(422);
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invalid offer.'
+    ]);
+
+    exit;
+}
+
+if (!in_array($response, ['accept', 'decline'], true)) {
+    http_response_code(422);
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Invalid response.'
+    ]);
+
+    exit;
+}
+
+if ($reference === '' || $mobile === '') {
+    http_response_code(422);
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Reference number and mobile number are required.'
+    ]);
+
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Get Offer + Submission
+|--------------------------------------------------------------------------
+*/
+
+$stmt = $pdo->prepare("
+    SELECT
+        o.id AS offer_id,
+        o.submission_id,
+        o.offer_amount,
+        o.status AS offer_status,
+
+        s.reference_number,
+        s.seller_mobile,
+        s.status AS submission_status
+
+    FROM offers o
+
+    INNER JOIN submissions s
+        ON s.id = o.submission_id
+
+    WHERE o.id = ?
+
+    LIMIT 1
+");
+
+$stmt->execute([
+    $offerId
+]);
+
+$data = $stmt->fetch();
+
+if (!$data) {
+    http_response_code(404);
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Offer not found.'
+    ]);
+
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Verify Reference + Mobile
+|--------------------------------------------------------------------------
+*/
+
+if (
+    strtoupper($data['reference_number'])
+    !== $reference
+) {
+    http_response_code(403);
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Reference number does not match.'
+    ]);
+
+    exit;
+}
+
+if (
+    normalizeMobile($data['seller_mobile'])
+    !== $mobile
+) {
+    http_response_code(403);
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Mobile number does not match.'
+    ]);
+
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Make Sure Offer Is Still Respondable
+|--------------------------------------------------------------------------
+*/
+
+if ($data['submission_status'] !== 'offer_sent') {
+    http_response_code(409);
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'This offer can no longer be responded to.'
+    ]);
+
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Determine Actual Offer ENUM Value
+|--------------------------------------------------------------------------
+*/
+
+$wantedOfferStatus = $response === 'accept'
+    ? 'accepted'
+    : 'declined';
+
+$actualOfferStatus = findEnumValue(
+    $pdo,
+    'offers',
+    'status',
+    $wantedOfferStatus
+);
+
+if ($actualOfferStatus === null) {
+    http_response_code(500);
+
+    echo json_encode([
+        'success' => false,
+        'message' =>
+            'Your offers table does not currently allow '
+            . $wantedOfferStatus
+            . ' status.'
+    ]);
+
+    exit;
+}
+
+/*
+|--------------------------------------------------------------------------
+| Transaction
+|--------------------------------------------------------------------------
+*/
 
 try {
 
-    /*
-    |--------------------------------------------------------------------------
-    | METHOD
-    |--------------------------------------------------------------------------
-    */
-
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-
-        jsonResponse(
-            false,
-            'Method not allowed.',
-            405
-        );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | ADMIN SESSION
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        !function_exists('isAdminLoggedIn')
-        ||
-        !isAdminLoggedIn()
-    ) {
-
-        jsonResponse(
-            false,
-            'Your admin session has expired. Please log in again.',
-            401
-        );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | CSRF
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        !verifyCsrfToken(
-            $_POST['csrf_token'] ?? null
-        )
-    ) {
-
-        jsonResponse(
-            false,
-            'Your session has expired. Please refresh the page and try again.',
-            419
-        );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | PERMISSION
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        !hasPermission('manage_offers')
-    ) {
-
-        jsonResponse(
-            false,
-            'You do not have permission to manage offers.',
-            403
-        );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | CURRENT ADMIN
-    |--------------------------------------------------------------------------
-    */
-
-    $currentAdmin =
-        getCurrentAdmin();
-
-
-    if (!$currentAdmin) {
-
-        jsonResponse(
-            false,
-            'Admin session is invalid. Please log in again.',
-            401
-        );
-
-    }
-
-
-    $adminId =
-        (int) $currentAdmin['id'];
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | REQUEST
-    |--------------------------------------------------------------------------
-    */
-
-    $offerId =
-        isset($_POST['offer_id'])
-            ? (int) $_POST['offer_id']
-            : 0;
-
-
-    $response =
-        strtolower(
-            trim(
-                (string) (
-                    $_POST['response']
-                    ?? ''
-                )
-            )
-        );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | VALIDATION
-    |--------------------------------------------------------------------------
-    */
-
-    if ($offerId <= 0) {
-
-        jsonResponse(
-            false,
-            'Invalid offer.',
-            422
-        );
-
-    }
-
-
-    if (
-        !in_array(
-            $response,
-            [
-                'accept',
-                'decline'
-            ],
-            true
-        )
-    ) {
-
-        jsonResponse(
-            false,
-            'Invalid response.',
-            422
-        );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | GET OFFER
-    |--------------------------------------------------------------------------
-    */
-
-    $stmt =
-        $pdo->prepare("
-            SELECT
-                o.id AS offer_id,
-                o.submission_id,
-                o.offer_amount,
-                o.status AS offer_status,
-                o.sender_type,
-
-                s.reference_number,
-                s.status AS submission_status
-
-            FROM offers o
-
-            INNER JOIN submissions s
-                ON s.id = o.submission_id
-
-            WHERE o.id = ?
-
-            LIMIT 1
-        ");
-
-
-    $stmt->execute([
-        $offerId
-    ]);
-
-
-    $offer =
-        $stmt->fetch();
-
-
-    if (!$offer) {
-
-        jsonResponse(
-            false,
-            'Offer not found.',
-            404
-        );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | SELLER COUNTER ONLY
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        strtolower(
-            (string)
-            $offer['sender_type']
-        )
-        !==
-        'seller'
-    ) {
-
-        jsonResponse(
-            false,
-            'This offer is not a seller counter-offer.',
-            409
-        );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | SUBMISSION MUST BE NEGOTIATING
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        $offer['submission_status']
-        !==
-        'offer_sent'
-    ) {
-
-        jsonResponse(
-            false,
-            'This submission is no longer available for negotiation.',
-            409
-        );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | TRANSACTION
-    |--------------------------------------------------------------------------
-    */
-
     $pdo->beginTransaction();
 
-
     /*
     |--------------------------------------------------------------------------
-    | GET LATEST OFFER WITH LOCK
+    | Update Offer
     |--------------------------------------------------------------------------
     */
 
-    $latestStmt =
-        $pdo->prepare("
-            SELECT
-                id,
-                sender_type,
-                status
+    $offerUpdate = $pdo->prepare("
+        UPDATE offers
 
-            FROM offers
+        SET
+            status = ?,
+            responded_at = NOW(),
+            updated_at = NOW()
 
-            WHERE submission_id = ?
+        WHERE id = ?
+        AND submission_id = ?
+    ");
 
-            ORDER BY id DESC
-
-            LIMIT 1
-
-            FOR UPDATE
-        ");
-
-
-    $latestStmt->execute([
-        $offer['submission_id']
+    $offerUpdate->execute([
+        $actualOfferStatus,
+        $offerId,
+        $data['submission_id']
     ]);
 
+    /*
+    |--------------------------------------------------------------------------
+    | Make Sure Offer Was Actually Updated
+    |--------------------------------------------------------------------------
+    */
 
-    $latestOffer =
-        $latestStmt->fetch();
-
-
-    if (!$latestOffer) {
-
+    if ($offerUpdate->rowCount() !== 1) {
         throw new RuntimeException(
-            'No active offer was found.'
+            'Unable to update the selected offer.'
         );
-
     }
-
 
     /*
     |--------------------------------------------------------------------------
-    | PREVENT OLD OFFER ACTION
-    |--------------------------------------------------------------------------
-    */
-
-    if (
-        (int)
-        $latestOffer['id']
-        !==
-        $offerId
-    ) {
-
-        throw new RuntimeException(
-            'This seller counter-offer is no longer active.'
-        );
-
-    }
-
-
-    if (
-        strtolower(
-            (string)
-            $latestOffer['sender_type']
-        )
-        !==
-        'seller'
-    ) {
-
-        throw new RuntimeException(
-            'The latest negotiation was not sent by the seller.'
-        );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | READ OFFER STATUS ENUM
-    |--------------------------------------------------------------------------
-    */
-
-    $columnStmt =
-        $pdo->query("
-            SHOW COLUMNS
-            FROM offers
-            LIKE 'status'
-        ");
-
-
-    $column =
-        $columnStmt->fetch();
-
-
-    if (!$column) {
-
-        throw new RuntimeException(
-            'The offers.status column could not be found.'
-        );
-
-    }
-
-
-    $columnType =
-        (string)
-        $column['Type'];
-
-
-    $enumValues = [];
-
-
-    preg_match_all(
-        "/'((?:[^'\\\\]|\\\\.)*)'/",
-        $columnType,
-        $matches
-    );
-
-
-    foreach (
-        ($matches[1] ?? [])
-        as $value
-    ) {
-
-        $enumValues[] =
-            stripslashes(
-                $value
-            );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | FIND ACCEPTED / DECLINED
-    |--------------------------------------------------------------------------
-    */
-
-    $acceptedStatus = null;
-    $declinedStatus = null;
-
-
-    foreach (
-        $enumValues
-        as $value
-    ) {
-
-        $normalized =
-            strtolower(
-                trim($value)
-            );
-
-
-        if (
-            $normalized
-            ===
-            'accepted'
-        ) {
-
-            $acceptedStatus =
-                $value;
-
-        }
-
-
-        if (
-            $normalized
-            ===
-            'declined'
-        ) {
-
-            $declinedStatus =
-                $value;
-
-        }
-
-    }
-
-
-    if (
-        $acceptedStatus === null
-        ||
-        $declinedStatus === null
-    ) {
-
-        throw new RuntimeException(
-            'The offers.status ENUM does not contain accepted and declined values.'
-        );
-
-    }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | DETERMINE NEW STATUS
-    |--------------------------------------------------------------------------
-    */
-
-    $newOfferStatus =
-        $response === 'accept'
-            ? $acceptedStatus
-            : $declinedStatus;
-
-
-    $newSubmissionStatus =
-        $response === 'accept'
-            ? 'accepted'
-            : 'declined';
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE OFFER
-    |--------------------------------------------------------------------------
-    */
-
-    $updateOffer =
-        $pdo->prepare("
-            UPDATE offers
-
-            SET
-                status = ?,
-                responded_at = NOW(),
-                updated_at = NOW()
-
-            WHERE id = ?
-
-            LIMIT 1
-        ");
-
-
-    $updateOffer->execute([
-        $newOfferStatus,
-        $offerId
-    ]);
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | UPDATE SUBMISSION
-    |--------------------------------------------------------------------------
-    */
-
-    $updateSubmission =
-        $pdo->prepare("
-            UPDATE submissions
-
-            SET
-                status = ?,
-                updated_at = NOW()
-
-            WHERE id = ?
-
-            LIMIT 1
-        ");
-
-
-    $updateSubmission->execute([
-        $newSubmissionStatus,
-        $offer['submission_id']
-    ]);
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | CREATE TRANSACTION ONLY WHEN ADMIN ACCEPTS
+    | Update Submission
     |--------------------------------------------------------------------------
     |
-    | Mirrors respond_offer.php (seller-accept path) so that every
-    | "accepted" submission ends up with exactly one transactions
-    | row, regardless of which side clicked accept.
+    | result_seen_by_seller is reset to 0 here too, even though the
+    | SELLER is the one performing this action. Per project decision:
+    | ANY transition to accepted/declined should surface the
+    | dashboard popup, regardless of which side triggered it — not
+    | just the admin-driven path in admin_respond_offer.php.
     |
+    */
+
+    $submissionStatus = $response === 'accept'
+        ? 'accepted'
+        : 'declined';
+
+    $submissionUpdate = $pdo->prepare("
+        UPDATE submissions
+
+        SET
+            status = ?,
+            result_seen_by_seller = 0,
+            updated_at = NOW()
+
+        WHERE id = ?
+    ");
+
+    $submissionUpdate->execute([
+        $submissionStatus,
+        $data['submission_id']
+    ]);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Create Transaction ONLY When Seller Accepts
+    |--------------------------------------------------------------------------
     */
 
     $transactionReference = null;
-
 
     if ($response === 'accept') {
 
@@ -642,32 +390,27 @@ try {
         |--------------------------------------------------------------------------
         */
 
-        $existingTransaction =
-            $pdo->prepare("
-                SELECT
-                    id,
-                    transaction_reference
-                FROM transactions
-                WHERE offer_id = ?
-                LIMIT 1
-                FOR UPDATE
-            ");
+        $existingTransaction = $pdo->prepare("
+            SELECT
+                id,
+                transaction_reference
+            FROM transactions
+            WHERE offer_id = ?
+            LIMIT 1
+            FOR UPDATE
+        ");
 
         $existingTransaction->execute([
-            $offer['offer_id']
+            $data['offer_id']
         ]);
 
-        $existing =
-            $existingTransaction->fetch();
+        $existing = $existingTransaction->fetch();
 
         if ($existing) {
-
             throw new RuntimeException(
                 'A transaction already exists for this accepted offer.'
             );
-
         }
-
 
         /*
         |--------------------------------------------------------------------------
@@ -675,9 +418,7 @@ try {
         |--------------------------------------------------------------------------
         */
 
-        $transactionReference =
-            generateTransactionReference($pdo);
-
+        $transactionReference = generateTransactionReference($pdo);
 
         /*
         |--------------------------------------------------------------------------
@@ -685,111 +426,96 @@ try {
         |--------------------------------------------------------------------------
         |
         | Data comes directly from:
-        | - the accepted seller counter-offer
-        | - the related submission
+        | - accepted offer
+        | - related submission
         |
-        | processed_by_admin_id is set here (unlike the seller-accept
-        | path in respond_offer.php, where no admin is involved yet)
-        | since we already have the authenticated admin in context.
+        | No dummy/test values.
         |
         */
 
-        $transactionInsert =
-            $pdo->prepare("
-                INSERT INTO transactions (
-                    submission_id,
-                    offer_id,
-                    transaction_reference,
-                    final_amount,
-                    payment_method,
-                    payment_status,
-                    transaction_status,
-                    processed_by_admin_id,
-                    notes,
-                    created_at,
-                    updated_at
-                )
-
-                VALUES (
-                    ?,
-                    ?,
-                    ?,
-                    ?,
-                    NULL,
-                    'pending',
-                    'pending',
-                    ?,
-                    NULL,
-                    NOW(),
-                    NOW()
-                )
-            ");
+        $transactionInsert = $pdo->prepare("
+            INSERT INTO transactions (
+                submission_id,
+                offer_id,
+                transaction_reference,
+                final_amount,
+                payment_method,
+                payment_status,
+                transaction_status,
+                processed_by_admin_id,
+                notes,
+                created_at,
+                updated_at,
+                seen_by_admin
+            )
+            VALUES (
+                ?,
+                ?,
+                ?,
+                ?,
+                NULL,
+                'pending',
+                'pending',
+                NULL,
+                NULL,
+                NOW(),
+                NOW(),
+                0
+            )
+        ");
 
         $transactionInsert->execute([
-            $offer['submission_id'],
-            $offer['offer_id'],
+            $data['submission_id'],
+            $data['offer_id'],
             $transactionReference,
-            $offer['offer_amount'],
-            $adminId
+            $data['offer_amount']
         ]);
-
     }
-
 
     /*
     |--------------------------------------------------------------------------
-    | COMMIT
+    | Commit
     |--------------------------------------------------------------------------
     */
 
     $pdo->commit();
 
-
     /*
     |--------------------------------------------------------------------------
-    | SUCCESS
+    | Success Response
     |--------------------------------------------------------------------------
     */
 
     if ($response === 'accept') {
 
-        jsonResponse(
-            true,
-            'Seller counter-offer accepted. Transaction created.',
-            200,
-            [
-                'transaction_reference' => $transactionReference
-            ]
-        );
+        echo json_encode([
+            'success' => true,
+            'message' => 'Offer accepted successfully. Transaction created.',
+            'transaction_reference' => $transactionReference
+        ]);
 
+    } else {
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Offer declined successfully.'
+        ]);
     }
 
-    jsonResponse(
-        true,
-        'Seller counter-offer declined.'
-    );
-
+    exit;
 
 } catch (Throwable $e) {
 
-    if (
-        isset($pdo)
-        &&
-        $pdo instanceof PDO
-        &&
-        $pdo->inTransaction()
-    ) {
-
+    if ($pdo->inTransaction()) {
         $pdo->rollBack();
-
     }
 
+    http_response_code(500);
 
-    jsonResponse(
-        false,
-        $e->getMessage()
-            ?: 'Unable to update seller counter-offer.',
-        500
-    );
+    echo json_encode([
+        'success' => false,
+        'message' => 'Unable to update the offer.'
+    ]);
 
+    exit;
 }

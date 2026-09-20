@@ -1003,3 +1003,25 @@ body {
     }
 
 }
+
+.admin-notification-badge {
+    position: absolute;
+    top: 6px;
+    right: 10px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #e11d48;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    box-sizing: border-box;
+    pointer-events: none;
+}
+
+.nav-item {
+    position: relative;
+}

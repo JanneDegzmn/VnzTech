@@ -662,7 +662,8 @@ try {
                 status,
                 seller_notes,
                 created_at,
-                updated_at
+                updated_at,
+                seen_by_admin
             )
             VALUES
             (
@@ -675,7 +676,8 @@ try {
                 'new_submission',
                 ?,
                 NOW(),
-                NOW()
+                NOW(),
+                0
             )
         ");
 

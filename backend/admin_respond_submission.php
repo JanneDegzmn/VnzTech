@@ -198,10 +198,24 @@ try {
      */
     if ($response === 'decline') {
 
+        /*
+        |--------------------------------------------------------------------------
+        | result_seen_by_seller = 0
+        |--------------------------------------------------------------------------
+        |
+        | Admin is making this decision directly (no offer/counter
+        | ever happened), so the seller has no other way of knowing.
+        | Reset the flag so backend/get_unseen_results.php picks
+        | this up for the dashboard popup, same as
+        | admin_respond_offer.php / respond_offer.php.
+        |
+        */
+
         $updateSubmission = $pdo->prepare("
             UPDATE submissions
             SET
                 status = 'declined',
+                result_seen_by_seller = 0,
                 updated_at = NOW()
             WHERE id = ?
         ");
@@ -283,6 +297,18 @@ try {
      * Direct Accept:
      *
      * offer_id = NULL
+     *
+     * NOTE: transactions.offer_id is defined NOT NULL with no
+     * default in the current schema. In MySQL's non-strict SQL
+     * mode this INSERT will NOT error — it silently stores 0
+     * instead of NULL, creating a transactions row that appears
+     * linked to a non-existent offer #0. This is a pre-existing
+     * schema/code mismatch, separate from the notification fix
+     * below, and worth addressing separately (either making
+     * offer_id nullable in the schema, or enabling strict SQL
+     * mode so this fails loudly instead of silently). Left
+     * unchanged here to keep this edit scoped to the seller
+     * notification fix.
      */
     $transactionInsert = $pdo->prepare("
         INSERT INTO transactions (
@@ -296,7 +322,8 @@ try {
             processed_by_admin_id,
             notes,
             created_at,
-            updated_at
+            updated_at,
+            seen_by_admin
         )
         VALUES (
             ?,
@@ -309,7 +336,8 @@ try {
             ?,
             NULL,
             NOW(),
-            NOW()
+            NOW(),
+            0
         )
     ");
 
@@ -322,11 +350,15 @@ try {
 
     /*
      * Mark submission accepted.
+     *
+     * result_seen_by_seller = 0 — same reasoning as the decline
+     * path above.
      */
     $updateSubmission = $pdo->prepare("
         UPDATE submissions
         SET
             status = 'accepted',
+            result_seen_by_seller = 0,
             updated_at = NOW()
         WHERE id = ?
     ");

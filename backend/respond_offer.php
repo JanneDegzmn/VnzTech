@@ -437,9 +437,9 @@ try {
                 processed_by_admin_id,
                 notes,
                 created_at,
-                updated_at
+                updated_at,
+                seen_by_admin
             )
-
             VALUES (
                 ?,
                 ?,
@@ -451,7 +451,8 @@ try {
                 NULL,
                 NULL,
                 NOW(),
-                NOW()
+                NOW(),
+                0
             )
         ");
 

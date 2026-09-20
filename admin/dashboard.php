@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/auth.php';
+require_once __DIR__ . '/../backend/csrf.php';
 
 requireAdminLogin();
 
@@ -12,6 +13,8 @@ if (!$currentAdmin) {
     header('Location: login.php');
     exit;
 }
+
+$csrfToken = generateCsrfToken();
 
 ?>
 
@@ -108,6 +111,12 @@ if (!$currentAdmin) {
                     Submissions
                 </span>
 
+                <span
+                    class="admin-notification-badge"
+                    id="submissionsBadge"
+                    hidden
+                >0</span>
+
             </button>
 
 
@@ -137,6 +146,12 @@ if (!$currentAdmin) {
                 <span class="nav-text">
                     Transactions
                 </span>
+
+                <span
+                    class="admin-notification-badge"
+                    id="transactionsBadge"
+                    hidden
+                >0</span>
 
             </button>
 
@@ -388,7 +403,258 @@ document.addEventListener(
         const navItems =
             document.querySelectorAll('.nav-item');
 
+                /*
+        |--------------------------------------------------------------------------
+        | ADMIN NOTIFICATIONS
+        |--------------------------------------------------------------------------
+        */
 
+        const submissionsBadge =
+            document.getElementById(
+                'submissionsBadge'
+            );
+
+        const transactionsBadge =
+            document.getElementById(
+                'transactionsBadge'
+            );
+
+        const adminCsrfToken =
+            <?= json_encode(
+                $csrfToken,
+                JSON_UNESCAPED_UNICODE |
+                JSON_UNESCAPED_SLASHES
+            ) ?>;
+
+        const ADMIN_NOTIFICATION_POLL_INTERVAL_MS =
+            4000;
+
+        let notificationCheckInProgress =
+            false;
+
+
+        function updateNotificationBadge(
+            badgeElement,
+            count
+        ) {
+
+            if (!badgeElement) {
+                return;
+            }
+
+
+            const safeCount =
+                Math.max(
+                    0,
+                    Number(count) || 0
+                );
+
+
+            if (safeCount <= 0) {
+
+                badgeElement.hidden =
+                    true;
+
+                badgeElement.textContent =
+                    '0';
+
+                return;
+            }
+
+
+            badgeElement.hidden =
+                false;
+
+
+            badgeElement.textContent =
+                safeCount > 99
+                    ? '99+'
+                    : String(safeCount);
+
+        }
+
+
+        async function refreshAdminNotificationCounts() {
+
+            if (
+                notificationCheckInProgress
+            ) {
+                return;
+            }
+
+
+            notificationCheckInProgress =
+                true;
+
+
+            try {
+
+                const response =
+                    await fetch(
+                        '/VNZ-TECH/backend/get_unseen_admin_counts.php',
+                        {
+                            method: 'GET',
+
+                            credentials:
+                                'same-origin',
+
+                            cache:
+                                'no-store'
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        'Unable to load admin notification counts.'
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                if (!data.success) {
+
+                    throw new Error(
+                        data.message
+                        ||
+                        'Unable to load admin notification counts.'
+                    );
+
+                }
+
+
+                updateNotificationBadge(
+                    submissionsBadge,
+                    data.submissions_count
+                );
+
+
+                updateNotificationBadge(
+                    transactionsBadge,
+                    data.transactions_count
+                );
+
+            } catch (error) {
+
+                console.warn(
+                    'Admin notification check failed:',
+                    error
+                );
+
+            } finally {
+
+                notificationCheckInProgress =
+                    false;
+
+            }
+
+        }
+
+
+        async function markAdminNotificationsSeen(
+            type
+        ) {
+
+            const badgeElement =
+                type === 'submissions'
+                    ? submissionsBadge
+                    : transactionsBadge;
+
+
+            updateNotificationBadge(
+                badgeElement,
+                0
+            );
+
+
+            try {
+
+                const body =
+                    new URLSearchParams();
+
+
+                body.set(
+                    'type',
+                    type
+                );
+
+
+                body.set(
+                    'csrf_token',
+                    adminCsrfToken
+                );
+
+
+                const response =
+                    await fetch(
+                        '/VNZ-TECH/backend/mark_admin_notifications_seen.php',
+                        {
+                            method: 'POST',
+
+                            headers: {
+                                'Content-Type':
+                                    'application/x-www-form-urlencoded; charset=UTF-8'
+                            },
+
+                            credentials:
+                                'same-origin',
+
+                            body:
+                                body.toString(),
+
+                            cache:
+                                'no-store'
+                        }
+                    );
+
+
+                if (!response.ok) {
+
+                    throw new Error(
+                        'Unable to mark admin notifications as seen.'
+                    );
+
+                }
+
+
+                const data =
+                    await response.json();
+
+
+                if (!data.success) {
+
+                    throw new Error(
+                        data.message
+                        ||
+                        'Unable to mark admin notifications as seen.'
+                    );
+
+                }
+
+            } catch (error) {
+
+                console.warn(
+                    'Admin notification mark-seen failed:',
+                    error
+                );
+
+            }
+
+        }
+
+
+        setInterval(
+            refreshAdminNotificationCounts,
+            ADMIN_NOTIFICATION_POLL_INTERVAL_MS
+        );
+
+
+        refreshAdminNotificationCounts();        
         /*
         |--------------------------------------------------------------------------
         | Page Titles
@@ -792,6 +1058,18 @@ document.addEventListener(
                             this.dataset.page;
 
 
+                        if (
+                            page === 'submissions' ||
+                            page === 'transactions'
+                        ) {
+
+                            markAdminNotificationsSeen(
+                                page
+                            );
+
+                        }
+
+
                         loadPage(
                             page,
                             true,
@@ -934,6 +1212,18 @@ document.addEventListener(
 
             }
         );
+
+
+        if (
+            initialPage === 'submissions' ||
+            initialPage === 'transactions'
+        ) {
+
+            markAdminNotificationsSeen(
+                initialPage
+            );
+
+        }
 
 
         loadPage(

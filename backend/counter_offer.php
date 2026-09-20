@@ -535,9 +535,9 @@ try {
                 sent_at,
                 responded_at,
                 created_at,
-                updated_at
+                updated_at,
+                seen_by_admin
             )
-
             VALUES
             (
                 ?,
@@ -549,7 +549,8 @@ try {
                 NOW(),
                 NULL,
                 NOW(),
-                NOW()
+                NOW(),
+                0
             )
         ");
 
