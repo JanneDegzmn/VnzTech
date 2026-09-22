@@ -1,0 +1,944 @@
+/* =========================================================
+   VNZ TECH
+   ADMIN BUYING RATES
+========================================================= */
+
+.rates-page {
+    width: 100%;
+    min-height: 100%;
+    color: #f5f5f5;
+}
+
+
+/* =========================================================
+   HEADER
+========================================================= */
+
+.rates-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 30px;
+    margin-bottom: 28px;
+}
+
+.rates-heading {
+    min-width: 0;
+}
+
+.rates-kicker {
+    margin-bottom: 8px;
+    color: #666;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+}
+
+.rates-heading h1 {
+    margin: 0;
+    color: #fff;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.rates-heading p {
+    margin: 8px 0 0;
+    color: #858585;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.rates-add-button {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 20px;
+    flex-shrink: 0;
+    border: 1px solid #363636;
+    border-radius: 8px;
+    background: #181818;
+    color: #fff;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.rates-add-button:hover {
+    border-color: #666;
+    background: #242424;
+}
+
+
+/* =========================================================
+   TABS
+========================================================= */
+
+.rates-tabs {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid #232323;
+}
+
+.rates-tab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    height: 40px;
+    padding: 0 4px 10px;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: #777;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.rates-tab:hover {
+    color: #ccc;
+}
+
+.rates-tab.active {
+    border-bottom-color: #eee;
+    color: #fff;
+}
+
+.rates-tab-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #2a2a2a;
+    color: #eee;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   SUMMARY CARDS
+========================================================= */
+
+.rates-summary-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.rates-summary-card {
+    padding: 17px 20px;
+    border: 1px solid #292929;
+    border-radius: 10px;
+    background: #111;
+}
+
+.rates-summary-card span {
+    display: block;
+    margin-bottom: 5px;
+    color: #666;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+}
+
+.rates-summary-card strong {
+    color: #fff;
+    font-size: 22px;
+    font-weight: 800;
+}
+
+
+/* =========================================================
+   FILTER CARD
+========================================================= */
+
+.rates-filter-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 18px;
+}
+
+.rates-search {
+    position: relative;
+    flex: 1;
+    min-width: 220px;
+}
+
+.rates-search .search-symbol {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    z-index: 2;
+    transform: translateY(-50%);
+    color: #707070;
+    font-size: 20px;
+    pointer-events: none;
+}
+
+.rates-search input {
+    width: 100%;
+    height: 44px;
+    padding: 0 14px 0 40px;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    outline: none;
+    background: #111;
+    color: #eee;
+    font-family: inherit;
+    font-size: 13px;
+    box-sizing: border-box;
+    transition:
+        border-color 0.2s ease,
+        background 0.2s ease;
+}
+
+.rates-search input::placeholder {
+    color: #5e5e5e;
+}
+
+.rates-search input:focus {
+    border-color: #494949;
+    background: #151515;
+}
+
+.rates-filter-select {
+    width: 175px;
+    height: 44px;
+    flex-shrink: 0;
+    padding: 0 12px;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    outline: none;
+    background: #111;
+    color: #ddd;
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+
+.rates-filter-select:focus {
+    border-color: #494949;
+}
+
+.rates-filter-select option {
+    background: #111;
+    color: #fff;
+}
+
+.clear-rates-filters {
+    height: 44px;
+    padding: 0 17px;
+    flex-shrink: 0;
+    border: 1px solid #2d2d2d;
+    border-radius: 8px;
+    background: transparent;
+    color: #777;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        color 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.clear-rates-filters:hover {
+    border-color: #555;
+    background: #181818;
+    color: #fff;
+}
+
+
+/* =========================================================
+   MAIN CARD
+========================================================= */
+
+.rates-card {
+    overflow: hidden;
+    border: 1px solid #252525;
+    border-radius: 12px;
+    background: #101010;
+}
+
+.rates-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 75px;
+    padding: 15px 20px;
+    border-bottom: 1px solid #242424;
+    box-sizing: border-box;
+}
+
+.rates-card-header h2 {
+    margin: 0 0 4px;
+    color: #eee;
+    font-size: 15px;
+    font-weight: 750;
+}
+
+.rates-card-header span {
+    color: #666;
+    font-size: 11px;
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+.rates-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.rates-table {
+    width: 100%;
+    min-width: 900px;
+    border-collapse: collapse;
+}
+
+.rates-table thead {
+    background: #0d0d0d;
+}
+
+.rates-table th {
+    height: 43px;
+    padding: 0 16px;
+    border-bottom: 1px solid #252525;
+    color: #626262;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1.25px;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.rates-table td {
+    padding: 15px 16px;
+    border-bottom: 1px solid #1f1f1f;
+    vertical-align: middle;
+}
+
+.rates-table tbody tr {
+    transition: background 0.15s ease;
+}
+
+.rates-table tbody tr:hover {
+    background: #151515;
+}
+
+.rates-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.rates-table tbody tr.rate-inactive {
+    opacity: 0.5;
+}
+
+
+/* =========================================================
+   TYPE BADGE
+========================================================= */
+
+.rate-type-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 25px;
+    padding: 4px 9px;
+    border: 1px solid #303030;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.rate-type-phone {
+    border-color: #344336;
+    background: #141914;
+    color: #a9c5ad;
+}
+
+.rate-type-bagsakan {
+    border-color: #494231;
+    background: #191712;
+    color: #d0bb8d;
+}
+
+.rate-type-noncode {
+    border-color: #3a3a52;
+    background: #131320;
+    color: #b0aee0;
+}
+
+
+/* =========================================================
+   CATEGORY / DESCRIPTION CELL
+========================================================= */
+
+.rate-category-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-width: 260px;
+}
+
+.rate-category-cell strong {
+    color: #fff;
+    font-size: 12px;
+    font-weight: 750;
+}
+
+.rate-category-cell span {
+    overflow: hidden;
+    color: #666;
+    font-size: 10px;
+    line-height: 1.5;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   PRICE
+========================================================= */
+
+.rate-price-cell {
+    color: #eee;
+    font-size: 13px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.rate-unit-cell {
+    color: #757575;
+    font-size: 10px;
+}
+
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+.rate-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 25px;
+    padding: 4px 9px;
+    border: 1px solid #303030;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+    box-sizing: border-box;
+}
+
+.rate-status-active {
+    border-color: #344336;
+    background: #141914;
+    color: #a9c5ad;
+}
+
+.rate-status-inactive {
+    border-color: #393939;
+    background: #171717;
+    color: #8b8b8b;
+}
+
+
+/* =========================================================
+   UPDATED
+========================================================= */
+
+.rate-updated-cell {
+    color: #bdbdbd;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+
+/* =========================================================
+   ACTIONS
+========================================================= */
+
+.rate-actions-cell {
+    display: flex;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.rate-edit-button,
+.rate-toggle-button,
+.rate-delete-button,
+.rate-restore-button,
+.rate-delete-permanent-button {
+    height: 31px;
+    padding: 0 13px;
+    border: 1px solid #363636;
+    border-radius: 6px;
+    background: #181818;
+    color: #ddd;
+    font-family: inherit;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease,
+        color 0.2s ease;
+}
+
+.rate-edit-button:hover {
+    border-color: #666;
+    background: #242424;
+    color: #fff;
+}
+
+.rate-toggle-button:hover {
+    border-color: #665050;
+    background: #201717;
+    color: #e0b8b8;
+}
+
+.rate-toggle-button.activate:hover {
+    border-color: #4a6650;
+    background: #172017;
+    color: #b8e0c0;
+}
+
+.rate-delete-button:hover {
+    border-color: #665050;
+    background: #201717;
+    color: #e0b8b8;
+}
+
+.rate-restore-button:hover {
+    border-color: #4a6650;
+    background: #172017;
+    color: #b8e0c0;
+}
+
+.rate-delete-permanent-button {
+    border-color: #453638;
+    color: #c8a8aa;
+}
+
+.rate-delete-permanent-button:hover {
+    border-color: #8a4a4d;
+    background: #2a1516;
+    color: #f0c0c2;
+}
+
+.rate-delete-permanent-button:disabled,
+.rate-delete-button:disabled,
+.rate-restore-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   EMPTY STATES
+========================================================= */
+
+.rates-empty,
+.filtered-rates-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    min-height: 300px;
+    padding: 50px 20px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.rates-empty .empty-symbol {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin-bottom: 17px;
+    border: 1px solid #303030;
+    border-radius: 50%;
+    background: #151515;
+    color: #777;
+    font-size: 24px;
+    font-weight: 300;
+}
+
+.rates-empty h3,
+.filtered-rates-empty h3 {
+    margin: 0 0 7px;
+    color: #ddd;
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.rates-empty p,
+.filtered-rates-empty p {
+    max-width: 410px;
+    margin: 0;
+    color: #626262;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+
+/* =========================================================
+   MODAL
+========================================================= */
+
+.rate-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.65);
+    box-sizing: border-box;
+}
+
+.rate-modal-overlay.active {
+    display: flex;
+}
+
+.rate-modal {
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    background: #111;
+}
+
+.rate-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 20px;
+    border-bottom: 1px solid #232323;
+}
+
+.rate-modal-header h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 15px;
+    font-weight: 750;
+}
+
+.rate-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #888;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.2s ease, color 0.2s ease;
+}
+
+.rate-modal-close:hover {
+    background: #1d1d1d;
+    color: #fff;
+}
+
+.rate-modal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    padding: 20px;
+}
+
+.rate-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rate-field label {
+    color: #888;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.rate-field input,
+.rate-field select,
+.rate-field textarea {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    outline: none;
+    background: #0d0d0d;
+    color: #eee;
+    font-family: inherit;
+    font-size: 13px;
+    box-sizing: border-box;
+    transition: border-color 0.2s ease;
+}
+
+.rate-field textarea {
+    height: auto;
+    min-height: 70px;
+    padding: 10px 12px;
+    resize: vertical;
+}
+
+.rate-field input:focus,
+.rate-field select:focus,
+.rate-field textarea:focus {
+    border-color: #494949;
+}
+
+.rate-field-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+}
+
+.rate-modal-error {
+    display: none;
+    padding: 10px 12px;
+    border: 1px solid #453638;
+    border-radius: 8px;
+    background: #191516;
+    color: #d9a8aa;
+    font-size: 11px;
+}
+
+.rate-modal-error.active {
+    display: block;
+}
+
+.rate-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 16px 20px;
+    border-top: 1px solid #232323;
+}
+
+.rate-modal-cancel,
+.rate-modal-save {
+    height: 40px;
+    padding: 0 18px;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.rate-modal-cancel {
+    border: 1px solid #2d2d2d;
+    background: transparent;
+    color: #999;
+}
+
+.rate-modal-cancel:hover {
+    border-color: #555;
+    color: #fff;
+}
+
+.rate-modal-save {
+    border: 1px solid #3d5a41;
+    background: #16261a;
+    color: #b8e0c0;
+}
+
+.rate-modal-save:hover {
+    border-color: #4a6650;
+    background: #1a301f;
+}
+
+.rate-modal-save:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* =========================================================
+   ACCESS DENIED
+========================================================= */
+
+.rates-access-denied {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    padding: 22px;
+    border: 1px solid #302727;
+    border-radius: 10px;
+    background: #151111;
+}
+
+.rates-access-denied .access-denied-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    flex-shrink: 0;
+    border: 1px solid #4a3636;
+    border-radius: 50%;
+    color: #c7a6a6;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.rates-access-denied h2 {
+    margin: 0 0 5px;
+    color: #e1d4d4;
+    font-size: 15px;
+}
+
+.rates-access-denied p {
+    margin: 0;
+    color: #766a6a;
+    font-size: 12px;
+}
+
+
+/* =========================================================
+   TOAST
+========================================================= */
+
+.rate-toast {
+    position: fixed;
+    right: 24px;
+    bottom: 24px;
+    z-index: 1100;
+    padding: 12px 18px;
+    border: 1px solid #344336;
+    border-radius: 8px;
+    background: #141914;
+    color: #b8e0c0;
+    font-size: 12px;
+    font-weight: 700;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    pointer-events: none;
+}
+
+.rate-toast.error {
+    border-color: #453638;
+    background: #191516;
+    color: #e0b8b8;
+}
+
+.rate-toast.active {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1000px) {
+
+    .rates-header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .rates-summary-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .rates-filter-card {
+        flex-wrap: wrap;
+    }
+
+    .rates-search {
+        flex: 1 1 100%;
+    }
+
+    .rates-filter-select {
+        flex: 1;
+        width: auto;
+    }
+
+}
+
+@media (max-width: 650px) {
+
+    .rates-heading h1 {
+        font-size: 27px;
+    }
+
+    .rates-heading p {
+        font-size: 12px;
+    }
+
+    .rates-summary-row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .rates-filter-card {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .rates-search {
+        width: 100%;
+        flex: none;
+    }
+
+    .rates-filter-select {
+        width: 100%;
+        flex: none;
+    }
+
+    .clear-rates-filters {
+        width: 100%;
+    }
+
+    .rates-card-header {
+        padding: 15px;
+    }
+
+    .rate-field-row {
+        grid-template-columns: 1fr;
+    }
+
+}
