@@ -92,8 +92,17 @@ $openFormRequested =
             align-items: center;
             justify-content: center;
             padding: 24px;
-            background: rgba(8, 11, 15, 0.78);
-            backdrop-filter: blur(8px);
+            background: rgba(8, 11, 15, 0.72);
+            backdrop-filter: blur(10px) saturate(0.9);
+            -webkit-backdrop-filter: blur(10px) saturate(0.9);
+            opacity: 1;
+            transition: opacity 0.28s ease, backdrop-filter 0.28s ease;
+            animation: sellerModalFadeIn 0.28s ease forwards;
+        }
+
+        .seller-modal[hidden] {
+            display: none !important;
+            opacity: 0;
         }
 
         .seller-modal-card {
@@ -104,6 +113,178 @@ $openFormRequested =
             background: #11161d;
             color: #ffffff;
             box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
+            transform: translateY(22px) scale(0.97);
+            opacity: 0;
+            animation: sellerCardIn 0.32s cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
+        }
+
+        .tracking-modal-card {
+            width: min(100%, 560px);
+            padding: 28px 28px 22px;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.52);
+        }
+
+        @keyframes sellerModalFadeIn {
+            from {
+                opacity: 0;
+                backdrop-filter: blur(0px);
+            }
+            to {
+                opacity: 1;
+                backdrop-filter: blur(10px) saturate(0.9);
+            }
+        }
+
+        @keyframes sellerCardIn {
+            0% {
+                opacity: 0;
+                transform: translateY(32px) scale(0.96);
+            }
+            60% {
+                opacity: 1;
+                transform: translateY(-4px) scale(1.01);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .tracking-modal-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .tracking-modal-header h2 {
+            margin: 0;
+            font-size: clamp(26px, 4vw, 36px);
+            line-height: 1.08;
+            letter-spacing: -1.5px;
+        }
+
+        .tracking-modal-form {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .tracking-modal-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        .tracking-modal-field {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .tracking-modal-field label {
+            color: rgba(255, 255, 255, 0.72);
+            font-size: 11px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .tracking-modal-field input {
+            width: 100%;
+            min-height: 52px;
+            padding: 14px 16px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02);
+            color: #ffffff;
+            font: inherit;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .tracking-modal-field input:focus {
+            border-color: rgba(88, 180, 255, 0.8);
+            box-shadow: 0 0 0 3px rgba(35, 132, 255, 0.12);
+        }
+
+        .track-modal-submit {
+            min-height: 50px;
+            padding: 0 18px;
+            border: 0;
+            border-radius: 12px;
+            background: linear-gradient(135deg, #5fc8ff, #0ea5e9 48%, #0c7ae7);
+            color: #071019;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform 0.18s ease, filter 0.18s ease;
+        }
+
+        .track-modal-submit:hover {
+            transform: translateY(-1px);
+            filter: brightness(1.04);
+        }
+
+        .track-modal-message {
+            margin-top: 16px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .track-modal-message.error {
+            background: rgba(255, 120, 120, 0.08);
+            border: 1px solid rgba(255, 120, 120, 0.18);
+            color: #ffb4b4;
+        }
+
+        .track-modal-message.success {
+            background: rgba(119, 221, 177, 0.08);
+            border: 1px solid rgba(119, 221, 177, 0.18);
+            color: #c8f3dc;
+        }
+
+        .track-modal-result {
+            margin-top: 18px;
+            padding: 18px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.09);
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .track-modal-result h3 {
+            margin: 0 0 14px;
+            font-size: 24px;
+            line-height: 1.1;
+            letter-spacing: -0.7px;
+        }
+
+        .track-result-row {
+            display: flex;
+            justify-content: space-between;
+            gap: 18px;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+        }
+
+        .track-result-row:last-child {
+            border-bottom: none;
+        }
+
+        .track-result-row strong {
+            color: rgba(255, 255, 255, 0.58);
+            font-weight: 700;
+        }
+
+        .track-result-row span {
+            text-align: right;
         }
 
         .seller-modal-kicker {
@@ -191,6 +372,208 @@ $openFormRequested =
             .seller-modal-btn {
                 width: 100%;
             }
+        }
+
+
+        /* =========================================================
+           BUYING RATES — NAV + FORM TRIGGER BUTTONS
+        ========================================================== */
+
+        .header-rates-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 38px;
+            padding: 0 16px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            font: inherit;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            transition:
+                background 0.18s ease,
+                border-color 0.18s ease;
+        }
+
+        .header-rates-btn:hover {
+            border-color: rgba(255, 255, 255, 0.32);
+            background: rgba(255, 255, 255, 0.11);
+        }
+
+        .form-rates-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            height: 38px;
+            padding: 0 16px;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.06);
+            color: #ffffff;
+            font: inherit;
+            font-size: 12px;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition:
+                background 0.18s ease,
+                border-color 0.18s ease;
+        }
+
+        .form-rates-btn:hover {
+            border-color: rgba(255, 255, 255, 0.32);
+            background: rgba(255, 255, 255, 0.11);
+        }
+
+
+        /* =========================================================
+           BUYING RATES MODAL
+        ========================================================== */
+
+        .rates-modal-card {
+            width: min(100%, 560px);
+            max-height: 82vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .rates-modal-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+        }
+
+        .rates-modal-close {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 10px;
+            background: transparent;
+            color: #ffffff;
+            font-size: 18px;
+            cursor: pointer;
+            transition: background 0.18s ease;
+        }
+
+        .rates-modal-close:hover {
+            background: rgba(255, 255, 255, 0.08);
+        }
+
+        .rates-modal-body {
+            margin-top: 22px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .rates-modal-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 40px 10px;
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 13px;
+            text-align: center;
+        }
+
+        .rates-group {
+            margin-bottom: 20px;
+        }
+
+        .rates-group:last-child {
+            margin-bottom: 0;
+        }
+
+        .rates-group-title {
+            margin: 0 0 10px;
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .rates-group-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .rates-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            padding: 12px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.03);
+        }
+
+        .rates-row-label {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            min-width: 0;
+        }
+
+        .rates-row-label strong {
+            color: #ffffff;
+            font-size: 13px;
+            font-weight: 750;
+        }
+
+        .rates-row-label span {
+            overflow: hidden;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 11px;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .rates-row-price {
+            flex-shrink: 0;
+            color: #ffffff;
+            font-size: 14px;
+            font-weight: 800;
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .rates-row-price small {
+            display: block;
+            margin-top: 2px;
+            color: rgba(255, 255, 255, 0.45);
+            font-size: 10px;
+            font-weight: 600;
+        }
+
+        .rates-modal-footnote {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.45);
+            font-size: 11px;
+            line-height: 1.6;
+        }
+
+        @media (max-width: 560px) {
+
+            .rates-modal-card {
+                max-height: 86vh;
+            }
+
         }
     </style>
 
@@ -384,35 +767,54 @@ $openFormRequested =
 
     <header class="site-header">
 
-        <a
-            href="/VNZ-TECH/index.php"
-            class="brand-mark"
-        >
-            VNZ <span>TECH</span>
-        </a>
-
-        <div class="header-actions">
+        <div class="site-header-inner">
 
             <a
-                href="/VNZ-TECH/account/register.php"
-                class="header-register-btn"
+                href="/VNZ-TECH/index.php"
+                class="brand-mark"
+                aria-label="VNZ TECH home"
             >
-                CREATE ACCOUNT
+                <img
+                    src="/VNZ-TECH/assets/images/vnz.png"
+                    alt="VNZ TECH logo"
+                    class="brand-logo"
+                >
+                <span class="brand-name">VNZ TECH</span>
             </a>
 
-            <a
-                href="/VNZ-TECH/account/login.php"
-                class="header-login-btn"
-            >
-                LOGIN
-            </a>
+            <div class="header-actions">
 
-            <a
-                href="/VNZ-TECH/seller/tracking.php"
-                class="header-track-btn"
-            >
-                TRACK SUBMISSION
-            </a>
+                <button
+                    type="button"
+                    class="header-rates-btn"
+                    id="openRatesBtnNav"
+                >
+                    BUYING RATES
+                </button>
+
+                <a
+                    href="/VNZ-TECH/account/register.php"
+                    class="header-register-btn"
+                >
+                    CREATE ACCOUNT
+                </a>
+
+                <a
+                    href="/VNZ-TECH/account/login.php"
+                    class="header-login-btn"
+                >
+                    LOGIN
+                </a>
+
+                <button
+                    type="button"
+                    class="header-track-btn"
+                    id="openTrackModalBtn"
+                >
+                    TRACK SUBMISSION
+                </button>
+
+            </div>
 
         </div>
 
@@ -444,7 +846,7 @@ $openFormRequested =
          SECTION 1 — HERO
     ========================================================== -->
 
-    <section class="marketing-section hero-section">
+    <section class="marketing-section hero-section" id="hero">
 
         <div class="hero-grid">
 
@@ -540,7 +942,7 @@ $openFormRequested =
          SECTION 2 — WHAT IS SCRAP
     ========================================================== -->
 
-    <section class="marketing-section education-section">
+    <section class="marketing-section education-section" id="scrap">
 
         <div class="section-intro">
 
@@ -725,7 +1127,7 @@ $openFormRequested =
          SECTION 3 — HOW IT WORKS
     ========================================================== -->
 
-    <section class="marketing-section process-section">
+    <section class="marketing-section process-section" id="process">
 
         <div class="section-intro">
 
@@ -879,13 +1281,25 @@ $openFormRequested =
 
             </div>
 
-            <button
-                type="button"
-                class="close-form-btn"
-                id="closeFormBtn"
-            >
-                ×
-            </button>
+            <div style="display:flex; align-items:flex-start; gap:10px;">
+
+                <button
+                    type="button"
+                    class="form-rates-btn"
+                    id="openRatesBtnForm"
+                >
+                    BUYING RATES
+                </button>
+
+                <button
+                    type="button"
+                    class="close-form-btn"
+                    id="closeFormBtn"
+                >
+                    ×
+                </button>
+
+            </div>
 
         </div>
 
@@ -1186,6 +1600,155 @@ $openFormRequested =
 
 
     <!-- =========================================================
+         BUYING RATES MODAL
+
+         Shared by the top-nav button and the in-form button.
+         Fetches live from backend/get_public_rates.php on every
+         open, so any Admin edit is reflected immediately —
+         no caching, no stale data.
+    ========================================================== -->
+
+    <div
+        class="seller-modal"
+        id="buyingRatesModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="buyingRatesModalTitle"
+        hidden
+    >
+        <div class="seller-modal-card rates-modal-card">
+
+            <div class="rates-modal-header">
+
+                <div>
+                    <span class="seller-modal-kicker">
+                        VNZ TECH
+                    </span>
+
+                    <h2 id="buyingRatesModalTitle" style="font-size: 26px;">
+                        Current Buying Rates
+                    </h2>
+                </div>
+
+                <button
+                    type="button"
+                    class="rates-modal-close"
+                    id="closeRatesModalBtn"
+                    aria-label="Close"
+                >
+                    ×
+                </button>
+
+            </div>
+
+            <div class="rates-modal-body" id="ratesModalBody">
+
+                <div class="rates-modal-state" id="ratesModalLoading">
+                    Loading current rates...
+                </div>
+
+            </div>
+
+            <div class="rates-modal-footnote">
+                Rates are subject to change without prior notice and
+                are always subject to actual inspection and verification
+                upon submission.
+            </div>
+
+        </div>
+    </div>
+
+
+    <div
+        class="seller-modal"
+        id="trackSubmissionModal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="trackSubmissionModalTitle"
+        hidden
+    >
+        <div class="seller-modal-card tracking-modal-card">
+
+            <div class="tracking-modal-header">
+
+                <div>
+                    <span class="seller-modal-kicker">
+                        TRACK STATUS
+                    </span>
+
+                    <h2 id="trackSubmissionModalTitle">
+                        Check your item status
+                    </h2>
+                </div>
+
+                <button
+                    type="button"
+                    class="rates-modal-close"
+                    id="closeTrackSubmissionModalBtn"
+                    aria-label="Close track submission modal"
+                >
+                    ×
+                </button>
+
+            </div>
+
+            <form id="trackSubmissionForm" class="tracking-modal-form">
+
+                <div class="tracking-modal-grid">
+
+                    <div class="tracking-modal-field">
+                        <label for="trackReferenceNumber">
+                            Reference Number
+                        </label>
+                        <input
+                            type="text"
+                            id="trackReferenceNumber"
+                            name="reference"
+                            placeholder="#SP-260911-XXXX"
+                            autocomplete="off"
+                            required
+                        >
+                    </div>
+
+                    <div class="tracking-modal-field">
+                        <label for="trackMobileNumber">
+                            Mobile Number
+                        </label>
+                        <input
+                            type="tel"
+                            id="trackMobileNumber"
+                            name="mobile"
+                            placeholder="09XXXXXXXXX"
+                            autocomplete="tel"
+                            required
+                        >
+                    </div>
+
+                </div>
+
+                <button type="submit" class="track-modal-submit">
+                    Track Submission
+                </button>
+
+            </form>
+
+            <div
+                id="trackSubmissionMessage"
+                class="track-modal-message"
+                hidden
+            ></div>
+
+            <div
+                id="trackSubmissionResult"
+                class="track-modal-result"
+                hidden
+            ></div>
+
+        </div>
+    </div>
+
+
+    <!-- =========================================================
          FOOTER
     ========================================================== -->
 
@@ -1243,8 +1806,6 @@ $openFormRequested =
 
 
 </div>
-
-
 
 <script>
     /*
@@ -1354,6 +1915,376 @@ $openFormRequested =
         );
     }
 </script>
+
+
+<script>
+    /*
+    |--------------------------------------------------------------------------
+    | BUYING RATES MODAL
+    |--------------------------------------------------------------------------
+    |
+    | Shared between the top-nav "BUYING RATES" button and the
+    | in-form "BUYING RATES" button. Always fetches fresh from
+    | backend/get_public_rates.php when opened — no caching —
+    | so an Admin price edit shows up immediately for viewers.
+    |
+    */
+
+    (function () {
+
+        const ratesModal =
+            document.getElementById('buyingRatesModal');
+
+        const ratesModalBody =
+            document.getElementById('ratesModalBody');
+
+        const closeRatesModalBtn =
+            document.getElementById('closeRatesModalBtn');
+
+        const openRatesBtnNav =
+            document.getElementById('openRatesBtnNav');
+
+        const openRatesBtnForm =
+            document.getElementById('openRatesBtnForm');
+
+        if (!ratesModal || !ratesModalBody) {
+            return;
+        }
+
+        const rateTypeLabels = {
+            phone: 'Phone Rates',
+            bagsakan: 'Board Code Rates',
+            non_code_board: 'Non-Code Board Rates'
+        };
+
+        const rateTypeOrder = ['phone', 'bagsakan', 'non_code_board'];
+
+        function pesoAmount(amount) {
+            const number = Number(amount) || 0;
+            return '₱' + number.toLocaleString('en-PH', {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+        }
+
+        function renderRates(rates) {
+
+            if (!rates.length) {
+                ratesModalBody.innerHTML =
+                    '<div class="rates-modal-state">No buying rates are currently published.</div>';
+                return;
+            }
+
+            const grouped = {};
+
+            rates.forEach(function (rate) {
+                if (!grouped[rate.rate_type]) {
+                    grouped[rate.rate_type] = [];
+                }
+                grouped[rate.rate_type].push(rate);
+            });
+
+            let html = '';
+
+            rateTypeOrder.forEach(function (type) {
+
+                const items = grouped[type];
+
+                if (!items || !items.length) {
+                    return;
+                }
+
+                html += '<div class="rates-group">';
+                html += '<h3 class="rates-group-title">' +
+                    (rateTypeLabels[type] || type) +
+                    '</h3>';
+                html += '<div class="rates-group-list">';
+
+                items.forEach(function (rate) {
+
+                    const description = rate.description
+                        ? '<span>' + escapeHtml(rate.description) + '</span>'
+                        : '';
+
+                    html += `
+                        <div class="rates-row">
+                            <div class="rates-row-label">
+                                <strong>${escapeHtml(rate.category)}</strong>
+                                ${description}
+                            </div>
+                            <div class="rates-row-price">
+                                ${pesoAmount(rate.price)}
+                                <small>per ${escapeHtml(rate.unit)}</small>
+                            </div>
+                        </div>
+                    `;
+
+                });
+
+                html += '</div></div>';
+
+            });
+
+            ratesModalBody.innerHTML = html;
+
+        }
+
+        function escapeHtml(value) {
+            const div = document.createElement('div');
+            div.textContent = value == null ? '' : String(value);
+            return div.innerHTML;
+        }
+
+        async function loadRates() {
+
+            ratesModalBody.innerHTML =
+                '<div class="rates-modal-state" id="ratesModalLoading">Loading current rates...</div>';
+
+            try {
+
+                const response = await fetch(
+                    '/VNZ-TECH/backend/get_public_rates.php',
+                    {
+                        method: 'GET',
+                        cache: 'no-store'
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Unable to load rates.');
+                }
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    throw new Error(data.message || 'Unable to load rates.');
+                }
+
+                renderRates(data.rates || []);
+
+            } catch (error) {
+
+                ratesModalBody.innerHTML =
+                    '<div class="rates-modal-state">Unable to load current rates. Please try again.</div>';
+
+            }
+
+        }
+
+        function openRatesModal() {
+            ratesModal.hidden = false;
+            document.body.style.overflow = 'hidden';
+            loadRates();
+        }
+
+        function closeRatesModal() {
+            ratesModal.hidden = true;
+
+            const anySellerModalOpen =
+                document.querySelector('.seller-modal:not([hidden])');
+
+            if (!anySellerModalOpen) {
+                document.body.style.overflow = '';
+            }
+        }
+
+        if (openRatesBtnNav) {
+            openRatesBtnNav.addEventListener('click', openRatesModal);
+        }
+
+        if (openRatesBtnForm) {
+            openRatesBtnForm.addEventListener('click', openRatesModal);
+        }
+
+        if (closeRatesModalBtn) {
+            closeRatesModalBtn.addEventListener('click', closeRatesModal);
+        }
+
+        ratesModal.addEventListener('click', function (event) {
+            if (event.target === ratesModal) {
+                closeRatesModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !ratesModal.hidden) {
+                closeRatesModal();
+            }
+        });
+
+    })();
+</script>
+
+
+<script>
+    (function () {
+        const trackModal = document.getElementById('trackSubmissionModal');
+        const openTrackModalBtn = document.getElementById('openTrackModalBtn');
+        const closeTrackSubmissionModalBtn = document.getElementById('closeTrackSubmissionModalBtn');
+        const trackSubmissionForm = document.getElementById('trackSubmissionForm');
+        const trackSubmissionMessage = document.getElementById('trackSubmissionMessage');
+        const trackSubmissionResult = document.getElementById('trackSubmissionResult');
+
+        if (!trackModal || !trackSubmissionForm) {
+            return;
+        }
+
+        function showTrackModal() {
+            trackModal.hidden = false;
+            document.body.style.overflow = 'hidden';
+            const firstInput = trackSubmissionForm.querySelector('input');
+            if (firstInput) {
+                setTimeout(() => firstInput.focus(), 50);
+            }
+        }
+
+        function hideTrackModal() {
+            trackModal.hidden = true;
+            trackSubmissionMessage.hidden = true;
+            trackSubmissionMessage.className = 'track-modal-message';
+            trackSubmissionMessage.textContent = '';
+            trackSubmissionResult.hidden = true;
+            trackSubmissionResult.innerHTML = '';
+
+            const anySellerModalOpen = document.querySelector('.seller-modal:not([hidden])');
+            if (!anySellerModalOpen) {
+                document.body.style.overflow = '';
+            }
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) {
+                return '—';
+            }
+
+            const date = new Date(dateString);
+            if (Number.isNaN(date.getTime())) {
+                return dateString;
+            }
+
+            return date.toLocaleString('en-PH', {
+                dateStyle: 'medium',
+                timeStyle: 'short'
+            });
+        }
+
+        function renderSubmissionResult(submission) {
+            const items = submission.items || [];
+            const offer = submission.offer;
+
+            const itemSummary = items.length
+                ? items.map((item, index) => `
+                    <div class="track-result-row">
+                        <strong>Item ${index + 1}</strong>
+                        <span>${item.brand || 'Item'} ${item.model || ''} · ${item.issue || 'N/A'}</span>
+                    </div>
+                `).join('')
+                : '<div class="track-result-row"><strong>Items</strong><span>No item details available.</span></div>';
+
+            const offerSummary = offer
+                ? `
+                    <div class="track-result-row">
+                        <strong>Latest Offer</strong>
+                        <span>₱${Number(offer.offer_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                    </div>
+                    <div class="track-result-row">
+                        <strong>Status</strong>
+                        <span>${offer.status || 'Pending'}</span>
+                    </div>
+                `
+                : '<div class="track-result-row"><strong>Latest Offer</strong><span>No offer yet</span></div>';
+
+            trackSubmissionResult.innerHTML = `
+                <h3>${submission.reference_number}</h3>
+                <div class="track-result-row">
+                    <strong>Seller</strong>
+                    <span>${submission.seller_name || 'N/A'}</span>
+                </div>
+                <div class="track-result-row">
+                    <strong>Status</strong>
+                    <span>${submission.status || 'Pending'}</span>
+                </div>
+                <div class="track-result-row">
+                    <strong>Submitted</strong>
+                    <span>${formatDate(submission.created_at)}</span>
+                </div>
+                ${itemSummary}
+                ${offerSummary}
+            `;
+            trackSubmissionResult.hidden = false;
+        }
+
+        if (openTrackModalBtn) {
+            openTrackModalBtn.addEventListener('click', showTrackModal);
+        }
+
+        if (closeTrackSubmissionModalBtn) {
+            closeTrackSubmissionModalBtn.addEventListener('click', hideTrackModal);
+        }
+
+        trackModal.addEventListener('click', function (event) {
+            if (event.target === trackModal) {
+                hideTrackModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !trackModal.hidden) {
+                hideTrackModal();
+            }
+        });
+
+        trackSubmissionForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+
+            const formData = new FormData(trackSubmissionForm);
+            const submitBtn = trackSubmissionForm.querySelector('button[type="submit"]');
+
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Checking...';
+            }
+
+            trackSubmissionMessage.hidden = true;
+            trackSubmissionMessage.className = 'track-modal-message';
+            trackSubmissionMessage.textContent = '';
+            trackSubmissionResult.hidden = true;
+            trackSubmissionResult.innerHTML = '';
+
+            try {
+                const response = await fetch('/VNZ-TECH/backend/track_submission.php', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                const data = await response.json();
+
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Unable to track this submission.');
+                }
+
+                trackSubmissionMessage.className = 'track-modal-message success';
+                trackSubmissionMessage.textContent = 'Submission found. Here are the latest details.';
+                trackSubmissionMessage.hidden = false;
+                renderSubmissionResult(data.submission);
+
+            } catch (error) {
+                trackSubmissionMessage.className = 'track-modal-message error';
+                trackSubmissionMessage.textContent = error.message || 'Something went wrong. Please try again.';
+                trackSubmissionMessage.hidden = false;
+            } finally {
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Track Submission';
+                }
+            }
+        });
+    })();
+</script>
+
 
 <script>
 
