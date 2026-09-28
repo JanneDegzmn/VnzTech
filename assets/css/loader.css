@@ -1,0 +1,179 @@
+:root {
+  --vnz-blue-1: #5fc8ff;
+  --vnz-blue-2: #1ca8ff;
+  --vnz-blue-3: #0c7ae7;
+}
+
+html.vnz-loading {
+  overflow: hidden;
+}
+
+.vnz-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 10050;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(6, 8, 11, 0.82);
+  backdrop-filter: blur(14px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.35s ease, visibility 0s linear 0.35s;
+}
+
+html.vnz-loading .vnz-loader {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.35s ease, visibility 0s linear 0s;
+}
+
+.vnz-loader__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.vnz-loader__logo {
+  width: clamp(110px, 12vw, 170px);
+  height: auto;
+  display: block;
+  opacity: 0;
+  transform: translateY(8px) scale(0.96);
+  animation: vnz-logo-in 0.45s ease forwards;
+}
+
+.vnz-loader__indicator {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 22px;
+  min-height: 12px;
+}
+
+.vnz-loader__indicator span {
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--vnz-blue-1), var(--vnz-blue-2) 48%, var(--vnz-blue-3));
+  box-shadow: 0 0 14px rgba(28, 168, 255, 0.55);
+  animation: vnz-dot 1.2s infinite ease-in-out;
+}
+
+.vnz-loader__indicator span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.vnz-loader__indicator span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.vnz-loader--bar .vnz-loader__indicator {
+  width: 140px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.vnz-loader--bar .vnz-loader__indicator span {
+  display: none;
+}
+
+.vnz-loader--bar .vnz-loader__indicator::before,
+.vnz-loader--bar .vnz-loader__indicator::after {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 48%;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--vnz-blue-1), var(--vnz-blue-2) 48%, var(--vnz-blue-3));
+  box-shadow: 0 0 12px rgba(28, 168, 255, 0.4);
+  animation: vnz-bar 1.3s ease-in-out infinite;
+}
+
+.vnz-loader--bar .vnz-loader__indicator::after {
+  animation-delay: 0.15s;
+  opacity: 0.75;
+}
+
+.vnz-loader--ring .vnz-loader__indicator {
+  width: 34px;
+  height: 34px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-top-color: var(--vnz-blue-2);
+  border-radius: 50%;
+  animation: vnz-ring 0.9s linear infinite;
+}
+
+.vnz-loader--ring .vnz-loader__indicator span {
+  display: none;
+}
+
+@keyframes vnz-logo-in {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes vnz-dot {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.4;
+  }
+
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes vnz-bar {
+  0% {
+    transform: translateX(-110%);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+  }
+
+  50% {
+    transform: translateX(38%);
+  }
+
+  100% {
+    transform: translateX(110%);
+    opacity: 0;
+  }
+}
+
+@keyframes vnz-ring {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vnz-loader__logo,
+  .vnz-loader__indicator span,
+  .vnz-loader--bar .vnz-loader__indicator::before,
+  .vnz-loader--bar .vnz-loader__indicator::after,
+  .vnz-loader--ring .vnz-loader__indicator {
+    animation: none !important;
+  }
+
+  .vnz-loader,
+  html.vnz-loading .vnz-loader {
+    transition: none !important;
+  }
+}

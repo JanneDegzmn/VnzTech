@@ -23,6 +23,8 @@ $success = isset($_GET['success']) && $_GET['success'] === '1';
 
 <head>
 
+    <?php include __DIR__ . '/../includes/loader-head.php'; ?>
+
     <meta charset="UTF-8">
 
     <meta
@@ -40,6 +42,8 @@ $success = isset($_GET['success']) && $_GET['success'] === '1';
 </head>
 
 <body>
+
+<?php include __DIR__ . '/../includes/loader-body.php'; ?>
 
 <div class="login-wrapper">
 

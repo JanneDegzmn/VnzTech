@@ -274,6 +274,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
         event.preventDefault();
 
+        let redirecting = false;
+
+        VNZLoader.show();
 
         messageBox.style.display = 'none';
         messageBox.textContent = '';
@@ -347,6 +350,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
             if (data.success === true) {
 
+                redirecting = true;
+
                 showMessage(
                     data.message || 'Login successful.',
                     'success'
@@ -389,6 +394,10 @@ document.addEventListener('DOMContentLoaded', function () {
             );
 
         } finally {
+
+            if (!redirecting) {
+                VNZLoader.hide();
+            }
 
             loginButton.disabled = false;
             loginButton.textContent = 'LOGIN';

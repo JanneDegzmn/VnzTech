@@ -65,6 +65,8 @@ $openFormRequested =
         content="width=device-width, initial-scale=1.0"
     >
 
+    <?php include __DIR__ . '/includes/loader-head.php'; ?>
+
     <title>
         Sell Your Broken Phone or Scrap | VNZ TECH
     </title>
@@ -80,6 +82,8 @@ $openFormRequested =
 
 
 <body>
+
+<?php include __DIR__ . '/includes/loader-body.php'; ?>
 
 <div class="seller-page">
 
@@ -292,8 +296,8 @@ $openFormRequested =
                 </nav>
 
                 <div class="nav-actions">
-                    <a href="/VNZ-TECH/account/login.php" class="nav-btn nav-btn-ghost">Login</a>
-                    <a href="/VNZ-TECH/account/register.php" class="nav-btn nav-btn-primary">Create Account</a>
+                    <a href="/VNZ-TECH/account/login.php" class="nav-btn nav-btn-ghost" data-loader>Login</a>
+                    <a href="/VNZ-TECH/account/register.php" class="nav-btn nav-btn-primary" data-loader>Create Account</a>
                 </div>
 
             </div>
@@ -314,6 +318,35 @@ $openFormRequested =
         </div>
 
     </header>
+
+    <nav
+        class="section-dot-nav"
+        aria-label="Section navigation"
+    >
+        <a
+            class="dot-link is-active"
+            href="#hero"
+            data-section="hero"
+            data-label="Home"
+            aria-label="Go to Home section"
+        ></a>
+
+        <a
+            class="dot-link"
+            href="#scrap"
+            data-section="scrap"
+            data-label="Why Sell"
+            aria-label="Go to Why Sell section"
+        ></a>
+
+        <a
+            class="dot-link"
+            href="#process"
+            data-section="process"
+            data-label="How It Works"
+            aria-label="Go to How It Works section"
+        ></a>
+    </nav>
 
 
     <?php if ($errorMessage): ?>
@@ -1249,38 +1282,96 @@ $openFormRequested =
 
     <footer class="site-footer">
 
-        <div class="footer-main">
+        <div class="footer-cta">
 
-            <div>
+            <div class="footer-cta-copy">
 
-                <a
-                    href="/VNZ-TECH/index.php"
-                    class="footer-brand"
-                >
-                    VNZ TECH
-                </a>
-
-                <p>
-                    We buy. We recover. We revalue.
-                </p>
-
-            </div>
-
-
-            <div class="footer-message">
-
-                <span>
+                <span class="footer-cta-kicker">
                     BROKEN PHONE?
                 </span>
 
-                <strong>
-                    BAKA PERA PA ’YAN.
-                </strong>
+                <h2 class="footer-cta-title">
+                    <span class="footer-cta-title-main">
+                        Baka pera
+                    </span>
+                    <span class="footer-cta-title-accent">
+                        pa 'yan.
+                    </span>
+                </h2>
+
+            </div>
+
+            <div class="footer-cta-actions">
+
+                <button
+                    type="button"
+                    class="hero-btn hero-btn-primary"
+                    data-open-form="phone"
+                >
+                    <span>SELL A PHONE</span>
+                    <b>→</b>
+                </button>
+
+                <button
+                    type="button"
+                    class="hero-btn hero-btn-secondary"
+                    data-open-form="scrap"
+                >
+                    SELL SCRAP
+                </button>
 
             </div>
 
         </div>
 
+        <div class="footer-grid">
+
+            <div class="footer-column footer-column-brand">
+                <div class="footer-brand">VNZ TECH</div>
+                <p class="footer-tagline">
+                    We buy. We recover. We revalue.
+                </p>
+                <p class="footer-description">
+                    Broken phones and scrap boards, reviewed and revalued properly.
+                </p>
+            </div>
+
+            <div class="footer-column">
+                <h3 class="footer-title">EXPLORE</h3>
+                <nav class="footer-nav" aria-label="Footer navigation">
+                    <a href="#hero" class="footer-link">Home</a>
+                    <a href="#scrap" class="footer-link">Why Sell</a>
+                    <a href="#process" class="footer-link">How It Works</a>
+                </nav>
+            </div>
+
+            <div class="footer-column">
+                <h3 class="footer-title">ACCOUNT</h3>
+                <nav class="footer-nav" aria-label="Account links">
+                    <a href="/VNZ-TECH/account/login.php" class="footer-link" data-loader>Login</a>
+                    <a href="/VNZ-TECH/account/register.php" class="footer-link" data-loader>Create Account</a>
+                </nav>
+            </div>
+
+            <div class="footer-column">
+                <h3 class="footer-title">CONTACT</h3>
+                <ul class="footer-contact-list">
+                    <li class="footer-contact-item">
+                        <a href="https://www.facebook.com/profile.php?id=61594929359273" target="_blank" rel="noopener noreferrer">Facebook</a>
+                    </li>
+                    <li class="footer-contact-item">
+                        <a href="[MESSENGER_URL]" target="_blank" rel="noopener noreferrer">Messenger</a>
+                    </li>
+                    <li class="footer-contact-item">
+                        <a href="tel:09948334118">0994 833 4118</a>
+                    </li>
+                    <li class="footer-contact-item">
+                        Dasmariñas, Cavite
+                    </li>
+                </ul>
+            </div>
+
+        </div>
 
         <div class="footer-bottom">
 
@@ -1288,8 +1379,12 @@ $openFormRequested =
                 © <?= date('Y') ?> VNZ TECH
             </span>
 
-            <span>
+            <span class="footer-bottom-center">
                 Broken Phones · Scrap Boards · Recovery
+            </span>
+
+            <span>
+                Prices are subject to inspection and verification.
             </span>
 
         </div>
@@ -1301,6 +1396,64 @@ $openFormRequested =
 
 
 </div>
+
+<script>
+    (function () {
+        const sectionLinks = document.querySelectorAll(
+            '.nav-link[data-section], .dot-link'
+        );
+
+        const sections = document.querySelectorAll(
+            '.marketing-section[id]'
+        );
+
+        if (!sectionLinks.length || !sections.length) {
+            return;
+        }
+
+        function setActiveSection(sectionId) {
+            const activeId = sectionId || 'hero';
+
+            sectionLinks.forEach(function (link) {
+                const isActive = link.dataset.section === activeId;
+
+                link.classList.toggle('is-active', isActive);
+                link.setAttribute(
+                    'aria-current',
+                    isActive ? 'true' : 'false'
+                );
+            });
+        }
+
+        const observer = new IntersectionObserver(
+            function (entries) {
+                const visibleEntries = entries
+                    .filter(function (entry) {
+                        return entry.isIntersecting;
+                    })
+                    .sort(function (a, b) {
+                        return b.intersectionRatio - a.intersectionRatio;
+                    });
+
+                if (!visibleEntries.length) {
+                    return;
+                }
+
+                setActiveSection(visibleEntries[0].target.id);
+            },
+            {
+                threshold: [0.3, 0.5, 0.8],
+                rootMargin: '-10% 0px -30% 0px'
+            }
+        );
+
+        sections.forEach(function (section) {
+            observer.observe(section);
+        });
+
+        setActiveSection('hero');
+    })();
+</script>
 
 <script>
     function syncBodyScrollLock() {

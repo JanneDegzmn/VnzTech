@@ -12,6 +12,8 @@ $error = $_GET['error'] ?? '';
 
 <head>
 
+    <?php include __DIR__ . '/../includes/loader-head.php'; ?>
+
     <meta charset="UTF-8">
 
     <meta
@@ -29,6 +31,8 @@ $error = $_GET['error'] ?? '';
 </head>
 
 <body>
+
+<?php include __DIR__ . '/../includes/loader-body.php'; ?>
 
 <div class="register-wrapper">
 
@@ -77,6 +81,7 @@ $error = $_GET['error'] ?? '';
             method="POST"
             enctype="multipart/form-data"
             autocomplete="off"
+            data-loader
         >
 
             <div class="profile-upload">

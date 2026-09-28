@@ -198,6 +198,8 @@ $initialAlertMessage =
 
 <head>
 
+    <?php include __DIR__ . '/../includes/loader-head.php'; ?>
+
     <meta charset="UTF-8">
 
     <meta
@@ -226,6 +228,7 @@ $initialAlertMessage =
 
 <body>
 
+<?php include __DIR__ . '/../includes/loader-body.php'; ?>
 
 <div class="dashboard-layout">
 
