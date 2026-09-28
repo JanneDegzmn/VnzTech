@@ -71,511 +71,10 @@ $openFormRequested =
 
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/seller_submission.css"
+        href="/VNZ-TECH/assets/css/sell.css"
     >
 
 
-    <style>
-        /* =========================================================
-           GUEST ACCOUNT ONBOARDING MODALS
-        ========================================================== */
-
-        .seller-modal[hidden] {
-            display: none !important;
-        }
-
-        .seller-modal {
-            position: fixed;
-            inset: 0;
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background: rgba(8, 11, 15, 0.72);
-            backdrop-filter: blur(10px) saturate(0.9);
-            -webkit-backdrop-filter: blur(10px) saturate(0.9);
-            opacity: 1;
-            transition: opacity 0.28s ease, backdrop-filter 0.28s ease;
-            animation: sellerModalFadeIn 0.28s ease forwards;
-        }
-
-        .seller-modal[hidden] {
-            display: none !important;
-            opacity: 0;
-        }
-
-        .seller-modal-card {
-            width: min(100%, 520px);
-            padding: 34px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 20px;
-            background: #11161d;
-            color: #ffffff;
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.42);
-            transform: translateY(22px) scale(0.97);
-            opacity: 0;
-            animation: sellerCardIn 0.32s cubic-bezier(0.2, 0.9, 0.2, 1) forwards;
-        }
-
-        .tracking-modal-card {
-            width: min(100%, 560px);
-            padding: 28px 28px 22px;
-            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.52);
-        }
-
-        @keyframes sellerModalFadeIn {
-            from {
-                opacity: 0;
-                backdrop-filter: blur(0px);
-            }
-            to {
-                opacity: 1;
-                backdrop-filter: blur(10px) saturate(0.9);
-            }
-        }
-
-        @keyframes sellerCardIn {
-            0% {
-                opacity: 0;
-                transform: translateY(32px) scale(0.96);
-            }
-            60% {
-                opacity: 1;
-                transform: translateY(-4px) scale(1.01);
-            }
-            100% {
-                opacity: 1;
-                transform: translateY(0) scale(1);
-            }
-        }
-
-        .tracking-modal-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 18px;
-            margin-bottom: 22px;
-        }
-
-        .tracking-modal-header h2 {
-            margin: 0;
-            font-size: clamp(26px, 4vw, 36px);
-            line-height: 1.08;
-            letter-spacing: -1.5px;
-        }
-
-        .tracking-modal-form {
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
-        }
-
-        .tracking-modal-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 16px;
-        }
-
-        .tracking-modal-field {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .tracking-modal-field label {
-            color: rgba(255, 255, 255, 0.72);
-            font-size: 11px;
-            font-weight: 800;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-
-        .tracking-modal-field input {
-            width: 100%;
-            min-height: 52px;
-            padding: 14px 16px;
-            border: 1px solid rgba(255, 255, 255, 0.12);
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.02);
-            color: #ffffff;
-            font: inherit;
-            outline: none;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-        }
-
-        .tracking-modal-field input:focus {
-            border-color: rgba(88, 180, 255, 0.8);
-            box-shadow: 0 0 0 3px rgba(35, 132, 255, 0.12);
-        }
-
-        .track-modal-submit {
-            min-height: 50px;
-            padding: 0 18px;
-            border: 0;
-            border-radius: 12px;
-            background: linear-gradient(135deg, #5fc8ff, #0ea5e9 48%, #0c7ae7);
-            color: #071019;
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: 0.18em;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: transform 0.18s ease, filter 0.18s ease;
-        }
-
-        .track-modal-submit:hover {
-            transform: translateY(-1px);
-            filter: brightness(1.04);
-        }
-
-        .track-modal-message {
-            margin-top: 16px;
-            padding: 12px 14px;
-            border-radius: 10px;
-            font-size: 13px;
-            line-height: 1.5;
-        }
-
-        .track-modal-message.error {
-            background: rgba(255, 120, 120, 0.08);
-            border: 1px solid rgba(255, 120, 120, 0.18);
-            color: #ffb4b4;
-        }
-
-        .track-modal-message.success {
-            background: rgba(119, 221, 177, 0.08);
-            border: 1px solid rgba(119, 221, 177, 0.18);
-            color: #c8f3dc;
-        }
-
-        .track-modal-result {
-            margin-top: 18px;
-            padding: 18px;
-            border-radius: 14px;
-            border: 1px solid rgba(255, 255, 255, 0.09);
-            background: rgba(255, 255, 255, 0.02);
-        }
-
-        .track-modal-result h3 {
-            margin: 0 0 14px;
-            font-size: 24px;
-            line-height: 1.1;
-            letter-spacing: -0.7px;
-        }
-
-        .track-result-row {
-            display: flex;
-            justify-content: space-between;
-            gap: 18px;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-            color: rgba(255, 255, 255, 0.8);
-            font-size: 13px;
-        }
-
-        .track-result-row:last-child {
-            border-bottom: none;
-        }
-
-        .track-result-row strong {
-            color: rgba(255, 255, 255, 0.58);
-            font-weight: 700;
-        }
-
-        .track-result-row span {
-            text-align: right;
-        }
-
-        .seller-modal-kicker {
-            display: block;
-            margin-bottom: 10px;
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            opacity: 0.62;
-        }
-
-        .seller-modal-card h2 {
-            margin: 0 0 12px;
-            font-size: clamp(28px, 4vw, 38px);
-            line-height: 1.05;
-        }
-
-        .seller-modal-card p {
-            margin: 0;
-            color: rgba(255, 255, 255, 0.78);
-            line-height: 1.65;
-        }
-
-        .seller-modal-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            margin-top: 26px;
-        }
-
-        .seller-modal-btn {
-            flex: 1 1 180px;
-            min-height: 48px;
-            padding: 12px 18px;
-            border: 1px solid rgba(255, 255, 255, 0.14);
-            border-radius: 12px;
-            font: inherit;
-            font-weight: 800;
-            cursor: pointer;
-            transition:
-                transform 0.18s ease,
-                opacity 0.18s ease,
-                background 0.18s ease;
-        }
-
-        .seller-modal-btn:hover {
-            transform: translateY(-1px);
-        }
-
-        .seller-modal-btn-primary {
-            background: #ffffff;
-            color: #11161d;
-        }
-
-        .seller-modal-btn-secondary {
-            background: transparent;
-            color: #ffffff;
-        }
-
-        .seller-modal-btn-secondary:hover {
-            background: rgba(255, 255, 255, 0.06);
-        }
-
-        .seller-modal-btn-danger {
-            background: #2a1717;
-            color: #ffffff;
-            border-color: rgba(255, 120, 120, 0.18);
-        }
-
-        @media (max-width: 560px) {
-            .seller-modal {
-                padding: 16px;
-            }
-
-            .seller-modal-card {
-                padding: 26px 20px;
-                border-radius: 16px;
-            }
-
-            .seller-modal-actions {
-                flex-direction: column;
-            }
-
-            .seller-modal-btn {
-                width: 100%;
-            }
-        }
-
-
-        /* =========================================================
-           BUYING RATES — NAV + FORM TRIGGER BUTTONS
-        ========================================================== */
-
-        .header-rates-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            height: 38px;
-            padding: 0 16px;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.06);
-            color: #ffffff;
-            font: inherit;
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-            cursor: pointer;
-            transition:
-                background 0.18s ease,
-                border-color 0.18s ease;
-        }
-
-        .header-rates-btn:hover {
-            border-color: rgba(255, 255, 255, 0.32);
-            background: rgba(255, 255, 255, 0.11);
-        }
-
-        .form-rates-btn {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            height: 38px;
-            padding: 0 16px;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.06);
-            color: #ffffff;
-            font: inherit;
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: 0.04em;
-            cursor: pointer;
-            flex-shrink: 0;
-            transition:
-                background 0.18s ease,
-                border-color 0.18s ease;
-        }
-
-        .form-rates-btn:hover {
-            border-color: rgba(255, 255, 255, 0.32);
-            background: rgba(255, 255, 255, 0.11);
-        }
-
-
-        /* =========================================================
-           BUYING RATES MODAL
-        ========================================================== */
-
-        .rates-modal-card {
-            width: min(100%, 560px);
-            max-height: 82vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .rates-modal-header {
-            display: flex;
-            align-items: flex-start;
-            justify-content: space-between;
-            gap: 16px;
-        }
-
-        .rates-modal-close {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 34px;
-            height: 34px;
-            flex-shrink: 0;
-            border: 1px solid rgba(255, 255, 255, 0.16);
-            border-radius: 10px;
-            background: transparent;
-            color: #ffffff;
-            font-size: 18px;
-            cursor: pointer;
-            transition: background 0.18s ease;
-        }
-
-        .rates-modal-close:hover {
-            background: rgba(255, 255, 255, 0.08);
-        }
-
-        .rates-modal-body {
-            margin-top: 22px;
-            overflow-y: auto;
-            padding-right: 4px;
-        }
-
-        .rates-modal-state {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            padding: 40px 10px;
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 13px;
-            text-align: center;
-        }
-
-        .rates-group {
-            margin-bottom: 20px;
-        }
-
-        .rates-group:last-child {
-            margin-bottom: 0;
-        }
-
-        .rates-group-title {
-            margin: 0 0 10px;
-            color: rgba(255, 255, 255, 0.55);
-            font-size: 10px;
-            font-weight: 800;
-            letter-spacing: 0.12em;
-            text-transform: uppercase;
-        }
-
-        .rates-group-list {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .rates-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 14px;
-            padding: 12px 14px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.03);
-        }
-
-        .rates-row-label {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            min-width: 0;
-        }
-
-        .rates-row-label strong {
-            color: #ffffff;
-            font-size: 13px;
-            font-weight: 750;
-        }
-
-        .rates-row-label span {
-            overflow: hidden;
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 11px;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-        }
-
-        .rates-row-price {
-            flex-shrink: 0;
-            color: #ffffff;
-            font-size: 14px;
-            font-weight: 800;
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .rates-row-price small {
-            display: block;
-            margin-top: 2px;
-            color: rgba(255, 255, 255, 0.45);
-            font-size: 10px;
-            font-weight: 600;
-        }
-
-        .rates-modal-footnote {
-            margin-top: 18px;
-            padding-top: 16px;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
-            color: rgba(255, 255, 255, 0.45);
-            font-size: 11px;
-            line-height: 1.6;
-        }
-
-        @media (max-width: 560px) {
-
-            .rates-modal-card {
-                max-height: 86vh;
-            }
-
-        }
-    </style>
 
 </head>
 
@@ -782,39 +281,35 @@ $openFormRequested =
                 <span class="brand-name">VNZ TECH</span>
             </a>
 
-            <div class="header-actions">
+            <div class="nav-menu" id="siteMenu">
 
-                <button
-                    type="button"
-                    class="header-rates-btn"
-                    id="openRatesBtnNav"
-                >
-                    BUYING RATES
-                </button>
+                <nav class="nav-links" aria-label="Primary">
+                    <a class="nav-link" href="#hero" data-section="hero">Home</a>
+                    <a class="nav-link" href="#scrap" data-section="scrap">Why Sell</a>
+                    <a class="nav-link" href="#process" data-section="process">How It Works</a>
+                    <button type="button" class="nav-link" id="openRatesBtnNav">Buying Rates</button>
+                    <button type="button" class="nav-link" id="openTrackModalBtn">Track Submission</button>
+                </nav>
 
-                <a
-                    href="/VNZ-TECH/account/register.php"
-                    class="header-register-btn"
-                >
-                    CREATE ACCOUNT
-                </a>
-
-                <a
-                    href="/VNZ-TECH/account/login.php"
-                    class="header-login-btn"
-                >
-                    LOGIN
-                </a>
-
-                <button
-                    type="button"
-                    class="header-track-btn"
-                    id="openTrackModalBtn"
-                >
-                    TRACK SUBMISSION
-                </button>
+                <div class="nav-actions">
+                    <a href="/VNZ-TECH/account/login.php" class="nav-btn nav-btn-ghost">Login</a>
+                    <a href="/VNZ-TECH/account/register.php" class="nav-btn nav-btn-primary">Create Account</a>
+                </div>
 
             </div>
+
+            <button
+                type="button"
+                class="nav-toggle"
+                id="navToggle"
+                aria-label="Toggle navigation menu"
+                aria-expanded="false"
+                aria-controls="siteMenu"
+            >
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+                <span class="nav-toggle-bar"></span>
+            </button>
 
         </div>
 
@@ -862,11 +357,11 @@ $openFormRequested =
                 </h1>
 
                 <p class="hero-description">
-                    Dead phone. No display. Bootloop.
-                    Water damage. Sirang board.
-                    Kahit hindi na gumagana ang phone,
-                    may parts at components pa rin itong
-                    maaaring magkaroon ng value.
+                Ang mga sirang phone, kahit hindi na umaandar, 
+                ay maaari pa ring bilhin bilang scrap. Tumatanggap 
+                kami ng iba't ibang uri ng defective phones, 
+                kabilang ang mga may cracked screens, dead units, 
+                water damage, at iba pang hardware issues.
                 </p>
 
 
@@ -956,11 +451,11 @@ $openFormRequested =
             </h2>
 
             <p>
-                Sa electronics, hindi lahat ng value ay nasa
-                working condition ng buong device.
-                May components, boards, parts, at materials
-                na maaaring i-recover at i-sort para sa
-                downstream processing.
+            Sa electronics, hindi lahat ng value ay nakadepende 
+            sa working condition ng isang device. 
+            Ang mga defective phones at scrap boards ay 
+            maaari pa ring magkaroon ng value depende sa 
+            kanilang type, condition, at quantity.
             </p>
 
         </div>
@@ -1013,7 +508,7 @@ $openFormRequested =
                     <b>→</b>
 
                     <span>
-                        RECOVERY
+                        BUYING
                     </span>
 
                 </div>
@@ -1037,18 +532,16 @@ $openFormRequested =
                 </h3>
 
                 <p>
-                    Ang scrap board ay electronic board,
-                    gaya ng motherboard o logic board,
-                    na maaaring defective, damaged, dead,
-                    removed from a phone, o hindi na intended
-                    para sa normal repair use.
+                Ang scrap board ay mga electronic boards gaya ng phone
+                motherboards at logic boards na defective, 
+                damaged, dead, o tinanggal na mula sa mga lumang devices.
                 </p>
 
                 <p>
-                    Kahit sira ang board, may recoverable
-                    components at material value pa rin
-                    depende sa board type, marking, kondisyon,
-                    at quantity.
+                Bumibili kami ng iba't ibang klase ng scrap boards, 
+                depende sa board type, condition, identification, 
+                at quantity. Kahit hindi na gumagana,
+                maaari pa rin itong magkaroon ng scrap value.
                 </p>
 
             </article>
@@ -1065,29 +558,31 @@ $openFormRequested =
                 </span>
 
                 <h3>
-                    From dead stock
-                    <span>to recoverable value.</span>
+                    Turn your old electronics
+                    <span>into value.</span>
                 </h3>
 
                 <p>
-                    Sa halip na nakatambak lang ang lumang,
-                    sirang, o defective phones at boards,
-                    puwede itong ipasuri at ipasok sa proper
-                    buying and recovery process.
+                Sa halip na nakatambak lang ang mga defective 
+                phones at scrap boards, maaari mo itong ibenta sa VNZ TECH.
                 </p>
 
                 <div class="mini-points">
 
                     <span>
-                        ✓ Clear out old stock
+                        ✓ Clear out old and unwanted electronics.
                     </span>
 
                     <span>
-                        ✓ Turn damaged inventory into value
+                        ✓ Get value from broken and defective phones.
                     </span>
 
                     <span>
-                        ✓ Avoid simply throwing electronics away
+                        ✓ Sell unused and scrap motherboards.
+                    </span>
+
+                    <span>
+                        ✓ Turn unwanted electronic items into extra income.
                     </span>
 
                 </div>
@@ -1808,6 +1303,16 @@ $openFormRequested =
 </div>
 
 <script>
+    function syncBodyScrollLock() {
+        /*
+         * Keep the page as a normal page behind the modal.
+         * The modal is an overlay only; it should not freeze the
+         * entire website layout or make the whole page feel stuck.
+         */
+        document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
+    }
+
     /*
      * Guest post-submission onboarding.
      * This runs only when the public form has reached the success
@@ -1845,7 +1350,7 @@ $openFormRequested =
             }
 
             modal.hidden = false;
-            document.body.style.overflow = 'hidden';
+            syncBodyScrollLock();
         }
 
         function hideSellerModal(modal) {
@@ -1854,15 +1359,7 @@ $openFormRequested =
             }
 
             modal.hidden = true;
-
-            const anySellerModalOpen =
-                document.querySelector(
-                    '.seller-modal:not([hidden])'
-                );
-
-            if (!anySellerModalOpen) {
-                document.body.style.overflow = '';
-            }
+            syncBodyScrollLock();
         }
 
         if (createAccountBtn) {
@@ -2073,19 +1570,13 @@ $openFormRequested =
 
         function openRatesModal() {
             ratesModal.hidden = false;
-            document.body.style.overflow = 'hidden';
+            syncBodyScrollLock();
             loadRates();
         }
 
         function closeRatesModal() {
             ratesModal.hidden = true;
-
-            const anySellerModalOpen =
-                document.querySelector('.seller-modal:not([hidden])');
-
-            if (!anySellerModalOpen) {
-                document.body.style.overflow = '';
-            }
+            syncBodyScrollLock();
         }
 
         if (openRatesBtnNav) {
@@ -2131,7 +1622,7 @@ $openFormRequested =
 
         function showTrackModal() {
             trackModal.hidden = false;
-            document.body.style.overflow = 'hidden';
+            syncBodyScrollLock();
             const firstInput = trackSubmissionForm.querySelector('input');
             if (firstInput) {
                 setTimeout(() => firstInput.focus(), 50);
@@ -2145,11 +1636,7 @@ $openFormRequested =
             trackSubmissionMessage.textContent = '';
             trackSubmissionResult.hidden = true;
             trackSubmissionResult.innerHTML = '';
-
-            const anySellerModalOpen = document.querySelector('.seller-modal:not([hidden])');
-            if (!anySellerModalOpen) {
-                document.body.style.overflow = '';
-            }
+            syncBodyScrollLock();
         }
 
         function formatDate(dateString) {
@@ -3382,6 +2869,86 @@ if (shouldAutoOpenForm) {
 
 }
 
+</script>
+
+<script>
+    (function () {
+        const header = document.querySelector('.site-header');
+        const siteMenu = document.getElementById('siteMenu');
+        const navToggle = document.getElementById('navToggle');
+
+        if (!header || !siteMenu || !navToggle) {
+            return;
+        }
+
+        const sectionLinks = Array.from(
+            document.querySelectorAll('a.nav-link[data-section]')
+        );
+
+        function setMenuState(isOpen) {
+            siteMenu.classList.toggle('is-open', isOpen);
+            navToggle.classList.toggle('is-open', isOpen);
+            navToggle.setAttribute('aria-expanded', String(isOpen));
+        }
+
+        navToggle.addEventListener('click', function () {
+            const isOpen = !siteMenu.classList.contains('is-open');
+            setMenuState(isOpen);
+        });
+
+        siteMenu.addEventListener('click', function (event) {
+            const target = event.target;
+
+            if (!target) {
+                return;
+            }
+
+            if (target.closest('a') || target.closest('button')) {
+                setMenuState(false);
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && siteMenu.classList.contains('is-open')) {
+                setMenuState(false);
+            }
+        });
+
+        if (!sectionLinks.length) {
+            return;
+        }
+
+        const observer = new IntersectionObserver(function (entries) {
+            const visibleEntries = entries
+                .filter(function (entry) {
+                    return entry.isIntersecting;
+                })
+                .sort(function (a, b) {
+                    return b.intersectionRatio - a.intersectionRatio;
+                });
+
+            if (!visibleEntries.length) {
+                return;
+            }
+
+            const activeSectionId = visibleEntries[0].target.id;
+
+            sectionLinks.forEach(function (link) {
+                const isActive = link.dataset.section === activeSectionId;
+                link.classList.toggle('is-active', isActive);
+            });
+        }, {
+            rootMargin: '-45% 0px -50% 0px'
+        });
+
+        sectionLinks.forEach(function (link) {
+            const section = document.getElementById(link.dataset.section);
+
+            if (section) {
+                observer.observe(section);
+            }
+        });
+    })();
 </script>
 
 </body>
