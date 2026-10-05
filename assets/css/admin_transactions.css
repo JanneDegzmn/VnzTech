@@ -621,11 +621,24 @@
     position: fixed;
     inset: 0;
     z-index: 9999;
-    display: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    box-sizing: border-box;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition:
+        opacity 0.24s ease,
+        visibility 0s linear 0.24s;
 }
 
 .admin-transaction-modal.is-open {
-    display: block;
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0s;
 }
 
 
@@ -638,6 +651,12 @@
     inset: 0;
     background: rgba(0, 0, 0, 0.78);
     backdrop-filter: blur(3px);
+    opacity: 0;
+    transition: opacity 0.24s ease;
+}
+
+.admin-transaction-modal.is-open .admin-transaction-modal-backdrop {
+    opacity: 1;
 }
 
 
@@ -650,12 +669,22 @@
     z-index: 2;
     width: min(760px, calc(100% - 30px));
     max-height: calc(100vh - 60px);
-    margin: 30px auto;
+    margin: 0 auto;
     overflow: hidden;
     border: 1px solid #2b2b2b;
     border-radius: 12px;
     background: #101010;
     box-shadow: 0 25px 80px rgba(0, 0, 0, 0.55);
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+    transition:
+        opacity 0.24s ease,
+        transform 0.28s cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.admin-transaction-modal.is-open .admin-transaction-modal-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
 }
 
 
@@ -862,7 +891,6 @@ body.admin-transaction-modal-open {
     .admin-transaction-modal-panel {
         width: calc(100% - 20px);
         max-height: calc(100vh - 20px);
-        margin: 10px auto;
     }
 
     .admin-transaction-modal-body {
@@ -872,5 +900,13 @@ body.admin-transaction-modal-open {
 
     .admin-transaction-modal-header {
         padding: 14px 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-transaction-modal,
+    .admin-transaction-modal-backdrop,
+    .admin-transaction-modal-panel {
+        transition: none;
     }
 }

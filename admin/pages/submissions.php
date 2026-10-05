@@ -1115,35 +1115,8 @@ function submissionDate(string $date): string
                     }
 
 
-                    /*
-                    * If your existing dashboard exposes
-                    * loadAdminPage(), use it.
-                    */
-
-                    if (
-                        typeof window.loadAdminPage === 'function'
-                    ) {
-
-                        window.loadAdminPage(
-                            'submission_review',
-                            {
-                                id: submissionId
-                            }
-                        );
-
-                    } else {
-
-                        /*
-                        * Temporary fallback.
-                        * Step 2 will replace this with the
-                        * actual review implementation.
-                        */
-
-                        console.log(
-                            'Submission ID:',
-                            submissionId
-                        );
-
+                    if (typeof window.openAdminSubmissionModal === 'function') {
+                        window.openAdminSubmissionModal(submissionId, 'submissions');
                     }
 
                 }

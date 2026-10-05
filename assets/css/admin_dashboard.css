@@ -1025,3 +1025,159 @@ body {
 .nav-item {
     position: relative;
 }
+
+.admin-submission-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    box-sizing: border-box;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+}
+
+.admin-submission-modal.is-open {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    transition-delay: 0s;
+}
+
+.admin-submission-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.78);
+    backdrop-filter: blur(4px);
+    opacity: 0;
+    transition: opacity 0.22s ease;
+}
+
+.admin-submission-modal.is-open .admin-submission-modal-backdrop {
+    opacity: 1;
+}
+
+.admin-submission-modal-panel {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    width: min(1160px, 100%);
+    max-height: 100%;
+    overflow: hidden;
+    border: 1px solid #303030;
+    border-radius: 10px;
+    background: #101010;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.58);
+    opacity: 0;
+    transform: translateY(12px) scale(0.99);
+    transition: opacity 0.22s ease, transform 0.26s cubic-bezier(0.2, 0.75, 0.25, 1);
+}
+
+.admin-submission-modal.is-open .admin-submission-modal-panel {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.admin-submission-modal-header {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex: 0 0 auto;
+    min-height: 58px;
+    padding: 0 20px;
+    border-bottom: 1px solid #292929;
+    background: #111111;
+}
+
+.admin-submission-modal-header h2 {
+    color: #e8e8e8;
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.admin-submission-modal-close {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #363636;
+    border-radius: 6px;
+    background: #191919;
+    color: #bcbcbc;
+    font-size: 19px;
+    cursor: pointer;
+}
+
+.admin-submission-modal-close:hover {
+    border-color: #666666;
+    color: #ffffff;
+}
+
+.admin-submission-modal-body {
+    min-height: 0;
+    padding: 24px;
+    overflow: auto;
+    overscroll-behavior: contain;
+}
+
+.admin-submission-modal-body .submission-review-page {
+    max-width: none;
+    padding-bottom: 12px;
+}
+
+.admin-submission-modal-loading,
+.admin-submission-modal-error {
+    padding: 52px 20px;
+    color: #999999;
+    text-align: center;
+    font-size: 12px;
+}
+
+.admin-submission-modal-error strong {
+    display: block;
+    color: #eeeeee;
+    font-size: 14px;
+}
+
+.admin-submission-modal-error p {
+    margin-top: 8px;
+}
+
+body.admin-submission-modal-open {
+    overflow: hidden;
+}
+
+@media (max-width: 700px) {
+    .admin-submission-modal {
+        padding: 10px;
+    }
+
+    .admin-submission-modal-panel {
+        width: 100%;
+        max-height: 100%;
+    }
+
+    .admin-submission-modal-header {
+        min-height: 50px;
+        padding: 0 14px;
+    }
+
+    .admin-submission-modal-body {
+        padding: 16px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-submission-modal,
+    .admin-submission-modal-backdrop,
+    .admin-submission-modal-panel {
+        transition: none;
+    }
+}

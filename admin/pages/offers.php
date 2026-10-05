@@ -435,7 +435,7 @@ function offerSubmissionDate($date): string
 
 <link
     rel="stylesheet"
-    href="/VNZ-TECH/assets/css/admin_submissions.css"
+    href="/VNZ-TECH/assets/css/admin_submissions.css?v=<?= filemtime(__DIR__ . '/../../assets/css/admin_submissions.css') ?>"
 >
 
 <link
@@ -1090,24 +1090,8 @@ function offerSubmissionDate($date): string
                     }
 
 
-                    if (
-                        typeof window.loadAdminPage === 'function'
-                    ) {
-
-                        window.loadAdminPage(
-                            'submission_review',
-                            {
-                                id: submissionId
-                            }
-                        );
-
-                    } else {
-
-                        console.log(
-                            'Submission ID:',
-                            submissionId
-                        );
-
+                    if (typeof window.openAdminSubmissionModal === 'function') {
+                        window.openAdminSubmissionModal(submissionId, 'offers');
                     }
 
                 }

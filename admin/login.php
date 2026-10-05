@@ -239,6 +239,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         content="0"
     >
 
+    <?php include __DIR__ . '/../includes/loader-head.php'; ?>
+
     <title>
         VNZ TECH - Admin Login
     </title>
@@ -254,6 +256,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <body>
 
+<?php include __DIR__ . '/../includes/loader-body.php'; ?>
 
 <div class="login-page">
 
@@ -324,6 +327,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form
             method="POST"
             autocomplete="on"
+            data-loader
         >
 
 

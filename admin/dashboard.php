@@ -37,10 +37,14 @@ $csrfToken = generateCsrfToken();
         href="/VNZ-TECH/assets/css/admin_dashboard.css"
     >
 
+    <?php include __DIR__ . '/../includes/loader-head.php'; ?>
+
 </head>
 
 
 <body>
+
+<?php include __DIR__ . '/../includes/loader-body.php'; ?>
 
 <div class="admin-layout">
 
@@ -271,6 +275,7 @@ $csrfToken = generateCsrfToken();
                 href="logout.php"
                 class="logout-button"
                 title="Logout"
+                data-loader
             >
                 ↪
             </a>
@@ -288,6 +293,40 @@ $csrfToken = generateCsrfToken();
         class="sidebar-overlay"
         id="sidebarOverlay"
     ></div>
+
+
+    <div
+        class="admin-submission-modal"
+        id="adminSubmissionModal"
+        aria-hidden="true"
+    >
+        <div
+            class="admin-submission-modal-backdrop"
+            data-close-admin-submission-modal
+        ></div>
+        <section
+            class="admin-submission-modal-panel"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="adminSubmissionModalTitle"
+        >
+            <header class="admin-submission-modal-header">
+                <h2 id="adminSubmissionModalTitle">Submission Review</h2>
+                <button
+                    type="button"
+                    class="admin-submission-modal-close"
+                    data-close-admin-submission-modal
+                    aria-label="Close submission review"
+                >
+                    ×
+                </button>
+            </header>
+            <div class="admin-submission-modal-body" id="adminSubmissionModalBody">
+                <div class="admin-submission-modal-loading">Loading submission...</div>
+            </div>
+        </section>
+    </div>
+
 
 
     <!-- =====================================================
@@ -402,6 +441,16 @@ document.addEventListener(
 
         const navItems =
             document.querySelectorAll('.nav-item');
+
+        const submissionModal =
+            document.getElementById('adminSubmissionModal');
+
+        const submissionModalBody =
+            document.getElementById('adminSubmissionModalBody');
+
+        let submissionModalId = null;
+        let submissionModalOrigin = 'submissions';
+        let submissionModalNeedsRefresh = false;
 
                 /*
         |--------------------------------------------------------------------------
@@ -1007,6 +1056,103 @@ document.addEventListener(
             );
 
         }
+
+
+        async function loadSubmissionModalContent(submissionId) {
+            if (!submissionModalBody || !submissionId) {
+                return;
+            }
+
+            submissionModalBody.innerHTML =
+                '<div class="admin-submission-modal-loading">Loading submission...</div>';
+
+            try {
+                const response = await fetch(
+                    'pages/submission_review.php?id=' +
+                    encodeURIComponent(submissionId) +
+                    '&modal=1',
+                    {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Unable to load submission details.');
+                }
+
+                submissionModalBody.innerHTML = await response.text();
+
+                submissionModalBody.querySelectorAll('script').forEach((oldScript) => {
+                    const newScript = document.createElement('script');
+                    Array.from(oldScript.attributes).forEach((attribute) => {
+                        newScript.setAttribute(attribute.name, attribute.value);
+                    });
+                    newScript.textContent = oldScript.textContent;
+                    oldScript.replaceWith(newScript);
+                });
+            } catch (error) {
+                submissionModalBody.innerHTML =
+                    '<div class="admin-submission-modal-error">' +
+                    '<strong>Unable to load submission</strong>' +
+                    '<p>Please close this window and try again.</p>' +
+                    '</div>';
+            }
+        }
+
+
+        function closeSubmissionModal() {
+            if (!submissionModal) {
+                return;
+            }
+
+            submissionModal.classList.remove('is-open');
+            submissionModal.setAttribute('aria-hidden', 'true');
+            document.body.classList.remove('admin-submission-modal-open');
+
+            if (submissionModalNeedsRefresh) {
+                submissionModalNeedsRefresh = false;
+                loadPage(submissionModalOrigin, false, {});
+            }
+        }
+
+
+        window.openAdminSubmissionModal = function (submissionId, origin) {
+            if (!submissionModal || !submissionModalBody || !submissionId) {
+                return;
+            }
+
+            submissionModalId = submissionId;
+            submissionModalOrigin = origin === 'offers' ? 'offers' : 'submissions';
+            submissionModal.classList.add('is-open');
+            submissionModal.setAttribute('aria-hidden', 'false');
+            document.body.classList.add('admin-submission-modal-open');
+            loadSubmissionModalContent(submissionId);
+        };
+
+
+        window.refreshAdminSubmissionModal = function (submissionId) {
+            submissionModalNeedsRefresh = true;
+            return loadSubmissionModalContent(submissionId || submissionModalId);
+        };
+
+
+        window.closeAdminSubmissionModal = closeSubmissionModal;
+
+
+        document.querySelectorAll('[data-close-admin-submission-modal]').forEach((element) => {
+            element.addEventListener('click', closeSubmissionModal);
+        });
+
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Escape' && submissionModal?.classList.contains('is-open')) {
+                closeSubmissionModal();
+            }
+        });
 
 
         /*

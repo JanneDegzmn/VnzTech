@@ -420,7 +420,7 @@ foreach ($items as $item) {
             <button
                 type="button"
                 class="back-button"
-                onclick="window.loadAdminPage('submissions')"
+                onclick="document.getElementById('adminSubmissionModal')?.classList.contains('is-open') ? window.closeAdminSubmissionModal() : window.loadAdminPage('submissions')"
             >
 
                 <span>←</span>
@@ -2250,7 +2250,7 @@ foreach ($items as $item) {
                         <button
                             type="button"
                             class="secondary-button"
-                            onclick="window.loadAdminPage('submissions')"
+                            onclick="document.getElementById('adminSubmissionModal')?.classList.contains('is-open') ? window.closeAdminSubmissionModal() : window.loadAdminPage('submissions')"
                         >
                             Cancel
                         </button>
@@ -2391,6 +2391,27 @@ foreach ($items as $item) {
         return;
     }
 
+    function refreshReviewAfterAction() {
+        if (
+            reviewPage.closest('#adminSubmissionModalBody')
+            && typeof window.refreshAdminSubmissionModal === 'function'
+        ) {
+            window.refreshAdminSubmissionModal(
+                <?= (int) $submissionId ?>
+            );
+            return;
+        }
+
+        if (typeof window.loadAdminPage === 'function') {
+            window.loadAdminPage(
+                'submission_review',
+                {
+                    id: <?= (int) $submissionId ?>
+                }
+            );
+        }
+    }
+
     /*
 |--------------------------------------------------------------------------
 | Direct Submission Accept / Decline
@@ -2480,21 +2501,7 @@ reviewPage
 
                     alert(data.message);
 
-                    if (
-                        typeof window.loadAdminPage
-                        ===
-                        'function'
-                    ) {
-
-                        window.loadAdminPage(
-                            'submission_review',
-                            {
-                                id:
-                                    <?= (int) $submissionId ?>
-                            }
-                        );
-
-                    }
+                    refreshReviewAfterAction();
 
                 } catch (error) {
 
@@ -2626,21 +2633,7 @@ reviewPage
                             );
 
 
-                            if (
-                                typeof window.loadAdminPage
-                                ===
-                                'function'
-                            ) {
-
-                                window.loadAdminPage(
-                                    'submission_review',
-                                    {
-                                        id:
-                                            <?= (int) $submissionId ?>
-                                    }
-                                );
-
-                            }
+                            refreshReviewAfterAction();
 
                         } catch (error) {
 
@@ -2850,21 +2843,7 @@ reviewPage
                     }
 
 
-                    if (
-                        typeof window.loadAdminPage
-                        ===
-                        'function'
-                    ) {
-
-                        window.loadAdminPage(
-                            'submission_review',
-                            {
-                                id:
-                                    <?= (int) $submissionId ?>
-                            }
-                        );
-
-                    }
+                    refreshReviewAfterAction();
 
                 } catch (error) {
 
