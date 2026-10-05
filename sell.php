@@ -1,6 +1,10 @@
 <?php
 
+require_once __DIR__ . '/backend/database.php';
 require_once __DIR__ . '/backend/session.php';
+require_once __DIR__ . '/backend/csrf.php';
+
+$tradeCsrfToken = generateCsrfToken();
 
 $submissionResult = isset($_GET['submitted']) && $_GET['submitted'] === '1';
 
@@ -291,6 +295,7 @@ $openFormRequested =
                     <a class="nav-link" href="#hero" data-section="hero">Home</a>
                     <a class="nav-link" href="#scrap" data-section="scrap">Why Sell</a>
                     <a class="nav-link" href="#process" data-section="process">How It Works</a>
+                    <a class="nav-link" href="#trade-items" data-section="trade-items">Trade</a>
                     <button type="button" class="nav-link" id="openRatesBtnNav">Buying Rates</button>
                     <button type="button" class="nav-link" id="openTrackModalBtn">Track Submission</button>
                 </nav>
@@ -345,6 +350,14 @@ $openFormRequested =
             data-section="process"
             data-label="How It Works"
             aria-label="Go to How It Works section"
+        ></a>
+
+        <a
+            class="dot-link"
+            href="#trade-items"
+            data-section="trade-items"
+            data-label="Trade Items"
+            aria-label="Go to Trade Items section"
         ></a>
     </nav>
 
@@ -1276,6 +1289,298 @@ $openFormRequested =
     </div>
 
 
+    <?php
+        $tradeItemsStmt = $pdo->prepare("
+            SELECT
+                ti.*
+            FROM trade_items ti
+            WHERE ti.is_active = 1
+            ORDER BY ti.sort_order ASC, ti.id DESC
+        ");
+        $tradeItemsStmt->execute();
+        $activeTradeItems = $tradeItemsStmt->fetchAll();
+
+        $featuredTradeItems = [];
+        $allActiveTradeItems = [];
+
+        foreach ($activeTradeItems as $tradeItem) {
+            $requirementsStmt = $pdo->prepare("
+                SELECT *
+                FROM trade_requirements
+                WHERE trade_item_id = ?
+                ORDER BY sort_order ASC, id ASC
+            ");
+            $requirementsStmt->execute([$tradeItem['id']]);
+            $tradeItem['requirements'] = $requirementsStmt->fetchAll();
+
+            $allActiveTradeItems[] = $tradeItem;
+
+            if ((int) $tradeItem['is_featured'] === 1) {
+                $featuredTradeItems[] = $tradeItem;
+            }
+        }
+
+        $featuredTradeItems = array_slice($featuredTradeItems, 0, 3);
+        $featuredTradeItemCount = count($featuredTradeItems);
+    ?>
+
+    <?php if (!empty($featuredTradeItems)): ?>
+        <section id="trade-items" class="trade-featured-section" aria-label="Featured trade items">
+            <div class="trade-section-header">
+                <div>
+                    <span class="trade-section-kicker">TRADE YOUR SCRAP</span>
+                    <h2>Trade your scrap for something useful</h2>
+                </div>
+                <button type="button" class="trade-view-all-btn" data-open-trade-modal>
+                    VIEW ALL TRADE ITEMS
+                </button>
+            </div>
+
+            <div class="trade-carousel" data-trade-carousel aria-label="Featured trade items carousel">
+                <button type="button" class="trade-carousel-arrow trade-carousel-prev" data-trade-prev aria-label="Previous featured trade item" <?= $featuredTradeItemCount < 2 ? 'disabled' : '' ?>>‹</button>
+
+                <div class="trade-carousel-stage" aria-live="polite">
+                <?php foreach ($featuredTradeItems as $featureIndex => $featureItem): ?>
+                    <?php
+                        $featureImage = !empty($featureItem['image_path'])
+                            ? '/VNZ-TECH/' . $featureItem['image_path']
+                            : '/VNZ-TECH/assets/images/vnz.png';
+                        $featurePosition = 'is-hidden';
+                        if ($featureIndex === 0) {
+                            $featurePosition = 'is-active';
+                        } elseif ($featuredTradeItemCount === 2 || $featureIndex === 1) {
+                            $featurePosition = 'is-next';
+                        } elseif ($featureIndex === 2) {
+                            $featurePosition = 'is-prev';
+                        }
+                        $featureRequestData = [
+                            'id' => (int) $featureItem['id'],
+                            'name' => (string) $featureItem['name'],
+                            'condition' => (string) $featureItem['condition'],
+                            'description' => (string) ($featureItem['description'] ?? ''),
+                            'image_url' => $featureImage,
+                            'requirements' => array_map(static function ($requirement) {
+                                return [
+                                    'requirement_type' => (string) $requirement['requirement_type'],
+                                    'quantity' => (int) $requirement['quantity'],
+                                    'storage' => (string) $requirement['storage'],
+                                    'description' => (string) ($requirement['description'] ?? ''),
+                                ];
+                            }, $featureItem['requirements']),
+                        ];
+                        $featureRequestDataAttribute = htmlspecialchars(
+                            json_encode($featureRequestData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
+                            ENT_QUOTES,
+                            'UTF-8'
+                        );
+                    ?>
+                    <article class="trade-feature-card <?= $featurePosition ?>" data-trade-slide="<?= (int) $featureIndex ?>" aria-hidden="<?= $featureIndex === 0 ? 'false' : 'true' ?>">
+                        <div class="trade-feature-image">
+                            <img src="<?= htmlspecialchars($featureImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($featureItem['name'], ENT_QUOTES, 'UTF-8') ?>" onerror="this.src='/VNZ-TECH/assets/images/vnz.png';">
+                        </div>
+
+                        <div class="trade-feature-content">
+                            <div class="trade-feature-meta">
+                                <span class="trade-feature-name"><?= htmlspecialchars($featureItem['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="trade-feature-condition"><?= htmlspecialchars($featureItem['condition'], ENT_QUOTES, 'UTF-8') ?></span>
+                            </div>
+
+                            <?php if (!empty($featureItem['description'])): ?>
+                                <p class="trade-feature-description"><?= htmlspecialchars($featureItem['description'], ENT_QUOTES, 'UTF-8') ?></p>
+                            <?php endif; ?>
+
+                            <?php if (!empty($featureItem['requirements'])): ?>
+                                <div class="trade-feature-requirements">
+                                    <?php foreach ($featureItem['requirements'] as $requirement): ?>
+                                        <div class="trade-feature-requirement">
+                                            <strong><?= (int) $requirement['quantity'] ?> × <?= htmlspecialchars(($requirement['requirement_type'] === 'scrap_board') ? 'Scrap Board' : 'Phone', ENT_QUOTES, 'UTF-8') ?></strong>
+                                            <span><?= htmlspecialchars($requirement['storage'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
+                            <?php endif; ?>
+
+                            <button type="button" class="hero-btn hero-btn-primary trade-feature-request-btn trade-item-request-btn" data-trade-item="<?= $featureRequestDataAttribute ?>">
+                                <span>TRADE THIS ITEM</span>
+                                <b aria-hidden="true">→</b>
+                            </button>
+                        </div>
+                    </article>
+                <?php endforeach; ?>
+                </div>
+
+                <button type="button" class="trade-carousel-arrow trade-carousel-next" data-trade-next aria-label="Next featured trade item" <?= $featuredTradeItemCount < 2 ? 'disabled' : '' ?>>›</button>
+
+                <div class="trade-carousel-dots" role="group" aria-label="Choose featured trade item">
+                    <?php foreach ($featuredTradeItems as $featureIndex => $featureItem): ?>
+                        <button type="button" class="trade-carousel-dot<?= $featureIndex === 0 ? ' is-active' : '' ?>" data-trade-dot="<?= (int) $featureIndex ?>" aria-label="Show featured trade item <?= (int) $featureIndex + 1 ?>" aria-current="<?= $featureIndex === 0 ? 'true' : 'false' ?>"></button>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        </section>
+        <script>
+            (function () {
+                const carousel = document.querySelector('[data-trade-carousel]');
+                if (!carousel) {
+                    return;
+                }
+
+                const cards = Array.from(carousel.querySelectorAll('[data-trade-slide]'));
+                const dots = Array.from(carousel.querySelectorAll('[data-trade-dot]'));
+                const previousButton = carousel.querySelector('[data-trade-prev]');
+                const nextButton = carousel.querySelector('[data-trade-next]');
+                const positionClasses = ['is-prev', 'is-active', 'is-next', 'is-hidden'];
+                let activeIndex = 0;
+
+                function renderCarousel() {
+                    const count = cards.length;
+                    cards.forEach(function (card, index) {
+                        card.classList.remove(...positionClasses);
+                        if (count === 1) {
+                            card.classList.add('is-active');
+                        } else if (index === activeIndex) {
+                            card.classList.add('is-active');
+                        } else if (count === 2 || index === (activeIndex + 1) % count) {
+                            card.classList.add('is-next');
+                        } else if (index === (activeIndex - 1 + count) % count) {
+                            card.classList.add('is-prev');
+                        } else {
+                            card.classList.add('is-hidden');
+                        }
+                        card.setAttribute('aria-hidden', index === activeIndex ? 'false' : 'true');
+                    });
+
+                    dots.forEach(function (dot, index) {
+                        const isActive = index === activeIndex;
+                        dot.classList.toggle('is-active', isActive);
+                        dot.setAttribute('aria-current', isActive ? 'true' : 'false');
+                    });
+                }
+
+                function moveCarousel(offset) {
+                    activeIndex = (activeIndex + offset + cards.length) % cards.length;
+                    renderCarousel();
+                }
+
+                previousButton?.addEventListener('click', function () {
+                    moveCarousel(-1);
+                });
+                nextButton?.addEventListener('click', function () {
+                    moveCarousel(1);
+                });
+                dots.forEach(function (dot) {
+                    dot.addEventListener('click', function () {
+                        activeIndex = Number(dot.dataset.tradeDot || 0);
+                        renderCarousel();
+                    });
+                });
+                carousel.addEventListener('keydown', function (event) {
+                    if (event.key === 'ArrowLeft') {
+                        moveCarousel(-1);
+                    } else if (event.key === 'ArrowRight') {
+                        moveCarousel(1);
+                    }
+                });
+
+                renderCarousel();
+            })();
+        </script>
+    <?php endif; ?>
+
+    <div class="seller-modal" id="tradeItemsModal" role="dialog" aria-modal="true" aria-labelledby="tradeItemsModalTitle" hidden>
+        <div class="seller-modal-card trade-modal-card">
+            <div class="rates-modal-header">
+                <div>
+                    <span class="seller-modal-kicker">TRADE ITEMS</span>
+                    <h2 id="tradeItemsModalTitle">Trade your scrap for something useful</h2>
+                </div>
+                <button type="button" class="rates-modal-close" id="closeTradeModalBtn" aria-label="Close trade items modal">×</button>
+            </div>
+
+            <div class="trade-modal-body">
+                <?php if (empty($allActiveTradeItems)): ?>
+                    <div class="trade-modal-empty">No trade items are currently available.</div>
+                <?php else: ?>
+                    <div class="trade-grid">
+                        <?php foreach ($allActiveTradeItems as $tradeItem): ?>
+                            <?php
+                                $tradeImage = !empty($tradeItem['image_path'])
+                                    ? '/VNZ-TECH/' . $tradeItem['image_path']
+                                    : '/VNZ-TECH/assets/images/vnz.png';
+                                $tradeRequestData = [
+                                    'id' => (int) $tradeItem['id'],
+                                    'name' => (string) $tradeItem['name'],
+                                    'condition' => (string) $tradeItem['condition'],
+                                    'description' => (string) ($tradeItem['description'] ?? ''),
+                                    'image_url' => $tradeImage,
+                                    'requirements' => array_map(static function ($requirement) {
+                                        return [
+                                            'requirement_type' => (string) $requirement['requirement_type'],
+                                            'quantity' => (int) $requirement['quantity'],
+                                            'storage' => (string) $requirement['storage'],
+                                            'description' => (string) ($requirement['description'] ?? ''),
+                                        ];
+                                    }, $tradeItem['requirements']),
+                                ];
+                                $tradeRequestDataAttribute = htmlspecialchars(
+                                    json_encode($tradeRequestData, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT),
+                                    ENT_QUOTES,
+                                    'UTF-8'
+                                );
+                            ?>
+                            <article class="trade-modal-card-item">
+                                <img src="<?= htmlspecialchars($tradeImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($tradeItem['name'], ENT_QUOTES, 'UTF-8') ?>" onerror="this.src='/VNZ-TECH/assets/images/vnz.png';">
+                                <div class="trade-modal-card-content">
+                                    <div class="trade-modal-card-top">
+                                        <h3><?= htmlspecialchars($tradeItem['name'], ENT_QUOTES, 'UTF-8') ?></h3>
+                                        <span><?= htmlspecialchars($tradeItem['condition'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    </div>
+
+                                    <?php if (!empty($tradeItem['description'])): ?>
+                                        <p><?= htmlspecialchars($tradeItem['description'], ENT_QUOTES, 'UTF-8') ?></p>
+                                    <?php endif; ?>
+
+                                    <?php if (!empty($tradeItem['requirements'])): ?>
+                                        <div class="trade-modal-requirements">
+                                            <h4>Requirements</h4>
+                                            <?php foreach ($tradeItem['requirements'] as $requirement): ?>
+                                                <div class="trade-modal-requirement">
+                                                    <strong><?= (int) $requirement['quantity'] ?> × <?= htmlspecialchars(($requirement['requirement_type'] === 'scrap_board') ? 'Scrap Board' : 'Phone', ENT_QUOTES, 'UTF-8') ?></strong>
+                                                    <span><?= htmlspecialchars($requirement['storage'], ENT_QUOTES, 'UTF-8') ?></span>
+                                                    <?php if (!empty($requirement['description'])): ?>
+                                                        <small><?= htmlspecialchars($requirement['description'], ENT_QUOTES, 'UTF-8') ?></small>
+                                                    <?php endif; ?>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        </div>
+                                    <?php endif; ?>
+
+                                    <div class="trade-action-row">
+                                        <button type="button" class="trade-primary-btn trade-item-request-btn" data-trade-item="<?= $tradeRequestDataAttribute ?>">TRADE THIS ITEM</button>
+                                    </div>
+                                </div>
+                            </article>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+    </div>
+
+    <div class="seller-modal" id="tradeRequestModal" role="dialog" aria-modal="true" aria-labelledby="tradeRequestModalTitle" hidden>
+        <div class="seller-modal-card trade-request-modal-card">
+            <div class="rates-modal-header">
+                <div>
+                    <span class="seller-modal-kicker">TRADE REQUEST</span>
+                    <h2 id="tradeRequestModalTitle">Request Trade</h2>
+                </div>
+                <button type="button" class="rates-modal-close" id="closeTradeRequestModalBtn" aria-label="Close trade request modal">×</button>
+            </div>
+            <div id="tradeRequestModalBody" class="trade-request-modal-body"></div>
+        </div>
+    </div>
+
+
     <!-- =========================================================
          FOOTER
     ========================================================== -->
@@ -1756,6 +2061,48 @@ $openFormRequested =
             }
         });
 
+    })();
+</script>
+
+<script>
+    (function () {
+        const tradeModal = document.getElementById('tradeItemsModal');
+        const closeTradeModalBtn = document.getElementById('closeTradeModalBtn');
+        const viewAllTradeButtons = document.querySelectorAll('[data-open-trade-modal]');
+
+        if (!tradeModal) {
+            return;
+        }
+
+        function openTradeModal() {
+            tradeModal.hidden = false;
+            syncBodyScrollLock();
+        }
+
+        function closeTradeModal() {
+            tradeModal.hidden = true;
+            syncBodyScrollLock();
+        }
+
+        viewAllTradeButtons.forEach(function (button) {
+            button.addEventListener('click', openTradeModal);
+        });
+
+        if (closeTradeModalBtn) {
+            closeTradeModalBtn.addEventListener('click', closeTradeModal);
+        }
+
+        tradeModal.addEventListener('click', function (event) {
+            if (event.target === tradeModal) {
+                closeTradeModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (event) {
+            if (event.key === 'Escape' && !tradeModal.hidden) {
+                closeTradeModal();
+            }
+        });
     })();
 </script>
 
@@ -3022,6 +3369,152 @@ if (shouldAutoOpenForm) {
 
 }
 
+</script>
+
+<script>
+    const tradeCsrfToken = <?= json_encode($tradeCsrfToken, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+
+    function openTradeRequestModal() {
+        const modal = document.getElementById('tradeRequestModal');
+        if (modal) {
+            modal.hidden = false;
+        }
+    }
+
+    function closeTradeRequestModal() {
+        const modal = document.getElementById('tradeRequestModal');
+        if (modal) {
+            modal.hidden = true;
+        }
+    }
+
+    function escapeTradeText(value) {
+        return String(value ?? '').replace(/[&<>"']/g, function (character) {
+            return {
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                '"': '&quot;',
+                "'": '&#039;'
+            }[character];
+        });
+    }
+
+    function openTradeRequestProcess(tradeItem) {
+        const modalBody = document.getElementById('tradeRequestModalBody');
+        const modal = document.getElementById('tradeRequestModal');
+        if (!modalBody || !modal) {
+            return;
+        }
+
+        openTradeRequestModal();
+
+        const requirements = Array.isArray(tradeItem.requirements) ? tradeItem.requirements : [];
+        const imageHtml = tradeItem.image_url
+            ? `<img class="trade-request-item-image" src="${escapeTradeText(tradeItem.image_url)}" alt="${escapeTradeText(tradeItem.name)}">`
+            : '';
+        const requirementsHtml = requirements.map(function (requirement) {
+            const isBoard = requirement.requirement_type === 'scrap_board';
+            const itemLabel = isBoard ? 'Scrap Board' : 'Damaged Phone';
+            const bringLabel = isBoard ? 'qualifying boards' : 'qualifying phones';
+            const detailLabel = isBoard ? 'Classification' : 'Storage';
+
+            return `
+                <article class="trade-request-requirement">
+                    <strong>${Number(requirement.quantity)} × ${itemLabel}</strong>
+                    <span>${detailLabel}: ${escapeTradeText(requirement.storage)}</span>
+                    ${requirement.description ? `<small>${escapeTradeText(requirement.description)}</small>` : ''}
+                    <p>Bring ${Number(requirement.quantity)} ${bringLabel} to VNZ TECH.</p>
+                </article>
+            `;
+        }).join('');
+
+        modalBody.innerHTML = `
+            <div class="trade-request-intro">
+                ${imageHtml}
+                <div>
+                    <h3>${escapeTradeText(tradeItem.name)}</h3>
+                    <p><strong>Condition:</strong> ${escapeTradeText(tradeItem.condition)}</p>
+                    ${tradeItem.description ? `<p>${escapeTradeText(tradeItem.description)}</p>` : ''}
+                </div>
+            </div>
+            <section class="trade-request-requirements">
+                <h3>Required Trade Items</h3>
+                ${requirementsHtml || '<p>No requirements are configured for this item.</p>'}
+            </section>
+            <div class="trade-request-actions">
+                <button type="button" class="trade-primary-btn" id="submitTradeRequestBtn" ${requirements.length ? '' : 'disabled'}>Submit Trade Request</button>
+            </div>
+        `;
+
+        const submitButton = document.getElementById('submitTradeRequestBtn');
+        submitButton?.addEventListener('click', async function () {
+            const formBody = new URLSearchParams();
+            formBody.set('action', 'create_request');
+            formBody.set('trade_item_id', String(tradeItem.id));
+            formBody.set('csrf_token', tradeCsrfToken);
+
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+
+            try {
+                const response = await fetch('/VNZ-TECH/backend/trade_requests.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin',
+                    body: formBody.toString(),
+                    cache: 'no-store'
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Unable to submit trade request.');
+                }
+
+                modalBody.innerHTML = `
+                    <div class="trade-request-success">
+                        <h3>Trade request submitted successfully.</h3>
+                        <p>Reference: <strong>${escapeTradeText(data.reference)}</strong></p>
+                        <p>Status: <strong>PENDING</strong></p>
+                        <a href="/VNZ-TECH/account/dashboard.php?page=trade_history">View Trade History</a>
+                    </div>
+                `;
+            } catch (error) {
+                modalBody.insertAdjacentHTML('afterbegin', `<div class="trade-request-error">${escapeTradeText(error.message || 'Unable to submit trade request.')}</div>`);
+                submitButton.disabled = false;
+                submitButton.textContent = 'Submit Trade Request';
+            }
+        });
+    }
+
+    document.addEventListener('click', function (event) {
+        const triggerButton = event.target.closest('.trade-item-request-btn');
+        if (!triggerButton) {
+            return;
+        }
+
+        let tradeItem;
+        try {
+            tradeItem = JSON.parse(triggerButton.dataset.tradeItem || '{}');
+        } catch (error) {
+            return;
+        }
+        if (!tradeItem.id) {
+            return;
+        }
+
+        const isLoggedIn = <?= isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] ? 'true' : 'false' ?>;
+        if (!isLoggedIn) {
+            window.location.href = '/VNZ-TECH/account/login.php';
+            return;
+        }
+
+        openTradeRequestProcess(tradeItem);
+    });
+
+    document.getElementById('closeTradeRequestModalBtn')?.addEventListener('click', closeTradeRequestModal);
 </script>
 
 <script>

@@ -184,6 +184,39 @@ $csrfToken = generateCsrfToken();
             <?php endif; ?>
 
 
+            <?php if (hasPermission('manage_trades')): ?>
+
+                <button
+                    type="button"
+                    class="nav-item"
+                    data-page="trade_items"
+                >
+
+                    <span class="nav-icon">◉</span>
+
+                    <span class="nav-text">
+                        Trade Items
+                    </span>
+
+                </button>
+
+                <button
+                    type="button"
+                    class="nav-item"
+                    data-page="trade_requests"
+                >
+
+                    <span class="nav-icon">⇄</span>
+
+                    <span class="nav-text">
+                        Trade Requests
+                    </span>
+
+                </button>
+
+            <?php endif; ?>
+
+
             <?php if (hasPermission('view_reports')): ?>
 
                 <button
@@ -723,6 +756,10 @@ document.addEventListener(
             transactions: 'Transactions',
 
             buying_rates: 'Buying Rates',
+
+            trade_items: 'Trade Items',
+
+            trade_requests: 'Trade Requests',
 
             reports: 'Reports',
 

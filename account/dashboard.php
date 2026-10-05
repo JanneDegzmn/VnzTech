@@ -131,6 +131,7 @@ $allowedPages = [
     'dashboard',
     'submissions',
     'submission',
+    'trade_history',
     'profile',
     'transactions',
     'transaction',
@@ -162,6 +163,7 @@ $pageTitles = [
     'dashboard' => 'Dashboard',
     'submissions' => 'My Submissions',
     'submission' => 'Submission Details',
+    'trade_history' => 'Trade History',
     'profile' => 'Profile',
     'transactions' => 'Transactions',
     'transaction' => 'Transaction Details',
@@ -321,6 +323,15 @@ $initialAlertMessage =
             >
                 <span class="nav-icon">▤</span>
                 <span>Transactions</span>
+            </button>
+
+            <button
+                type="button"
+                class="nav-item <?= $page === 'trade_history' ? 'active' : '' ?>"
+                data-page="trade_history"
+            >
+                <span class="nav-icon">⇄</span>
+                <span>Trade History</span>
             </button>
 
 
@@ -999,6 +1010,9 @@ $initialAlertMessage =
 
         transactions:
             'Transactions',
+
+        trade_history:
+            'Trade History',
 
         profile:
             'Profile',
