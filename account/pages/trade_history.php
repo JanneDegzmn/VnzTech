@@ -56,6 +56,11 @@ function tradeHistoryFormatDate(?string $date): string
         <div>
             <div class="page-kicker">TRADE HISTORY</div>
             <h1>My Trade Requests</h1>
+            <p class="trade-history-intro">Track the status and requirements for the items you have requested.</p>
+        </div>
+        <div class="trade-history-total" aria-label="<?= count($tradeRequests) ?> total trade requests">
+            <strong><?= count($tradeRequests) ?></strong>
+            <span>REQUESTS</span>
         </div>
     </div>
 
@@ -138,34 +143,314 @@ function tradeHistoryFormatDate(?string $date): string
 </div>
 
 <style>
-    .trade-history-page { padding: 24px; }
-    .page-header-block { margin-bottom: 20px; }
-    .page-kicker { font-size: 12px; letter-spacing: 0.18em; color: #7d7d86; text-transform: uppercase; }
-    .trade-history-list { display: grid; gap: 20px; }
-    .trade-history-item { padding: 22px; }
-    .trade-history-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
-    .trade-history-reference { font-size: 12px; color: #6a7282; text-transform: uppercase; }
-    .trade-history-item-details { display: flex; align-items: center; gap: 16px; margin-top: 14px; }
-    .trade-history-item-details img { width: 88px; height: 72px; object-fit: cover; border-radius: 6px; }
-    .trade-history-meta { display: flex; gap: 18px; flex-wrap: wrap; color: #3a3f4a; }
-    .trade-history-description { margin-top: 12px; color: #4b5363; }
-    .trade-history-section { margin-top: 18px; }
-    .trade-history-section h3 { margin-bottom: 8px; }
-    .trade-history-requirements { margin: 0; padding-left: 18px; color: #2f3440; }
-    .trade-history-requirements li { margin-bottom: 8px; }
-    .trade-history-requirements span, .trade-history-requirements small { display: block; }
-    .trade-history-admin-notes { margin-top: 18px; padding: 14px; border-left: 3px solid #c69b50; background: rgba(198, 155, 80, 0.08); }
-    .trade-history-admin-notes p { margin: 6px 0 0; white-space: pre-line; }
-    .trade-history-timeline { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 18px; color: #485164; }
-    .trade-status-badge { display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; font-size: 12px; font-weight: 700; padding: 6px 12px; text-transform: uppercase; }
-    .status-pending { background: #fff1d8; color: #9a6a00; }
-    .status-approved { background: #ddf6e8; color: #0b7a46; }
-    .status-completed { background: #e0f5ea; color: #116b3d; }
-    .status-rejected { background: #fde1df; color: #b2282a; }
-    .status-cancelled { background: #efeef7; color: #4d4a64; }
-    @media (max-width: 768px) {
+    .trade-history-page {
+        width: 100%;
+        max-width: none;
+        margin: 0;
+        padding: 24px;
+        color: #f3f6f8;
+    }
+
+    .trade-history-page .page-header-block {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 24px;
+        margin-bottom: 24px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #242c34;
+    }
+
+    .trade-history-page .page-kicker {
+        margin-bottom: 7px;
+        color: #8b97a2;
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+    }
+
+    .trade-history-page .page-header-block h1 {
+        margin: 0;
+        color: #f3f6f8;
+        font-size: 30px;
+        font-weight: 850;
+        line-height: 1.15;
+    }
+
+    .trade-history-intro {
+        margin: 8px 0 0;
+        color: #8b97a2;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .trade-history-total {
+        display: flex;
+        align-items: baseline;
+        gap: 9px;
+        flex: 0 0 auto;
+        padding: 10px 13px;
+        border: 1px solid #242c34;
+        border-radius: 8px;
+        background: #10151b;
+    }
+
+    .trade-history-total strong {
+        color: #f3f6f8;
+        font-size: 20px;
+        line-height: 1;
+    }
+
+    .trade-history-total span {
+        color: #8b97a2;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.12em;
+    }
+
+    .trade-history-list {
+        display: grid;
+        gap: 16px;
+    }
+
+    .trade-history-item {
+        padding: 22px;
+        border: 1px solid #242c34;
+        border-radius: 10px;
+        background: #10151b;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+    }
+
+    .trade-history-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 18px;
+    }
+
+    .trade-history-reference {
+        margin-bottom: 6px;
+        color: #68747f;
+        font-size: 10px;
+        font-weight: 750;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .trade-history-header h2 {
+        margin: 0;
+        color: #f3f6f8;
+        font-size: 21px;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    .trade-status-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex: 0 0 auto;
+        min-height: 28px;
+        padding: 5px 10px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        font-size: 10px;
+        font-weight: 850;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .trade-history-page .status-pending { color: #f2c964; background: rgba(242, 201, 100, 0.1); border-color: rgba(242, 201, 100, 0.22); }
+    .trade-history-page .status-approved { color: #55d69e; background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.22); }
+    .trade-history-page .status-completed { color: #55d69e; background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.22); }
+    .trade-history-page .status-rejected { color: #ff8585; background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.22); }
+    .trade-history-page .status-cancelled { color: #aab4be; background: rgba(139, 151, 162, 0.1); border-color: rgba(139, 151, 162, 0.2); }
+
+    .trade-history-item-details {
+        display: grid;
+        grid-template-columns: 112px minmax(0, 1fr);
+        align-items: center;
+        gap: 16px;
+        margin-top: 18px;
+    }
+
+    .trade-history-item-details img {
+        display: block;
+        width: 112px;
+        height: 88px;
+        padding: 8px;
+        object-fit: contain;
+        border: 1px solid #303a44;
+        border-radius: 8px;
+        background: #151b22;
+    }
+
+    .trade-history-meta {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        color: #c4ccd3;
+        font-size: 12px;
+        line-height: 1.45;
+    }
+
+    .trade-history-meta > div {
+        min-width: 0;
+        padding: 10px 12px;
+        border: 1px solid #242c34;
+        border-radius: 7px;
+        background: #0d1217;
+        overflow-wrap: anywhere;
+    }
+
+    .trade-history-meta strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #68747f;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    .trade-history-description {
+        margin: 16px 0 0;
+        color: #aab4be;
+        font-size: 13px;
+        line-height: 1.65;
+    }
+
+    .trade-history-section {
+        margin-top: 20px;
+        padding-top: 18px;
+        border-top: 1px solid #242c34;
+    }
+
+    .trade-history-section h3 {
+        margin: 0 0 12px;
+        color: #dfe5ea;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+
+    .trade-history-requirements {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+
+    .trade-history-requirements li {
+        min-width: 0;
+        padding: 12px 14px;
+        border: 1px solid #242c34;
+        border-radius: 7px;
+        background: #0d1217;
+        color: #c4ccd3;
+        font-size: 12px;
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+    }
+
+    .trade-history-requirements strong {
+        display: block;
+        margin-bottom: 3px;
+        color: #f3f6f8;
+        font-size: 13px;
+    }
+
+    .trade-history-requirements span,
+    .trade-history-requirements small {
+        display: block;
+        color: #8b97a2;
+        font-size: 11px;
+    }
+
+    .trade-history-admin-notes {
+        margin-top: 16px;
+        padding: 14px 16px;
+        border: 1px solid rgba(14, 165, 233, 0.2);
+        border-left: 3px solid #0ea5e9;
+        border-radius: 7px;
+        background: rgba(14, 165, 233, 0.06);
+        color: #c4ccd3;
+        font-size: 12px;
+        line-height: 1.6;
+    }
+
+    .trade-history-admin-notes strong {
+        color: #e5f5fd;
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .trade-history-admin-notes p {
+        margin: 6px 0 0;
+        white-space: pre-line;
+    }
+
+    .trade-history-timeline {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 18px;
+        margin-top: 16px;
+        padding-top: 14px;
+        border-top: 1px solid #242c34;
+        color: #8b97a2;
+        font-size: 11px;
+    }
+
+    .trade-history-timeline strong {
+        color: #c4ccd3;
+    }
+
+    .trade-history-page .portal-empty-state {
+        padding: 32px;
+        border: 1px solid #242c34;
+        border-radius: 10px;
+        background: #10151b;
+        color: #c4ccd3;
+    }
+
+    .trade-history-page .portal-empty-state h2 {
+        margin: 0 0 8px;
+        color: #f3f6f8;
+        font-size: 18px;
+    }
+
+    .trade-history-page .portal-empty-state p {
+        margin: 0;
+        color: #8b97a2;
+        font-size: 13px;
+        line-height: 1.6;
+    }
+
+    @media (max-width: 900px) {
+        .trade-history-page { padding: 20px; }
+        .trade-history-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 600px) {
         .trade-history-page { padding: 16px; }
-        .trade-history-header, .trade-history-item-details { align-items: flex-start; flex-direction: column; }
-        .trade-history-meta { flex-direction: column; gap: 10px; }
+        .trade-history-page .page-header-block { align-items: flex-start; }
+        .trade-history-page .page-header-block h1 { font-size: 25px; }
+        .trade-history-total { gap: 6px; padding: 8px; }
+        .trade-history-total span { font-size: 8px; }
+        .trade-history-item { padding: 16px; }
+        .trade-history-header { gap: 10px; }
+        .trade-history-header h2 { font-size: 18px; }
+        .trade-status-badge { min-height: 25px; padding: 4px 7px; font-size: 9px; }
+        .trade-history-item-details { grid-template-columns: 1fr; }
+        .trade-history-item-details img { width: 100%; height: 150px; }
+        .trade-history-meta,
+        .trade-history-requirements { grid-template-columns: 1fr; }
+        .trade-history-timeline { flex-direction: column; gap: 8px; }
+        .trade-history-page .portal-empty-state { padding: 22px; }
     }
 </style>

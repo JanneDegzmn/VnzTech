@@ -293,9 +293,9 @@ $openFormRequested =
 
                 <nav class="nav-links" aria-label="Primary">
                     <a class="nav-link" href="#hero" data-section="hero">Home</a>
+                    <a class="nav-link" href="#trade-items" data-section="trade-items">Trade</a>
                     <a class="nav-link" href="#scrap" data-section="scrap">Why Sell</a>
                     <a class="nav-link" href="#process" data-section="process">How It Works</a>
-                    <a class="nav-link" href="#trade-items" data-section="trade-items">Trade</a>
                     <button type="button" class="nav-link" id="openRatesBtnNav">Buying Rates</button>
                     <button type="button" class="nav-link" id="openTrackModalBtn">Track Submission</button>
                 </nav>
@@ -338,6 +338,14 @@ $openFormRequested =
 
         <a
             class="dot-link"
+            href="#trade-items"
+            data-section="trade-items"
+            data-label="Trade Items"
+            aria-label="Go to Trade Items section"
+        ></a>
+
+        <a
+            class="dot-link"
             href="#scrap"
             data-section="scrap"
             data-label="Why Sell"
@@ -352,13 +360,6 @@ $openFormRequested =
             aria-label="Go to How It Works section"
         ></a>
 
-        <a
-            class="dot-link"
-            href="#trade-items"
-            data-section="trade-items"
-            data-label="Trade Items"
-            aria-label="Go to Trade Items section"
-        ></a>
     </nav>
 
 
@@ -480,7 +481,7 @@ $openFormRequested =
 
 
     <!-- =========================================================
-         SECTION 2 — WHAT IS SCRAP
+         SECTION 3 — WHAT IS SCRAP
     ========================================================== -->
 
     <section class="marketing-section education-section" id="scrap">
@@ -488,7 +489,7 @@ $openFormRequested =
         <div class="section-intro">
 
             <span class="section-kicker">
-                02 / UNDERSTANDING SCRAP
+                03 / UNDERSTANDING SCRAP
             </span>
 
             <h2>
@@ -665,7 +666,7 @@ $openFormRequested =
 
 
     <!-- =========================================================
-         SECTION 3 — HOW IT WORKS
+         SECTION 4 — HOW IT WORKS
     ========================================================== -->
 
     <section class="marketing-section process-section" id="process">
@@ -673,7 +674,7 @@ $openFormRequested =
         <div class="section-intro">
 
             <span class="section-kicker">
-                03 / HOW VNZ TECH WORKS
+                04 / HOW VNZ TECH WORKS
             </span>
 
             <h2>
@@ -1329,7 +1330,7 @@ $openFormRequested =
             <div class="trade-section-header">
                 <div>
                     <span class="trade-section-kicker">TRADE YOUR SCRAP</span>
-                    <h2>Trade your scrap for something useful</h2>
+                    <h2>Trade your scrap for <span>something useful.</span></h2>
                 </div>
                 <button type="button" class="trade-view-all-btn" data-open-trade-modal>
                     VIEW ALL TRADE ITEMS
@@ -1375,9 +1376,9 @@ $openFormRequested =
                         );
                     ?>
                     <article class="trade-feature-card <?= $featurePosition ?>" data-trade-slide="<?= (int) $featureIndex ?>" aria-hidden="<?= $featureIndex === 0 ? 'false' : 'true' ?>">
-                        <div class="trade-feature-image">
+                        <button type="button" class="trade-image-trigger trade-feature-image" data-image-preview aria-label="View larger image of <?= htmlspecialchars($featureItem['name'], ENT_QUOTES, 'UTF-8') ?>">
                             <img src="<?= htmlspecialchars($featureImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($featureItem['name'], ENT_QUOTES, 'UTF-8') ?>" onerror="this.src='/VNZ-TECH/assets/images/vnz.png';">
-                        </div>
+                        </button>
 
                         <div class="trade-feature-content">
                             <div class="trade-feature-meta">
@@ -1487,6 +1488,17 @@ $openFormRequested =
         </script>
     <?php endif; ?>
 
+        <script>
+            (function () {
+                const tradeSection = document.getElementById('trade-items');
+                const heroSection = document.getElementById('hero');
+
+                if (tradeSection && heroSection) {
+                    heroSection.insertAdjacentElement('afterend', tradeSection);
+                }
+            })();
+        </script>
+
     <div class="seller-modal" id="tradeItemsModal" role="dialog" aria-modal="true" aria-labelledby="tradeItemsModalTitle" hidden>
         <div class="seller-modal-card trade-modal-card">
             <div class="rates-modal-header">
@@ -1529,7 +1541,9 @@ $openFormRequested =
                                 );
                             ?>
                             <article class="trade-modal-card-item">
-                                <img src="<?= htmlspecialchars($tradeImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($tradeItem['name'], ENT_QUOTES, 'UTF-8') ?>" onerror="this.src='/VNZ-TECH/assets/images/vnz.png';">
+                                <button type="button" class="trade-image-trigger trade-modal-image-trigger" data-image-preview aria-label="View larger image of <?= htmlspecialchars($tradeItem['name'], ENT_QUOTES, 'UTF-8') ?>">
+                                    <img src="<?= htmlspecialchars($tradeImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($tradeItem['name'], ENT_QUOTES, 'UTF-8') ?>" onerror="this.src='/VNZ-TECH/assets/images/vnz.png';">
+                                </button>
                                 <div class="trade-modal-card-content">
                                     <div class="trade-modal-card-top">
                                         <h3><?= htmlspecialchars($tradeItem['name'], ENT_QUOTES, 'UTF-8') ?></h3>
@@ -1565,6 +1579,14 @@ $openFormRequested =
                 <?php endif; ?>
             </div>
         </div>
+    </div>
+
+    <div class="trade-image-lightbox" id="tradeImageLightbox" role="dialog" aria-modal="true" aria-label="Product image preview" aria-hidden="true" hidden>
+        <button type="button" class="trade-image-lightbox-close" aria-label="Close image preview">×</button>
+        <figure class="trade-image-lightbox-figure">
+            <img id="tradeImageLightboxImage" src="" alt="">
+            <figcaption id="tradeImageLightboxCaption"></figcaption>
+        </figure>
     </div>
 
     <div class="seller-modal" id="tradeRequestModal" role="dialog" aria-modal="true" aria-labelledby="tradeRequestModalTitle" hidden>
@@ -1709,7 +1731,7 @@ $openFormRequested =
         );
 
         const sections = document.querySelectorAll(
-            '.marketing-section[id]'
+            '.marketing-section[id], .trade-featured-section[id]'
         );
 
         if (!sectionLinks.length || !sections.length) {
@@ -2103,6 +2125,84 @@ $openFormRequested =
                 closeTradeModal();
             }
         });
+    })();
+</script>
+
+<script>
+    (function () {
+        const lightbox = document.getElementById('tradeImageLightbox');
+        const previewImage = document.getElementById('tradeImageLightboxImage');
+        const caption = document.getElementById('tradeImageLightboxCaption');
+        const closeButton = lightbox?.querySelector('.trade-image-lightbox-close');
+        let activeTrigger = null;
+        let closeTimer = null;
+
+        if (!lightbox || !previewImage || !caption || !closeButton) {
+            return;
+        }
+
+        function openPreview(trigger) {
+            const image = trigger.querySelector('img');
+            if (!image) {
+                return;
+            }
+
+            window.clearTimeout(closeTimer);
+            activeTrigger = trigger;
+            previewImage.src = image.currentSrc || image.src;
+            previewImage.alt = image.alt;
+            caption.textContent = image.alt;
+            lightbox.hidden = false;
+            lightbox.setAttribute('aria-hidden', 'false');
+            window.requestAnimationFrame(function () {
+                lightbox.classList.add('is-open');
+            });
+            closeButton.focus();
+        }
+
+        function closePreview() {
+            if (lightbox.hidden) {
+                return;
+            }
+
+            lightbox.classList.remove('is-open');
+            lightbox.setAttribute('aria-hidden', 'true');
+            closeTimer = window.setTimeout(function () {
+                lightbox.hidden = true;
+                previewImage.removeAttribute('src');
+                if (activeTrigger?.isConnected) {
+                    activeTrigger.focus();
+                }
+                activeTrigger = null;
+            }, 240);
+        }
+
+        document.addEventListener('click', function (event) {
+            const trigger = event.target.closest('[data-image-preview]');
+            if (trigger) {
+                openPreview(trigger);
+            }
+        });
+
+        closeButton.addEventListener('click', closePreview);
+        lightbox.addEventListener('click', function (event) {
+            if (event.target === lightbox) {
+                closePreview();
+            }
+        });
+        document.addEventListener('keydown', function (event) {
+            if (lightbox.hidden) {
+                return;
+            }
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                event.stopPropagation();
+                closePreview();
+            } else if (event.key === 'Tab') {
+                event.preventDefault();
+                closeButton.focus();
+            }
+        }, true);
     })();
 </script>
 
