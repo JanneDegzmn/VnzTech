@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/email_verification.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /VNZ-TECH/account/register.php');
@@ -170,8 +171,29 @@ try {
         $language
     ]);
 
+    $userId = (int) $pdo->lastInsertId();
+    $verificationEmailSent = false;
+
+    try {
+        sendEmailVerification(
+            $pdo,
+            $userId,
+            $email
+        );
+
+        $verificationEmailSent = true;
+    } catch (Throwable $mailError) {
+        error_log(
+            'Registration verification email could not be sent for user ' .
+            $userId .
+            ': ' .
+            $mailError->getMessage()
+        );
+    }
+
     header(
-        'Location: /VNZ-TECH/account/register.php?success=1'
+        'Location: /VNZ-TECH/account/register.php?success=1&verification=' .
+        ($verificationEmailSent ? 'sent' : 'pending')
     );
     exit;
 

@@ -95,7 +95,17 @@ function tradeHistoryFormatDate(?string $date): string
                     </div>
 
                     <div class="trade-history-item-details">
-                        <img src="<?= htmlspecialchars($tradeImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($tradeRequest['trade_item_name'], ENT_QUOTES, 'UTF-8') ?>">
+                        <a
+                            class="transaction-photo-link trade-history-image-link"
+                            href="<?= htmlspecialchars($tradeImage, ENT_QUOTES, 'UTF-8') ?>"
+                            aria-label="View <?= htmlspecialchars($tradeRequest['trade_item_name'], ENT_QUOTES, 'UTF-8') ?> image"
+                        >
+                            <img
+                                src="<?= htmlspecialchars($tradeImage, ENT_QUOTES, 'UTF-8') ?>"
+                                alt="<?= htmlspecialchars($tradeRequest['trade_item_name'], ENT_QUOTES, 'UTF-8') ?>"
+                                loading="lazy"
+                            >
+                        </a>
                         <div class="trade-history-meta">
                             <div><strong>Condition:</strong> <?= htmlspecialchars($tradeRequest['trade_item_condition'], ENT_QUOTES, 'UTF-8') ?></div>
                             <div><strong>Requested:</strong> <?= htmlspecialchars(tradeHistoryFormatDate($tradeRequest['requested_at']), ENT_QUOTES, 'UTF-8') ?></div>
@@ -275,15 +285,22 @@ function tradeHistoryFormatDate(?string $date): string
         margin-top: 18px;
     }
 
-    .trade-history-item-details img {
+    .trade-history-item-details .trade-history-image-link {
         display: block;
         width: 112px;
         height: 88px;
-        padding: 8px;
-        object-fit: contain;
+        overflow: hidden;
         border: 1px solid #303a44;
         border-radius: 8px;
         background: #151b22;
+        cursor: zoom-in;
+    }
+
+    .trade-history-item-details .trade-history-image-link img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
     }
 
     .trade-history-meta {
@@ -447,7 +464,7 @@ function tradeHistoryFormatDate(?string $date): string
         .trade-history-header h2 { font-size: 18px; }
         .trade-status-badge { min-height: 25px; padding: 4px 7px; font-size: 9px; }
         .trade-history-item-details { grid-template-columns: 1fr; }
-        .trade-history-item-details img { width: 100%; height: 150px; }
+        .trade-history-item-details .trade-history-image-link { width: 100%; height: 150px; }
         .trade-history-meta,
         .trade-history-requirements { grid-template-columns: 1fr; }
         .trade-history-timeline { flex-direction: column; gap: 8px; }

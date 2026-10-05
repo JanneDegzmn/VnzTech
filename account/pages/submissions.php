@@ -1418,7 +1418,7 @@ $firstName =
                                             'reference_number'
                                         ]
                                     ) ?>"
-                                    data-seller-page="submission"
+                                    data-seller-submission-modal
                                     class="view-button"
                                 >
 

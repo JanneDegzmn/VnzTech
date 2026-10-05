@@ -3,6 +3,7 @@
 session_start();
 
 $success = isset($_GET['success']) && $_GET['success'] === '1';
+$verification = $_GET['verification'] ?? '';
 $error = $_GET['error'] ?? '';
 
 ?>
@@ -71,7 +72,12 @@ $error = $_GET['error'] ?? '';
         <?php if ($success): ?>
 
             <div class="message success">
-                Account created successfully. You may now log in.
+                <?php if ($verification === 'sent'): ?>
+                    Account created. Check your email for the verification link before continuing.
+                <?php else: ?>
+                    Account created, but we could not send the verification email yet.
+                    Log in and resend it from Settings after mail delivery is configured.
+                <?php endif; ?>
             </div>
 
         <?php endif; ?>

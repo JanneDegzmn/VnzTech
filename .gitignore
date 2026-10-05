@@ -8,6 +8,10 @@ uploads/
 
 # Dependencies
 node_modules/
+/vendor/
+
+# Local mail credentials
+/backend/mail_config.local.php
 
 # OS files
 .DS_Store

@@ -781,6 +781,9 @@ $openFormRequested =
                 type="button"
                 class="hero-btn hero-btn-primary"
                 data-open-form="phone"
+                data-form-toggle
+                aria-expanded="false"
+                aria-controls="submissionFormSection"
             >
                 <span>
                     START YOUR SUBMISSION
@@ -788,6 +791,10 @@ $openFormRequested =
 
                 <b>→</b>
             </button>
+
+            <div class="final-cta-form" id="finalCtaForm" aria-hidden="true">
+                <div class="final-cta-form-inner" id="finalCtaFormInner"></div>
+            </div>
 
         </div>
 
@@ -1628,27 +1635,6 @@ $openFormRequested =
 
             </div>
 
-            <div class="footer-cta-actions">
-
-                <button
-                    type="button"
-                    class="hero-btn hero-btn-primary"
-                    data-open-form="phone"
-                >
-                    <span>SELL A PHONE</span>
-                    <b>→</b>
-                </button>
-
-                <button
-                    type="button"
-                    class="hero-btn hero-btn-secondary"
-                    data-open-form="scrap"
-                >
-                    SELL SCRAP
-                </button>
-
-            </div>
-
         </div>
 
         <div class="footer-grid">
@@ -2376,6 +2362,7 @@ $openFormRequested =
 <script>
 
 let itemIndex = 0;
+let formOpenAnimationFrame;
 
 const itemsContainer =
     document.getElementById('itemsContainer');
@@ -2389,8 +2376,20 @@ const form =
 const formSection =
     document.getElementById('submissionFormSection');
 
+const finalCtaForm =
+    document.getElementById('finalCtaForm');
+
+const finalCtaFormInner =
+    document.getElementById('finalCtaFormInner');
+
 const closeFormBtn =
     document.getElementById('closeFormBtn');
+
+if (finalCtaForm && finalCtaFormInner && formSection) {
+    finalCtaFormInner.append(formSection);
+    formSection.hidden = false;
+    finalCtaForm.inert = true;
+}
 
 
 const issueList = [
@@ -2420,18 +2419,29 @@ const damageLevels = [
 ];
 
 
-function openSubmissionForm(type = 'phone') {
+function openSubmissionForm(type = 'phone', shouldScroll = true) {
 
     if (!formSection) {
         return;
     }
 
-    formSection.hidden = false;
+    if (finalCtaForm) {
+        cancelAnimationFrame(formOpenAnimationFrame);
+        finalCtaForm.inert = false;
+        finalCtaForm.setAttribute('aria-hidden', 'false');
+        formOpenAnimationFrame = requestAnimationFrame(() => finalCtaForm.classList.add('is-open'));
+    }
 
-    formSection.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start'
-    });
+    document
+        .querySelectorAll('[data-form-toggle]')
+        .forEach(button => button.setAttribute('aria-expanded', 'true'));
+
+    if (shouldScroll) {
+        formSection.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+        });
+    }
 
 
     setTimeout(() => {
@@ -2483,8 +2493,18 @@ document
             'click',
             () => {
 
+                if (button.hasAttribute('data-form-toggle') && finalCtaForm.classList.contains('is-open')) {
+                    cancelAnimationFrame(formOpenAnimationFrame);
+                    finalCtaForm.classList.remove('is-open');
+                    finalCtaForm.inert = true;
+                    finalCtaForm.setAttribute('aria-hidden', 'true');
+                    button.setAttribute('aria-expanded', 'false');
+                    return;
+                }
+
                 openSubmissionForm(
-                    button.dataset.openForm
+                    button.dataset.openForm,
+                    !button.hasAttribute('data-form-toggle')
                 );
 
             }
@@ -2499,12 +2519,16 @@ if (closeFormBtn) {
         'click',
         () => {
 
-            formSection.hidden = true;
-
-            window.scrollTo({
-                top: 0,
-                behavior: 'smooth'
-            });
+            cancelAnimationFrame(formOpenAnimationFrame);
+            finalCtaForm.classList.remove('is-open');
+            finalCtaForm.inert = true;
+            finalCtaForm.setAttribute('aria-hidden', 'true');
+            document
+                .querySelectorAll('[data-form-toggle]')
+                .forEach(button => button.setAttribute('aria-expanded', 'false'));
+            document
+                .querySelector('.final-cta [data-form-toggle]')
+                ?.focus();
 
         }
     );

@@ -57,9 +57,9 @@ function tradeRequestFormatDate(?string $date): string
 }
 ?>
 
-<link rel="stylesheet" href="/VNZ-TECH/assets/css/admin_trade_items.css">
+<link rel="stylesheet" href="/VNZ-TECH/assets/css/admin_trade_items.css?v=<?= filemtime(__DIR__ . '/../../assets/css/admin_trade_items.css') ?>">
 
-<div class="trade-page">
+<div class="trade-page trade-requests-page">
     <div class="trade-header">
         <div class="trade-heading">
             <div class="trade-kicker">VNZ TECH MANAGEMENT</div>
@@ -88,16 +88,26 @@ function tradeRequestFormatDate(?string $date): string
                         <div class="trade-item-topline">
                             <div>
                                 <h4><?= htmlspecialchars($request['request_reference'], ENT_QUOTES, 'UTF-8') ?></h4>
-                                <p><?= htmlspecialchars($request['user_name'], ENT_QUOTES, 'UTF-8') ?> · <?= htmlspecialchars($request['user_email'], ENT_QUOTES, 'UTF-8') ?></p>
                             </div>
                             <span class="trade-status-badge status-<?= strtolower((string) $request['status']) ?>"><?= htmlspecialchars(tradeRequestStatusLabel((string) $request['status']), ENT_QUOTES, 'UTF-8') ?></span>
                         </div>
 
-                        <div class="trade-item-meta-row">
-                            <strong><?= htmlspecialchars($request['trade_item_name'], ENT_QUOTES, 'UTF-8') ?></strong>
-                            <span><?= htmlspecialchars($request['trade_item_condition'], ENT_QUOTES, 'UTF-8') ?></span>
-                            <span>Requested <?= htmlspecialchars(tradeRequestFormatDate($request['requested_at']), ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php if ($request['reviewed_at']): ?><span>Reviewed <?= htmlspecialchars(tradeRequestFormatDate($request['reviewed_at']), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                        <div class="admin-trade-request-summary">
+                            <section class="admin-trade-request-summary-block">
+                                <span class="admin-trade-request-label">Customer</span>
+                                <strong><?= htmlspecialchars($request['user_name'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                <span class="admin-trade-request-secondary"><?= htmlspecialchars($request['user_email'], ENT_QUOTES, 'UTF-8') ?></span>
+                            </section>
+
+                            <section class="admin-trade-request-summary-block">
+                                <span class="admin-trade-request-label">Trade item</span>
+                                <strong><?= htmlspecialchars($request['trade_item_name'], ENT_QUOTES, 'UTF-8') ?></strong>
+                                <div class="admin-trade-request-item-meta">
+                                    <span><?= htmlspecialchars($request['trade_item_condition'], ENT_QUOTES, 'UTF-8') ?></span>
+                                    <span>Requested <?= htmlspecialchars(tradeRequestFormatDate($request['requested_at']), ENT_QUOTES, 'UTF-8') ?></span>
+                                    <?php if ($request['reviewed_at']): ?><span>Reviewed <?= htmlspecialchars(tradeRequestFormatDate($request['reviewed_at']), ENT_QUOTES, 'UTF-8') ?></span><?php endif; ?>
+                                </div>
+                            </section>
                         </div>
 
                         <?php if (!empty($request['trade_item_description'])): ?>
@@ -105,7 +115,10 @@ function tradeRequestFormatDate(?string $date): string
                         <?php endif; ?>
 
                         <section class="admin-trade-requirements">
-                            <h5>Required Trade Items</h5>
+                            <div class="admin-trade-section-heading">
+                                <h5>Required Trade Items</h5>
+                                <span><?= count($requirements) ?> <?= count($requirements) === 1 ? 'requirement' : 'requirements' ?></span>
+                            </div>
                             <?php if ($requirements): ?>
                                 <?php foreach ($requirements as $requirement): ?>
                                     <div class="admin-trade-requirement">
@@ -124,8 +137,10 @@ function tradeRequestFormatDate(?string $date): string
                         <?php endif; ?>
 
                         <?php if (in_array((string) $request['status'], ['PENDING', 'APPROVED'], true)): ?>
-                            <label class="admin-trade-note-label" for="tradeNotes<?= (int) $request['id'] ?>">Staff notes</label>
-                            <textarea class="admin-trade-notes" id="tradeNotes<?= (int) $request['id'] ?>" maxlength="5000" placeholder="Record the in-person verification or reason for the decision."><?= htmlspecialchars((string) ($request['admin_notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                            <div class="admin-trade-notes-section">
+                                <label class="admin-trade-note-label" for="tradeNotes<?= (int) $request['id'] ?>">Staff notes <span>Optional</span></label>
+                                <textarea class="admin-trade-notes" id="tradeNotes<?= (int) $request['id'] ?>" maxlength="5000" placeholder="Add verification details or a reason for your decision."><?= htmlspecialchars((string) ($request['admin_notes'] ?? ''), ENT_QUOTES, 'UTF-8') ?></textarea>
+                            </div>
                         <?php endif; ?>
 
                         <div class="trade-form-actions admin-trade-actions">

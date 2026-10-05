@@ -352,9 +352,24 @@ $initialMobile =
             'click',
             function () {
 
-                /*
-                |--------------------------------------------------------------------------
-                | USE SELLER PORTAL ROUTER
+            if (
+                document.body.classList.contains(
+                    'transaction-details-modal-open'
+                ) &&
+                typeof window.closeSellerSubmissionModal ===
+                    'function'
+            ) {
+
+                window.closeSellerSubmissionModal();
+
+                return;
+
+            }
+
+
+            /*
+            |--------------------------------------------------------------------------
+            | USE SELLER PORTAL ROUTER
                 |--------------------------------------------------------------------------
                 |
                 | This keeps the user inside:
@@ -2369,6 +2384,21 @@ $initialMobile =
                     fallbackBackButton.addEventListener(
                         'click',
                         function() {
+
+                            if (
+                                document.body.classList.contains(
+                                    'transaction-details-modal-open'
+                                ) &&
+                                typeof window.closeSellerSubmissionModal ===
+                                    'function'
+                            ) {
+
+                                window.closeSellerSubmissionModal();
+
+                                return;
+
+                            }
+
 
                             if (
                                 typeof window.loadSellerPage ===

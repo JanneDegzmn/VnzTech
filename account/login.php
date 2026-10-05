@@ -15,6 +15,7 @@ if (
 
 $error = $_GET['error'] ?? '';
 $success = isset($_GET['success']) && $_GET['success'] === '1';
+$verification = $_GET['verification'] ?? '';
 
 ?>
 
@@ -93,6 +94,21 @@ $success = isset($_GET['success']) && $_GET['success'] === '1';
             <div class="message success">
                 Account created successfully.
                 You may now log in.
+            </div>
+
+        <?php endif; ?>
+
+        <?php if ($verification === 'success'): ?>
+
+            <div class="message success">
+                Your email address is verified. You may now log in.
+            </div>
+
+        <?php elseif ($verification === 'invalid'): ?>
+
+            <div class="message error">
+                This verification link is invalid, expired, or has already been used.
+                Log in and request a new link from Settings.
             </div>
 
         <?php endif; ?>

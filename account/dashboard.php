@@ -131,6 +131,7 @@ $allowedPages = [
     'dashboard',
     'submissions',
     'submission',
+    'offers',
     'trade_history',
     'profile',
     'transactions',
@@ -163,6 +164,7 @@ $pageTitles = [
     'dashboard' => 'Dashboard',
     'submissions' => 'My Submissions',
     'submission' => 'Submission Details',
+    'offers' => 'Offers',
     'trade_history' => 'Trade History',
     'profile' => 'Profile',
     'transactions' => 'Transactions',
@@ -301,8 +303,8 @@ $initialAlertMessage =
 
             <button
                 type="button"
-                class="nav-item"
-                disabled
+                class="nav-item <?= $page === 'offers' ? 'active' : '' ?>"
+                data-page="offers"
             >
 
                 <span class="nav-icon">
@@ -860,6 +862,53 @@ $initialAlertMessage =
 
 </div>
 
+<div
+    id="sellerSubmissionDetailsModal"
+    class="transaction-details-modal"
+    aria-hidden="true"
+>
+    <div
+        class="transaction-details-modal-backdrop"
+        data-seller-submission-modal-close
+    ></div>
+
+    <div
+        class="transaction-details-modal-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="sellerSubmissionDetailsModalTitle"
+    >
+        <div class="transaction-details-modal-header">
+            <div>
+                <div class="transaction-details-modal-eyebrow">
+                    SELLER PORTAL
+                </div>
+                <h2 id="sellerSubmissionDetailsModalTitle">
+                    Submission &amp; negotiation details
+                </h2>
+            </div>
+
+            <button
+                type="button"
+                class="transaction-details-modal-close"
+                data-seller-submission-modal-close
+                aria-label="Close submission details"
+            >
+                ×
+            </button>
+        </div>
+
+        <div
+            id="sellerSubmissionDetailsModalBody"
+            class="transaction-details-modal-body"
+        >
+            <div class="transaction-details-modal-loading">
+                Loading submission details...
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <style>
 
@@ -1008,6 +1057,9 @@ $initialAlertMessage =
         submission:
             'Submission Details',
 
+        offers:
+            'Offers',
+
         transactions:
             'Transactions',
 
@@ -1113,6 +1165,257 @@ $initialAlertMessage =
                     newScript,
                     oldScript
                 );
+
+            }
+        );
+
+    }
+
+
+    const sellerSubmissionModal =
+        document.getElementById(
+            'sellerSubmissionDetailsModal'
+        );
+
+
+    const sellerSubmissionModalBody =
+        document.getElementById(
+            'sellerSubmissionDetailsModalBody'
+        );
+
+
+    let sellerSubmissionModalRequest =
+        0;
+
+
+    function closeSellerSubmissionModal() {
+
+        if (
+            !sellerSubmissionModal ||
+            !sellerSubmissionModalBody
+        ) {
+            return;
+        }
+
+
+        sellerSubmissionModalRequest++;
+
+        sellerSubmissionModal.classList.remove(
+            'is-open'
+        );
+
+        sellerSubmissionModal.setAttribute(
+            'aria-hidden',
+            'true'
+        );
+
+        document.body.classList.remove(
+            'transaction-details-modal-open'
+        );
+
+        sellerSubmissionModalBody.innerHTML = `
+            <div class="transaction-details-modal-loading">
+                Loading submission details...
+            </div>
+        `;
+
+    }
+
+
+    async function openSellerSubmissionModal(
+        reference
+    ) {
+
+        if (
+            !sellerSubmissionModal ||
+            !sellerSubmissionModalBody ||
+            !reference
+        ) {
+            return;
+        }
+
+
+        const requestId =
+            ++sellerSubmissionModalRequest;
+
+
+        sellerSubmissionModal.classList.add(
+            'is-open'
+        );
+
+        sellerSubmissionModal.setAttribute(
+            'aria-hidden',
+            'false'
+        );
+
+        document.body.classList.add(
+            'transaction-details-modal-open'
+        );
+
+        sellerSubmissionModalBody.innerHTML = `
+            <div class="transaction-details-modal-loading">
+                Loading submission details...
+            </div>
+        `;
+
+
+        try {
+
+            const params =
+                new URLSearchParams({
+                    ref: reference,
+                    modal: '1'
+                });
+
+
+            const response =
+                await fetch(
+                    'pages/submission.php?' +
+                    params.toString(),
+                    {
+                        method: 'GET',
+                        credentials: 'same-origin',
+                        cache: 'no-store',
+                        headers: {
+                            'X-Requested-With':
+                                'XMLHttpRequest'
+                        }
+                    }
+                );
+
+
+            if (
+                !response.ok
+            ) {
+                throw new Error(
+                    'HTTP ' + response.status
+                );
+            }
+
+
+            const html =
+                await response.text();
+
+
+            if (
+                requestId !==
+                sellerSubmissionModalRequest
+            ) {
+                return;
+            }
+
+
+            if (
+                html.trim() === ''
+            ) {
+                throw new Error(
+                    'Empty submission response.'
+                );
+            }
+
+
+            sellerSubmissionModalBody.innerHTML =
+                html;
+
+            executeScripts(
+                sellerSubmissionModalBody
+            );
+
+        } catch (
+            error
+        ) {
+
+            console.error(
+                'VNZ TECH Seller Portal: unable to load submission details.',
+                error
+            );
+
+
+            if (
+                requestId !==
+                sellerSubmissionModalRequest
+            ) {
+                return;
+            }
+
+
+            const errorPanel =
+                document.createElement(
+                    'div'
+                );
+
+            errorPanel.className =
+                'transaction-details-modal-error';
+
+
+            const errorTitle =
+                document.createElement(
+                    'strong'
+                );
+
+            errorTitle.textContent =
+                'Unable to load submission details';
+
+
+            const errorMessage =
+                document.createElement(
+                    'p'
+                );
+
+            errorMessage.textContent =
+                'Please close this window and try again.';
+
+
+            errorPanel.append(
+                errorTitle,
+                errorMessage
+            );
+
+            sellerSubmissionModalBody.replaceChildren(
+                errorPanel
+            );
+
+        }
+
+    }
+
+
+    window.closeSellerSubmissionModal =
+        closeSellerSubmissionModal;
+
+
+    if (
+        sellerSubmissionModal
+    ) {
+
+        sellerSubmissionModal
+            .querySelectorAll(
+                '[data-seller-submission-modal-close]'
+            )
+            .forEach(
+                button => {
+
+                    button.addEventListener(
+                        'click',
+                        closeSellerSubmissionModal
+                    );
+
+                }
+            );
+
+
+        document.addEventListener(
+            'keydown',
+            event => {
+
+                if (
+                    event.key === 'Escape' &&
+                    sellerSubmissionModal.classList.contains(
+                        'is-open'
+                    )
+                ) {
+                    closeSellerSubmissionModal();
+                }
 
             }
         );
@@ -1367,6 +1670,33 @@ $initialAlertMessage =
         function (
             event
         ) {
+
+            const submissionLink =
+                event.target.closest(
+                    'a[data-seller-submission-modal]'
+                );
+
+
+            if (
+                submissionLink
+            ) {
+
+                event.preventDefault();
+
+                const url =
+                    new URL(
+                        submissionLink.href,
+                        window.location.origin
+                    );
+
+                openSellerSubmissionModal(
+                    url.searchParams.get('ref')
+                );
+
+                return;
+
+            }
+
 
             const link =
                 event.target.closest(

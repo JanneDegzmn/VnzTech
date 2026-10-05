@@ -62,9 +62,9 @@ function tradeRequirementTypeLabel(string $type): string
 
 ?>
 
-<link rel="stylesheet" href="/VNZ-TECH/assets/css/admin_trade_items.css">
+<link rel="stylesheet" href="/VNZ-TECH/assets/css/admin_trade_items.css?v=<?= filemtime(__DIR__ . '/../../assets/css/admin_trade_items.css') ?>">
 
-<div class="trade-page">
+<div class="trade-page trade-items-page">
 
     <div class="trade-header">
 
