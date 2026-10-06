@@ -88,6 +88,7 @@ $action = strtolower(trim((string) ($_POST['action'] ?? $_GET['action'] ?? '')))
 
 if ($action === 'admin_update_status') {
     require_once __DIR__ . '/auth.php';
+    require_once __DIR__ . '/admin_activity.php';
 
     if (!isAdminLoggedIn()) {
         jsonTradeResponse(false, 'Admin session expired.', 401);
@@ -169,6 +170,11 @@ if ($action === 'admin_update_status') {
             $update->execute([$now, $now, $adminNotes, $tradeRequestId]);
         }
 
+        logAdminActivity(
+            (int) $adminUser['id'],
+            'trade_request.' . $statusAction,
+            'Trade request #' . $tradeRequestId . ' status changed from ' . $requestStatus . '.'
+        );
         $pdo->commit();
         jsonTradeResponse(true, 'Trade request status updated successfully.');
     } catch (Throwable $e) {

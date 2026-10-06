@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
+require_once __DIR__ . '/csrf.php';
 
 function isAjaxRequest(): bool
 {
@@ -25,7 +26,10 @@ function sendJsonResponse(array $payload, int $statusCode = 200): void
 
 function redirectToDashboard(): void
 {
-    header('Location: /VNZ-TECH/account/dashboard.php');
+    $reminder = !empty($_SESSION['seller_2fa_reminder'])
+        ? '?security_reminder=1'
+        : '';
+    header('Location: /VNZ-TECH/account/dashboard.php' . $reminder);
     exit;
 }
 
@@ -46,31 +50,58 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = strtolower(trim((string) ($_POST['email'] ?? '')));
-    $password = (string) ($_POST['password'] ?? '');
-
-    if ($email === '' || $password === '') {
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
         sendJsonResponse([
             'success' => false,
-            'message' => 'Please enter your email and password.'
+            'message' => 'Your session token expired. Refresh the page and try again.'
+        ], 419);
+    }
+
+    $login = strtolower(trim((string) ($_POST['login'] ?? $_POST['email'] ?? '')));
+    $password = (string) ($_POST['password'] ?? '');
+
+    if ($login === '' || $password === '') {
+        sendJsonResponse([
+            'success' => false,
+            'message' => 'Please enter your email or registered mobile number and password.'
         ], 400);
     }
 
     try {
-        $stmt = $pdo->prepare("
+        $selectedFields = "
             SELECT
                 id,
                 full_name,
                 email,
                 password_hash,
-                is_active
+                is_active,
+                totp_secret,
+                totp_enabled_at,
+                totp_last_used_counter,
+                totp_reminder_dismissed,
+                totp_login_required
             FROM users
-            WHERE email = ?
-            LIMIT 1
-        ");
-
-        $stmt->execute([$email]);
-        $user = $stmt->fetch();
+        ";
+        if (filter_var($login, FILTER_VALIDATE_EMAIL)) {
+            $stmt = $pdo->prepare($selectedFields . ' WHERE email = ? LIMIT 1');
+            $stmt->execute([$login]);
+            $user = $stmt->fetch();
+        } else {
+            $mobile = preg_replace('/\D+/', '', $login);
+            if (strlen($mobile) < 8 || strlen($mobile) > 15) {
+                sendJsonResponse([
+                    'success' => false,
+                    'message' => 'Enter a valid email address or registered mobile number.'
+                ], 422);
+            }
+            $stmt = $pdo->prepare($selectedFields . "
+                WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(mobile, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') = ?
+                LIMIT 1
+            ");
+            $stmt->execute([$mobile]);
+            $matches = $stmt->fetchAll();
+            $user = count($matches) === 1 ? $matches[0] : null;
+        }
 
         if (!$user) {
             sendJsonResponse([
@@ -93,17 +124,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ], 401);
         }
 
+        if (
+            !empty($user['totp_enabled_at'])
+            && !empty($user['totp_secret'])
+            && (int) $user['totp_login_required'] === 1
+        ) {
+            $_SESSION['seller_2fa_login_user_id'] = (int) $user['id'];
+            $_SESSION['seller_2fa_login_started_at'] = time();
+            $challengeRedirect = '/VNZ-TECH/account/login.php?two_factor=1';
+
+            if (isAjaxRequest()) {
+                sendJsonResponse([
+                    'success' => false,
+                    'requires_two_factor' => true,
+                    'message' => 'Enter the 6-digit code from your authenticator app.',
+                    'redirect' => $challengeRedirect,
+                ], 200);
+            }
+
+            header('Location: ' . $challengeRedirect);
+            exit;
+        }
+
         session_regenerate_id(true);
         $_SESSION['user_logged_in'] = true;
         $_SESSION['user_id'] = (int) $user['id'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_name'] = $user['full_name'];
+        if (
+            (int) $user['totp_reminder_dismissed'] !== 1
+            && (
+                empty($user['totp_enabled_at'])
+                || (int) $user['totp_login_required'] !== 1
+            )
+        ) {
+            $_SESSION['seller_2fa_reminder'] = true;
+        }
 
         if (isAjaxRequest()) {
             sendJsonResponse([
                 'success' => true,
                 'message' => 'Login successful.',
-                'redirect' => '/VNZ-TECH/account/dashboard.php'
+                'redirect' => '/VNZ-TECH/account/dashboard.php' .
+                    (!empty($_SESSION['seller_2fa_reminder']) ? '?security_reminder=1' : '')
             ]);
         }
 
@@ -132,7 +195,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/seller_login.css"
+        href="/VNZ-TECH/assets/css/seller_login.css?v=20261006-seller-2fa"
     >
 </head>
 
@@ -173,19 +236,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 style="display:none;"
             ></div>
 
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars(generateCsrfToken(), ENT_QUOTES, 'UTF-8') ?>">
 
             <div class="form-group">
 
-                <label for="email">
-                    EMAIL ADDRESS
+                <label for="login">
+                    EMAIL OR MOBILE NUMBER
                 </label>
 
                 <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Enter your email"
-                    autocomplete="email"
+                    type="text"
+                    id="login"
+                    name="login"
+                    placeholder="Enter your email or registered mobile"
+                    autocomplete="username"
                     required
                 >
 
@@ -224,9 +288,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="login-footer">
 
             <a
-                href="#"
+                href="/VNZ-TECH/account/forgot_password.php"
                 class="forgot-password"
-                onclick="return false;"
             >
                 Forgot Password?
             </a>
@@ -283,8 +346,8 @@ document.addEventListener('DOMContentLoaded', function () {
         messageBox.className = 'login-message';
 
 
-        const email = document
-            .getElementById('email')
+        const login = document
+            .getElementById('login')
             .value
             .trim();
 
@@ -293,10 +356,10 @@ document.addEventListener('DOMContentLoaded', function () {
             .value;
 
 
-        if (email === '' || password === '') {
+        if (login === '' || password === '') {
 
             showMessage(
-                'Please enter your email and password.',
+                'Please enter your email or registered mobile number and password.',
                 'error'
             );
 
@@ -318,6 +381,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 {
                     method: 'POST',
                     body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
                     credentials: 'same-origin'
                 }
             );
@@ -373,6 +439,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 return;
             }
 
+            if (data.requires_two_factor === true && data.redirect) {
+                window.location.href = data.redirect;
+                return;
+            }
+
 
             showMessage(
                 data.message ||
@@ -424,4 +495,3 @@ document.addEventListener('DOMContentLoaded', function () {
 
 </body>
 </html>
-

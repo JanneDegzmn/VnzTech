@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/session.php';
+require_once __DIR__ . '/../backend/csrf.php';
 
 
 /*
@@ -55,7 +56,9 @@ try {
             address,
             profile_picture,
             language,
-            is_active
+            is_active,
+            totp_enabled_at,
+            totp_login_required
         FROM users
         WHERE id = ?
         LIMIT 1
@@ -224,7 +227,7 @@ $initialAlertMessage =
 
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/seller_dashboard.css"
+        href="/VNZ-TECH/assets/css/seller_dashboard.css?v=20261006-seller-2fa-preference"
     >
 
 </head>
@@ -233,6 +236,109 @@ $initialAlertMessage =
 <body>
 
 <?php include __DIR__ . '/../includes/loader-body.php'; ?>
+
+<?php if (
+    ($_GET['security_reminder'] ?? '') === '1'
+    && !empty($_SESSION['seller_2fa_reminder'])
+): ?>
+    <div class="seller-2fa-reminder-backdrop" data-seller-2fa-reminder role="presentation">
+        <section class="seller-2fa-reminder-modal" role="dialog" aria-modal="true" aria-labelledby="seller2faReminderTitle">
+            <span class="seller-2fa-reminder-icon" aria-hidden="true">!</span>
+            <?php if (!empty($sellerAccount['totp_enabled_at'])): ?>
+                <h2 id="seller2faReminderTitle">Use a 6-digit code at login?</h2>
+                <p>Your authenticator is set up. Choose whether to require its 6-digit code every time you sign in. You can change this later in Settings.</p>
+            <?php else: ?>
+                <h2 id="seller2faReminderTitle">Secure your seller account</h2>
+                <p>Set up an authenticator for password recovery. You can choose separately whether you want a 6-digit code at every login.</p>
+            <?php endif; ?>
+            <label class="seller-2fa-reminder-choice">
+                <input type="checkbox" data-seller-2fa-dont-show>
+                <span>Don't show again</span>
+            </label>
+            <div class="seller-2fa-reminder-actions">
+                <?php if (!empty($sellerAccount['totp_enabled_at'])): ?>
+                    <button type="button" class="seller-2fa-reminder-later" data-seller-2fa-login-choice="0">Continue without code</button>
+                    <button type="button" data-seller-2fa-login-choice="1">Require code every login</button>
+                <?php else: ?>
+                    <button type="button" class="seller-2fa-reminder-later" data-seller-2fa-remind-later>Remind me later</button>
+                    <a href="/VNZ-TECH/account/dashboard.php?page=settings" data-seller-2fa-setup>Set up 2FA</a>
+                <?php endif; ?>
+            </div>
+        </section>
+    </div>
+    <script>
+    (function () {
+        const reminder = document.querySelector('[data-seller-2fa-reminder]');
+        const dismissButton = document.querySelector('[data-seller-2fa-remind-later]');
+        if (!reminder) return;
+
+        async function saveReminder(action, loginRequired = null, button = null, redirectUrl = null) {
+            if (button) button.disabled = true;
+            try {
+                const data = new FormData();
+                data.set('action', action);
+                data.set('csrf_token', <?= json_encode(generateCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+                if (document.querySelector('[data-seller-2fa-dont-show]').checked) {
+                    data.set('dont_show_again', '1');
+                }
+                if (loginRequired !== null) {
+                    data.set('login_required', String(loginRequired));
+                }
+                const response = await fetch('/VNZ-TECH/backend/seller_2fa.php', {
+                    method: 'POST',
+                    body: data,
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    credentials: 'same-origin'
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Unable to save your reminder preference.');
+                }
+                if (redirectUrl) {
+                    window.location.href = redirectUrl;
+                } else {
+                    reminder.remove();
+                }
+            } catch (error) {
+                if (button) button.disabled = false;
+                window.alert(error.message || 'Unable to save your reminder preference.');
+            }
+        }
+
+        if (dismissButton) {
+            dismissButton.addEventListener('click', function () {
+                saveReminder('dismiss_reminder', null, dismissButton);
+            });
+        }
+
+        const setupLink = reminder.querySelector('[data-seller-2fa-setup]');
+        if (setupLink) {
+            setupLink.addEventListener('click', function (event) {
+                event.preventDefault();
+                saveReminder(
+                    'dismiss_reminder',
+                    null,
+                    setupLink,
+                    setupLink.href
+                );
+            });
+        }
+
+        reminder.querySelectorAll('[data-seller-2fa-login-choice]').forEach(button => {
+            button.addEventListener('click', function () {
+                saveReminder(
+                    'set_login_requirement',
+                    button.dataset.seller2faLoginChoice,
+                    button
+                );
+            });
+        });
+    })();
+    </script>
+<?php endif; ?>
 
 <div class="dashboard-layout">
 
@@ -1077,6 +1183,9 @@ $initialAlertMessage =
 
     };
 
+    let activePageRequestId = 0;
+    let contentAnimationTimer = null;
+
 
     function setActiveNavigation(
         page
@@ -1423,6 +1532,42 @@ $initialAlertMessage =
     }
 
 
+    function finishPageTransition() {
+
+        contentArea.classList.remove(
+            'is-loading',
+            'is-entering'
+        );
+
+        contentArea.setAttribute(
+            'aria-busy',
+            'false'
+        );
+
+        void contentArea.offsetWidth;
+
+        contentArea.classList.add(
+            'is-entering'
+        );
+
+        contentAnimationTimer =
+            window.setTimeout(
+                function () {
+
+                    contentArea.classList.remove(
+                        'is-entering'
+                    );
+
+                    contentAnimationTimer =
+                        null;
+
+                },
+                320
+            );
+
+    }
+
+
     async function loadPage(
         page,
         pushState = true,
@@ -1437,6 +1582,35 @@ $initialAlertMessage =
                 'dashboard';
 
         }
+
+        const requestId =
+            ++activePageRequestId;
+
+
+        if (contentAnimationTimer) {
+
+            window.clearTimeout(
+                contentAnimationTimer
+            );
+
+            contentAnimationTimer =
+                null;
+
+        }
+
+
+        contentArea.classList.remove(
+            'is-entering'
+        );
+
+        contentArea.classList.add(
+            'is-loading'
+        );
+
+        contentArea.setAttribute(
+            'aria-busy',
+            'true'
+        );
 
 
         setActiveNavigation(
@@ -1541,9 +1715,20 @@ $initialAlertMessage =
             const html =
                 await response.text();
 
+            if (
+                requestId !==
+                activePageRequestId
+            ) {
+
+                return;
+
+            }
+
 
             contentArea.innerHTML =
                 html;
+
+            finishPageTransition();
 
 
             executeScripts(
@@ -1611,6 +1796,16 @@ $initialAlertMessage =
             error
         ) {
 
+            if (
+                requestId !==
+                activePageRequestId
+            ) {
+
+                return;
+
+            }
+
+
             console.error(
                 error
             );
@@ -1637,6 +1832,8 @@ $initialAlertMessage =
 
                 </div>
             `;
+
+            finishPageTransition();
 
         }
 

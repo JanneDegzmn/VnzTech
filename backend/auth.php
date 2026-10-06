@@ -59,6 +59,9 @@ function getCurrentAdmin(): ?array
             a.username,
             a.email,
             a.is_active,
+            a.totp_enabled_at,
+            a.totp_login_required,
+            a.totp_reminder_dismissed,
             r.name AS role_name
         FROM admins a
         INNER JOIN roles r

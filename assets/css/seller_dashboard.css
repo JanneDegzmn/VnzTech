@@ -435,6 +435,27 @@ textarea {
     min-width: 0;
 }
 
+#contentArea.is-entering,
+#contentArea > .content-loading {
+    animation: seller-module-enter 0.28s ease both;
+}
+
+
+@keyframes seller-module-enter {
+
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+}
+
+
 .content-loading {
     width: 100%;
 
@@ -448,6 +469,13 @@ textarea {
 
     font-size: 12px;
     font-weight: 700;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #contentArea.is-entering,
+    #contentArea > .content-loading {
+        animation: none;
+    }
 }
 
 
@@ -2821,6 +2849,242 @@ textarea {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
+}
+
+.seller-2fa-section {
+    position: relative;
+}
+
+.seller-2fa-status {
+    display: inline-flex;
+    margin-top: 12px;
+    padding: 6px 10px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.seller-2fa-status.is-enabled {
+    color: #91e4a9;
+    border-color: rgba(34, 197, 94, 0.25);
+    background: rgba(34, 197, 94, 0.08);
+}
+
+.seller-2fa-status.is-disabled {
+    color: var(--yellow);
+    border-color: rgba(242, 201, 100, 0.25);
+    background: rgba(242, 201, 100, 0.08);
+}
+
+.seller-2fa-form {
+    margin-top: 16px;
+}
+
+.seller-2fa-controls {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.seller-2fa-controls > label,
+.seller-2fa-disable-controls > div {
+    flex: 1 1 220px;
+}
+
+.seller-2fa-controls label,
+.seller-2fa-setup-step label {
+    display: block;
+    margin-bottom: 7px;
+    color: #d5dce2;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.seller-2fa-controls input,
+.seller-2fa-controls select,
+.seller-2fa-setup-step input {
+    width: 100%;
+    min-height: 42px;
+    padding: 10px 12px;
+    border: 1px solid var(--border-light);
+    border-radius: 9px;
+    outline: none;
+    background: var(--panel-2);
+    color: #fff;
+    font: inherit;
+}
+
+.seller-2fa-controls input:focus,
+.seller-2fa-controls select:focus,
+.seller-2fa-setup-step input:focus {
+    border-color: var(--accent);
+}
+
+.seller-2fa-controls .profile-save-button,
+.seller-2fa-setup-step .profile-save-button {
+    min-height: 42px;
+}
+
+.seller-2fa-login-choice {
+    flex: 1 1 300px;
+}
+
+.seller-2fa-login-choice small {
+    display: block;
+    margin-top: 6px;
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.5;
+}
+
+.seller-2fa-disable-button {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: rgba(239, 68, 68, 0.3);
+    color: #ffb7b7;
+}
+
+.seller-2fa-setup-step {
+    margin-top: 18px;
+    padding: 18px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--panel-2);
+}
+
+.seller-2fa-qr {
+    width: fit-content;
+    max-width: 100%;
+    margin: 14px auto;
+    padding: 12px;
+    border-radius: 10px;
+    background: #fff;
+}
+
+.seller-2fa-qr svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.seller-2fa-manual {
+    margin: 12px 0;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.seller-2fa-manual code {
+    display: block;
+    margin-top: 8px;
+    overflow-wrap: anywhere;
+    color: #fff;
+}
+
+.seller-2fa-setup-step form {
+    display: grid;
+    grid-template-columns: minmax(160px, 1fr) auto;
+    align-items: end;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.seller-2fa-setup-step form label {
+    grid-column: 1 / -1;
+    margin-bottom: -5px;
+}
+
+.seller-2fa-reminder-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 20000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(2, 6, 10, 0.78);
+    backdrop-filter: blur(7px);
+}
+
+.seller-2fa-reminder-modal {
+    width: min(100%, 460px);
+    padding: 30px;
+    border: 1px solid #2b3944;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #121a21, #0b1015);
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.6);
+    text-align: center;
+}
+
+.seller-2fa-reminder-icon {
+    display: inline-grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid rgba(14, 165, 233, 0.35);
+    border-radius: 50%;
+    background: rgba(14, 165, 233, 0.1);
+    color: #7dd3fc;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.seller-2fa-reminder-modal h2 {
+    margin-top: 15px;
+    color: #fff;
+    font-size: 21px;
+}
+
+.seller-2fa-reminder-modal > p {
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.seller-2fa-reminder-choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+    color: #cbd5dd;
+    font-size: 12px;
+}
+
+.seller-2fa-reminder-choice input {
+    accent-color: var(--accent);
+}
+
+.seller-2fa-reminder-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.seller-2fa-reminder-actions button,
+.seller-2fa-reminder-actions a,
+.seller-2fa-reminder-actions [data-seller-2fa-login-choice="1"] {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 15px;
+    border: 1px solid var(--border-light);
+    border-radius: 9px;
+    background: transparent;
+    color: #d2dbe2;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.seller-2fa-reminder-actions a {
+    border-color: transparent;
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    color: #fff;
 }
 
 .settings-email-address {

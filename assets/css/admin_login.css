@@ -122,7 +122,6 @@ body {
     z-index: 1;
 }
 
-
 /* =========================================================
    BRAND
 ========================================================= */
@@ -214,6 +213,12 @@ body {
     line-height: 1.5;
 }
 
+.login-message-success {
+    border-color: #2b5938;
+    background: #102116;
+    color: #a9e6bb;
+}
+
 
 /* =========================================================
    FORM
@@ -282,6 +287,34 @@ body {
 
     box-shadow:
         0 0 0 3px rgba(255, 255, 255, 0.05);
+}
+
+.login-forgot-password {
+    display: flex;
+    justify-content: flex-end;
+    margin: -7px 0 17px;
+}
+
+.login-forgot-password a,
+.login-two-factor-cancel {
+    color: #a9b8c8;
+    font-size: 12px;
+    font-weight: 650;
+    text-decoration: none;
+    transition: color 0.18s ease;
+}
+
+.login-forgot-password a:hover,
+.login-two-factor-cancel:hover {
+    color: #ffffff;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.login-two-factor-cancel {
+    display: block;
+    margin-top: 17px;
+    text-align: center;
 }
 
 

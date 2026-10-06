@@ -16,6 +16,7 @@ require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/admin_activity.php';
 
 function jsonError(string $message, int $statusCode = 400): void
 {
@@ -308,6 +309,7 @@ try {
             ]);
         }
 
+        logAdminActivity((int) $currentAdmin['id'], 'trade_item.created', 'Trade item #' . $tradeItemId . ' created.');
         echo json_encode([
             'success' => true,
             'message' => 'Trade item created successfully.',
@@ -409,6 +411,7 @@ try {
             ]);
         }
 
+        logAdminActivity((int) $currentAdmin['id'], 'trade_item.updated', 'Trade item #' . $tradeItemId . ' updated.');
         echo json_encode([
             'success' => true,
             'message' => 'Trade item updated successfully.'
@@ -441,6 +444,7 @@ try {
             }
         }
 
+        logAdminActivity((int) $currentAdmin['id'], 'trade_item.deleted', 'Trade item #' . $tradeItemId . ' deleted.');
         echo json_encode([
             'success' => true,
             'message' => 'Trade item deleted successfully.'
@@ -465,6 +469,7 @@ try {
 
         $stmt->execute([$currentAdmin['id'], $tradeItemId]);
 
+        logAdminActivity((int) $currentAdmin['id'], 'trade_item.active_toggled', 'Trade item #' . $tradeItemId . ' active status toggled.');
         echo json_encode([
             'success' => true,
             'message' => 'Trade item status updated.'
@@ -489,6 +494,7 @@ try {
 
         $stmt->execute([$currentAdmin['id'], $tradeItemId]);
 
+        logAdminActivity((int) $currentAdmin['id'], 'trade_item.featured_toggled', 'Trade item #' . $tradeItemId . ' featured status toggled.');
         echo json_encode([
             'success' => true,
             'message' => 'Trade item featured status updated.'
@@ -518,6 +524,7 @@ try {
 
         $stmt->execute([$sortOrder, $currentAdmin['id'], $tradeItemId]);
 
+        logAdminActivity((int) $currentAdmin['id'], 'trade_item.reordered', 'Trade item #' . $tradeItemId . ' sort order changed.');
         echo json_encode([
             'success' => true,
             'message' => 'Trade item sort order updated.'
@@ -565,6 +572,7 @@ try {
             $data['sort_order']
         ]);
 
+        logAdminActivity((int) $currentAdmin['id'], 'trade_requirement.created', 'Requirement added to trade item #' . $tradeItemId . '.');
         echo json_encode([
             'success' => true,
             'message' => 'Requirement added successfully.',
@@ -615,6 +623,7 @@ try {
             $requirementId
         ]);
 
+        logAdminActivity((int) $currentAdmin['id'], 'trade_requirement.updated', 'Trade requirement #' . $requirementId . ' updated.');
         echo json_encode([
             'success' => true,
             'message' => 'Requirement updated successfully.'
@@ -632,6 +641,7 @@ try {
         $deleteStmt = $pdo->prepare("DELETE FROM trade_requirements WHERE id = ?");
         $deleteStmt->execute([$requirementId]);
 
+        logAdminActivity((int) $currentAdmin['id'], 'trade_requirement.deleted', 'Trade requirement #' . $requirementId . ' deleted.');
         echo json_encode([
             'success' => true,
             'message' => 'Requirement removed successfully.'
@@ -678,6 +688,7 @@ try {
             $updateStmt->execute([$position + 1, $id, $tradeItemId]);
         }
 
+        logAdminActivity((int) $currentAdmin['id'], 'trade_requirement.reordered', 'Requirements reordered for trade item #' . $tradeItemId . '.');
         echo json_encode([
             'success' => true,
             'message' => 'Requirement order updated successfully.'

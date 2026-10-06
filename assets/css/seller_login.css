@@ -244,7 +244,8 @@ body {
     cursor: pointer;
 }
 
-.forgot {
+.forgot,
+.forgot-password {
     color: #38bdf8;
 
     font-size: 12px;
@@ -252,12 +253,35 @@ body {
     text-decoration: none;
 }
 
-.forgot:hover {
+.forgot:hover,
+.forgot-password:hover {
     text-decoration: underline;
 }
 
-/* =========================================================
-   LOGIN BUTTON
+   .seller-totp-recovery {
+       margin-top: 18px;
+       padding-top: 15px;
+       border-top: 1px solid #29323b;
+   }
+
+   .seller-totp-recovery summary {
+       color: #38bdf8;
+       font-size: 12px;
+       font-weight: 700;
+       cursor: pointer;
+   }
+
+   .seller-totp-recovery .subtitle {
+       margin: 12px 0 18px;
+   }
+
+   .seller-totp-recovery .login-button {
+       margin-top: 2px;
+       font-size: 12px;
+   }
+
+   /* =========================================================
+      LOGIN BUTTON
    ========================================================= */
 
 .login-button {

@@ -453,6 +453,26 @@ body {
     padding: 32px;
 }
 
+.content-area.is-entering,
+.content-loading {
+    animation: admin-module-enter 0.28s ease both;
+}
+
+
+@keyframes admin-module-enter {
+
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+}
+
 
 .content-loading {
     min-height: 300px;
@@ -1175,9 +1195,118 @@ body.admin-submission-modal-open {
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .content-area.is-entering,
+    .content-loading {
+        animation: none;
+    }
+
     .admin-submission-modal,
     .admin-submission-modal-backdrop,
     .admin-submission-modal-panel {
         transition: none;
+    }
+}
+
+.admin-2fa-reminder-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(2, 6, 10, 0.78);
+    backdrop-filter: blur(7px);
+}
+
+.admin-2fa-reminder-modal {
+    width: min(100%, 460px);
+    padding: 30px;
+    border: 1px solid #2b3944;
+    border-radius: 18px;
+    background: linear-gradient(145deg, #121a21, #0b1015);
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.6);
+    text-align: center;
+}
+
+.admin-2fa-reminder-icon {
+    display: inline-grid;
+    width: 42px;
+    height: 42px;
+    place-items: center;
+    border: 1px solid rgba(14, 165, 233, 0.35);
+    border-radius: 50%;
+    background: rgba(14, 165, 233, 0.1);
+    color: #7dd3fc;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.admin-2fa-reminder-modal h2 {
+    margin-top: 15px;
+    color: #fff;
+    font-size: 21px;
+}
+
+.admin-2fa-reminder-modal > p {
+    margin-top: 9px;
+    color: #8b97a2;
+    font-size: 13px;
+    line-height: 1.6;
+}
+
+.admin-2fa-reminder-choice {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 18px;
+    color: #cbd5dd;
+    font-size: 12px;
+}
+
+.admin-2fa-reminder-choice input {
+    accent-color: #0ea5e9;
+}
+
+.admin-2fa-reminder-actions {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 22px;
+}
+
+.admin-2fa-reminder-actions button {
+    display: inline-flex;
+    min-height: 40px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 15px;
+    border: 1px solid #303a44;
+    border-radius: 9px;
+    background: transparent;
+    color: #d2dbe2;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+}
+
+.admin-2fa-reminder-actions [data-admin-2fa-login-choice="1"] {
+    border-color: transparent;
+    background: linear-gradient(135deg, #0ea5e9, #0284c7);
+    color: #fff;
+}
+
+@media (max-width: 480px) {
+    .admin-2fa-reminder-modal {
+        padding: 24px 19px;
+    }
+
+    .admin-2fa-reminder-actions {
+        flex-direction: column;
+    }
+
+    .admin-2fa-reminder-actions button {
+        width: 100%;
     }
 }

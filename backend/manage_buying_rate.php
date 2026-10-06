@@ -15,6 +15,7 @@ require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/admin_activity.php';
 
 requireAdminLogin();
 
@@ -185,6 +186,7 @@ if ($action === 'create') {
         $currentAdmin['id']
     ]);
 
+    logAdminActivity((int) $currentAdmin['id'], 'buying_rate.created', 'Buying rate #' . (int) $pdo->lastInsertId() . ' created.');
     echo json_encode([
         'success' => true,
         'message' => 'Buying rate added successfully.',
@@ -246,6 +248,7 @@ if ($action === 'update') {
         $rateId
     ]);
 
+    logAdminActivity((int) $currentAdmin['id'], 'buying_rate.updated', 'Buying rate #' . $rateId . ' updated.');
     echo json_encode([
         'success' => true,
         'message' => 'Buying rate updated successfully.'
@@ -308,6 +311,7 @@ if ($action === 'toggle') {
         $rateId
     ]);
 
+    logAdminActivity((int) $currentAdmin['id'], 'buying_rate.active_toggled', 'Buying rate #' . $rateId . ' active status changed.');
     echo json_encode([
         'success' => true,
         'message' => $newStatus
@@ -351,6 +355,8 @@ if ($action === 'archive') {
         $currentAdmin['id'],
         $rateId
     ]);
+
+    logAdminActivity((int) $currentAdmin['id'], 'buying_rate.archived', 'Buying rate #' . $rateId . ' archived.');
 
     if ($stmt->rowCount() === 0) {
         http_response_code(404);
@@ -408,6 +414,7 @@ if ($action === 'restore') {
         exit;
     }
 
+    logAdminActivity((int) $currentAdmin['id'], 'buying_rate.restored', 'Buying rate #' . $rateId . ' restored.');
     echo json_encode([
         'success' => true,
         'message' => 'Rate restored.'
@@ -456,6 +463,7 @@ if ($action === 'delete_permanent') {
         exit;
     }
 
+    logAdminActivity((int) $currentAdmin['id'], 'buying_rate.deleted', 'Buying rate #' . $rateId . ' permanently deleted.');
     echo json_encode([
         'success' => true,
         'message' => 'Rate permanently deleted.'

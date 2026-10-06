@@ -1,6 +1,12 @@
 <?php
 
 require_once __DIR__ . '/../backend/session.php';
+require_once __DIR__ . '/../backend/database.php';
+require_once __DIR__ . '/../backend/admin_activity.php';
+
+if (isset($_SESSION['admin_id'])) {
+    logAdminActivity((int) $_SESSION['admin_id'], 'auth.logout', 'Admin signed out.');
+}
 
 
 // Clear all session data

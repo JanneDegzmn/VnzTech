@@ -3,6 +3,7 @@
 session_start();
 
 require_once __DIR__ . '/../backend/session.php';
+require_once __DIR__ . '/../backend/csrf.php';
 
 if (
     isset($_SESSION['user_logged_in']) &&
@@ -15,7 +16,26 @@ if (
 
 $error = $_GET['error'] ?? '';
 $success = isset($_GET['success']) && $_GET['success'] === '1';
+$passwordReset = isset($_GET['password_reset']) && $_GET['password_reset'] === '1';
 $verification = $_GET['verification'] ?? '';
+$twoFactorChallenge =
+    isset($_GET['two_factor'])
+    && !empty($_SESSION['seller_2fa_login_user_id'])
+    && time() - (int) ($_SESSION['seller_2fa_login_started_at'] ?? 0) <= 300;
+
+if (isset($_GET['cancel_two_factor'])) {
+    unset($_SESSION['seller_2fa_login_user_id'], $_SESSION['seller_2fa_login_started_at']);
+    header('Location: /VNZ-TECH/account/login.php');
+    exit;
+}
+
+if (isset($_GET['two_factor']) && !$twoFactorChallenge) {
+    unset($_SESSION['seller_2fa_login_user_id'], $_SESSION['seller_2fa_login_started_at']);
+    header('Location: /VNZ-TECH/account/login.php?error=' . urlencode('Your sign-in verification expired. Please log in again.'));
+    exit;
+}
+
+$csrfToken = generateCsrfToken();
 
 ?>
 
@@ -37,7 +57,7 @@ $verification = $_GET['verification'] ?? '';
 
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/seller_login.css"
+        href="/VNZ-TECH/assets/css/seller_login.css?v=20261006-seller-2fa"
     >
 
 </head>
@@ -67,12 +87,13 @@ $verification = $_GET['verification'] ?? '';
     <div class="login-card">
 
         <h2>
-            Welcome Back
+            <?= $twoFactorChallenge ? 'Verify Your Sign-In' : 'Welcome Back' ?>
         </h2>
 
         <p class="subtitle">
-            Log in to manage your submissions, offers,
-            transactions, and account.
+            <?= $twoFactorChallenge
+                ? 'Enter the current 6-digit code from your authenticator app.'
+                : 'Log in to manage your submissions, offers, transactions, and account.' ?>
         </p>
 
         <?php if ($error !== ''): ?>
@@ -98,6 +119,14 @@ $verification = $_GET['verification'] ?? '';
 
         <?php endif; ?>
 
+        <?php if ($passwordReset): ?>
+
+            <div class="message success" role="status">
+                Your password has been reset. You may now log in with your new password.
+            </div>
+
+        <?php endif; ?>
+
         <?php if ($verification === 'success'): ?>
 
             <div class="message success">
@@ -114,23 +143,31 @@ $verification = $_GET['verification'] ?? '';
         <?php endif; ?>
 
         <form
-            action="/VNZ-TECH/backend/login.php"
+            action="<?= $twoFactorChallenge ? '/VNZ-TECH/backend/verify_seller_2fa.php' : '/VNZ-TECH/backend/login.php' ?>"
             method="POST"
             autocomplete="on"
         >
 
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+
+            <?php if ($twoFactorChallenge): ?>
+                <div class="field">
+                    <label for="two_factor_code">AUTHENTICATOR CODE</label>
+                    <input type="text" id="two_factor_code" name="two_factor_code" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required autofocus>
+                </div>
+            <?php else: ?>
             <div class="field">
 
-                <label for="email">
-                    Email Address
+                <label for="login">
+                    Email or Mobile Number
                 </label>
 
                 <input
-                    type="email"
-                    id="email"
-                    name="email"
+                    type="text"
+                    id="login"
+                    name="login"
                     maxlength="190"
-                    autocomplete="email"
+                    autocomplete="username"
                     required
                 >
 
@@ -169,23 +206,29 @@ $verification = $_GET['verification'] ?? '';
                 </label>
 
                 <a
-                    href="#"
+                    href="/VNZ-TECH/account/forgot_password.php"
                     class="forgot"
-                    onclick="return false;"
                 >
                     Forgot Password?
                 </a>
 
             </div>
+            <?php endif; ?>
 
             <button
                 type="submit"
                 class="login-button"
             >
-                LOG IN
+                <?= $twoFactorChallenge ? 'VERIFY CODE' : 'LOG IN' ?>
             </button>
 
         </form>
+
+        <?php if ($twoFactorChallenge): ?>
+            <div class="register-link">
+                <a href="/VNZ-TECH/account/login.php?cancel_two_factor=1">Cancel and return to login</a>
+            </div>
+        <?php endif; ?>
 
         <div class="register-link">
 

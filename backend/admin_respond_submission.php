@@ -4,6 +4,7 @@ require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/admin_activity.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -224,6 +225,7 @@ try {
             $submissionId
         ]);
 
+        logAdminActivity($adminId, 'submission.declined', 'Submission #' . $submissionId . ' declined.');
         $pdo->commit();
 
         jsonResponse(
@@ -367,6 +369,7 @@ try {
         $submissionId
     ]);
 
+    logAdminActivity($adminId, 'submission.accepted', 'Submission #' . $submissionId . ' accepted and transaction created.');
     $pdo->commit();
 
     jsonResponse(

@@ -34,7 +34,7 @@ $csrfToken = generateCsrfToken();
 
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/admin_dashboard.css"
+        href="/VNZ-TECH/assets/css/admin_dashboard.css?v=<?= filemtime(__DIR__ . '/../assets/css/admin_dashboard.css') ?>"
     >
 
     <?php include __DIR__ . '/../includes/loader-head.php'; ?>
@@ -45,6 +45,67 @@ $csrfToken = generateCsrfToken();
 <body>
 
 <?php include __DIR__ . '/../includes/loader-body.php'; ?>
+
+<?php if (
+    ($_GET['security_reminder'] ?? '') === '1'
+    && !empty($_SESSION['admin_2fa_reminder'])
+    && !empty($currentAdmin['totp_enabled_at'])
+    && (int) ($currentAdmin['totp_login_required'] ?? 0) !== 1
+): ?>
+    <div class="admin-2fa-reminder-backdrop" data-admin-2fa-reminder role="presentation">
+        <section class="admin-2fa-reminder-modal" role="dialog" aria-modal="true" aria-labelledby="admin2faReminderTitle">
+            <span class="admin-2fa-reminder-icon" aria-hidden="true">!</span>
+            <h2 id="admin2faReminderTitle">Use a 6-digit code at login?</h2>
+            <p>Your authenticator is set up. Choose whether to require its 6-digit code every time you sign in. You can change this later in Settings.</p>
+            <label class="admin-2fa-reminder-choice">
+                <input type="checkbox" data-admin-2fa-dont-show>
+                <span>Don't show again</span>
+            </label>
+            <div class="admin-2fa-reminder-actions">
+                <button type="button" data-admin-2fa-login-choice="0">Continue without code</button>
+                <button type="button" data-admin-2fa-login-choice="1">Require code every login</button>
+            </div>
+        </section>
+    </div>
+    <script>
+    (function () {
+        const reminder = document.querySelector('[data-admin-2fa-reminder]');
+        if (!reminder) return;
+
+        reminder.querySelectorAll('[data-admin-2fa-login-choice]').forEach(button => {
+            button.addEventListener('click', async function () {
+                button.disabled = true;
+                try {
+                    const data = new FormData();
+                    data.set('csrf_token', <?= json_encode(generateCsrfToken(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+                    data.set('action', 'set_2fa_login_requirement');
+                    data.set('login_required', button.dataset.admin2faLoginChoice);
+                    if (reminder.querySelector('[data-admin-2fa-dont-show]').checked) {
+                        data.set('dont_show_again', '1');
+                    }
+                    const response = await fetch('/VNZ-TECH/backend/update_admin_settings.php', {
+                        method: 'POST',
+                        body: new URLSearchParams(data).toString(),
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
+                            'Accept': 'application/json'
+                        },
+                        credentials: 'same-origin'
+                    });
+                    const result = await response.json();
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.message || 'Unable to save the sign-in preference.');
+                    }
+                    reminder.remove();
+                } catch (error) {
+                    button.disabled = false;
+                    window.alert(error.message || 'Unable to save the sign-in preference.');
+                }
+            });
+        });
+    })();
+    </script>
+<?php endif; ?>
 
 <div class="admin-layout">
 
@@ -484,6 +545,8 @@ document.addEventListener(
         let submissionModalId = null;
         let submissionModalOrigin = 'submissions';
         let submissionModalNeedsRefresh = false;
+        let activePageRequestId = 0;
+        let contentAnimationTimer = null;
 
                 /*
         |--------------------------------------------------------------------------
@@ -871,11 +934,77 @@ document.addEventListener(
         |--------------------------------------------------------------------------
         */
 
+        function finishPageTransition() {
+
+            contentArea.classList.remove(
+                'is-loading',
+                'is-entering'
+            );
+
+            contentArea.setAttribute(
+                'aria-busy',
+                'false'
+            );
+
+            void contentArea.offsetWidth;
+
+            contentArea.classList.add(
+                'is-entering'
+            );
+
+            contentAnimationTimer =
+                window.setTimeout(
+                    function () {
+
+                        contentArea.classList.remove(
+                            'is-entering'
+                        );
+
+                        contentAnimationTimer =
+                            null;
+
+                    },
+                    320
+                );
+
+        }
+
+
         function loadPage(
             page,
             pushState = true,
             params = {}
         ) {
+
+            const requestId =
+                ++activePageRequestId;
+
+
+            if (contentAnimationTimer) {
+
+                window.clearTimeout(
+                    contentAnimationTimer
+                );
+
+                contentAnimationTimer =
+                    null;
+
+            }
+
+
+            contentArea.classList.remove(
+                'is-entering'
+            );
+
+            contentArea.classList.add(
+                'is-loading'
+            );
+
+            contentArea.setAttribute(
+                'aria-busy',
+                'true'
+            );
+
 
             contentArea.innerHTML = `
 
@@ -967,8 +1096,20 @@ document.addEventListener(
             .then(
                 function (html) {
 
+                    if (
+                        requestId !==
+                        activePageRequestId
+                    ) {
+
+                        return;
+
+                    }
+
+
                     contentArea.innerHTML =
                         html;
+
+                    finishPageTransition();
 
 
                     /*
@@ -1024,6 +1165,16 @@ document.addEventListener(
             .catch(
                 function (error) {
 
+                    if (
+                        requestId !==
+                        activePageRequestId
+                    ) {
+
+                        return;
+
+                    }
+
+
                     contentArea.innerHTML = `
 
                         <div class="page-error">
@@ -1050,6 +1201,8 @@ document.addEventListener(
                         </div>
 
                     `;
+
+                    finishPageTransition();
 
                 }
             );
