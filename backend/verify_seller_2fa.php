@@ -114,6 +114,7 @@ try {
     $pdo->commit();
 
     session_regenerate_id(true);
+    clearAdminSessionState();
     unset(
         $_SESSION['seller_2fa_login_user_id'],
         $_SESSION['seller_2fa_login_started_at'],

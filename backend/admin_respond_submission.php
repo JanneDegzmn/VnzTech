@@ -349,6 +349,7 @@ try {
         $totalAskingPrice,
         $adminId
     ]);
+    $transactionId = (int) $pdo->lastInsertId();
 
     /*
      * Mark submission accepted.
@@ -379,6 +380,8 @@ try {
         [
             'transaction_reference' =>
                 $transactionReference,
+            'transaction_id' =>
+                $transactionId,
             'final_amount' =>
                 $totalAskingPrice
         ]

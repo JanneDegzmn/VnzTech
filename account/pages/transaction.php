@@ -1037,6 +1037,23 @@ function transactionDetailDamageLabel($level)
         </div>
 
 
+        <?php
+        $transactionChatId = (int) $transaction['id'];
+        ?>
+        <button
+            type="button"
+            class="transaction-chat-shortcut"
+            data-open-transaction-chat
+            data-transaction-id="<?= $transactionChatId ?>"
+            data-transaction-reference="<?= transactionDetailEscape($transaction['transaction_reference']) ?>"
+        >
+            <span>
+                <strong>Open transaction chat</strong>
+                <small>Continue this conversation in the floating chat window.</small>
+            </span>
+            <span aria-hidden="true">→</span>
+        </button>
+
         <!-- =================================================
              BACK
         ================================================== -->

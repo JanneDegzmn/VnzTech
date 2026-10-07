@@ -1946,10 +1946,23 @@ $initialMobile =
             }
 
 
-            showMessage(
-                data.message,
-                'success'
-            );
+            if (
+                responseType === 'accept'
+                && Number(data.transaction_id) > 0
+                && typeof window.showSellerTransactionApproval === 'function'
+            ) {
+                window.showSellerTransactionApproval({
+                    transaction_id: data.transaction_id,
+                    transaction_reference: data.transaction_reference,
+                    offer_amount: data.offer_amount,
+                    submission_reference: reference
+                });
+            } else {
+                showMessage(
+                    data.message,
+                    'success'
+                );
+            }
 
 
             await refreshSubmission();

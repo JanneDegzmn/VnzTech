@@ -462,6 +462,7 @@ try {
             $transactionReference,
             $data['offer_amount']
         ]);
+        $transactionId = (int) $pdo->lastInsertId();
     }
 
     /*
@@ -483,7 +484,9 @@ try {
         echo json_encode([
             'success' => true,
             'message' => 'Offer accepted successfully. Transaction created.',
-            'transaction_reference' => $transactionReference
+            'transaction_reference' => $transactionReference,
+            'transaction_id' => $transactionId,
+            'offer_amount' => (float) $data['offer_amount']
         ]);
 
     } else {

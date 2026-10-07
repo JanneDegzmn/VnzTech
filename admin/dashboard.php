@@ -36,6 +36,18 @@ $csrfToken = generateCsrfToken();
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/admin_dashboard.css?v=<?= filemtime(__DIR__ . '/../assets/css/admin_dashboard.css') ?>"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261008-floating"
+    >
+    <script
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261008-floating"
+        defer
+    ></script>
+    <script
+        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261008-floating"
+        defer
+    ></script>
 
     <?php include __DIR__ . '/../includes/loader-head.php'; ?>
 
@@ -105,6 +117,7 @@ $csrfToken = generateCsrfToken();
         });
     })();
     </script>
+
 <?php endif; ?>
 
 <div class="admin-layout">
@@ -1573,6 +1586,9 @@ document.addEventListener(
 
 </script>
 
+<?php if (hasPermission('view_submissions')): ?>
+    <?php require __DIR__ . '/../includes/floating-messages.php'; ?>
+<?php endif; ?>
 
 </body>
 

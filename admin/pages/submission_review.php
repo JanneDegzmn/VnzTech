@@ -2377,6 +2377,42 @@ foreach ($items as $item) {
 
 </div>
 
+<div class="transaction-chat-approval-modal" data-approval-modal aria-hidden="true">
+    <div class="transaction-chat-approval-backdrop" data-approval-close></div>
+    <section
+        class="transaction-chat-approval-panel"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transactionApprovalTitle"
+    >
+        <span class="transaction-chat-approval-kicker">VNZ TECH · APPROVED</span>
+        <h2 id="transactionApprovalTitle">Request Approved</h2>
+        <p>The seller's request has been approved successfully.</p>
+        <dl class="transaction-chat-approval-details">
+            <div>
+                <dt>Submission</dt>
+                <dd data-approval-submission></dd>
+            </div>
+            <div>
+                <dt>Transaction</dt>
+                <dd data-approval-transaction></dd>
+            </div>
+            <div>
+                <dt>Approved amount</dt>
+                <dd data-approval-amount></dd>
+            </div>
+        </dl>
+        <div class="transaction-chat-approval-actions">
+            <button type="button" class="transaction-chat-approval-primary" data-approval-chat>
+                Chat with Seller
+            </button>
+            <button type="button" class="transaction-chat-approval-close" data-approval-close>
+                Close
+            </button>
+        </div>
+    </section>
+</div>
+
 
 <script>
 
@@ -2411,6 +2447,80 @@ foreach ($items as $item) {
             );
         }
     }
+
+    const approvalModal =
+        reviewPage.parentElement?.querySelector('[data-approval-modal]');
+    const approvalChatButton =
+        approvalModal?.querySelector('[data-approval-chat]');
+    let approvedTransactionId = 0;
+
+    function closeApprovalModal(refresh = true) {
+        if (!approvalModal) {
+            return;
+        }
+
+        approvalModal.classList.remove('is-open');
+        approvalModal.setAttribute('aria-hidden', 'true');
+
+        if (refresh) {
+            refreshReviewAfterAction();
+        }
+    }
+
+    function showApprovalModal(data) {
+        if (!approvalModal) {
+            throw new Error('The approval confirmation could not be displayed.');
+        }
+
+        approvedTransactionId = Number(data.transaction_id) || 0;
+        if (!approvedTransactionId) {
+            throw new Error('The approved transaction could not be identified.');
+        }
+
+        approvalModal.querySelector('[data-approval-submission]').textContent =
+            <?= json_encode((string) $submission['reference_number']) ?>;
+        approvalModal.querySelector('[data-approval-transaction]').textContent =
+            String(data.transaction_reference || 'Transaction created');
+
+        const amount = Number(data.offer_amount ?? data.final_amount);
+        approvalModal.querySelector('[data-approval-amount]').textContent =
+            Number.isFinite(amount)
+                ? new Intl.NumberFormat('en-PH', {
+                    style: 'currency',
+                    currency: 'PHP'
+                }).format(amount)
+                : '—';
+
+        approvalModal.classList.add('is-open');
+        approvalModal.setAttribute('aria-hidden', 'false');
+        approvalChatButton?.focus({preventScroll: true});
+    }
+
+    approvalModal?.querySelectorAll('[data-approval-close]').forEach(button => {
+        button.addEventListener('click', () => closeApprovalModal());
+    });
+
+    approvalChatButton?.addEventListener('click', () => {
+        if (!approvedTransactionId) {
+            return;
+        }
+
+        closeApprovalModal(false);
+        if (
+            reviewPage.closest('#adminSubmissionModalBody')
+            && typeof window.closeAdminSubmissionModal === 'function'
+        ) {
+            window.closeAdminSubmissionModal();
+        }
+
+        window.openTransactionChat?.(approvedTransactionId);
+    });
+
+    approvalModal?.addEventListener('keydown', event => {
+        if (event.key === 'Escape' && approvalModal.classList.contains('is-open')) {
+            closeApprovalModal();
+        }
+    });
 
     /*
 |--------------------------------------------------------------------------
@@ -2499,9 +2609,16 @@ reviewPage
                         );
                     }
 
-                    alert(data.message);
-
-                    refreshReviewAfterAction();
+                    if (responseType === 'accept') {
+                        showApprovalModal({
+                            transaction_id: data.transaction_id,
+                            transaction_reference: data.transaction_reference,
+                            final_amount: data.final_amount
+                        });
+                    } else {
+                        alert(data.message);
+                        refreshReviewAfterAction();
+                    }
 
                 } catch (error) {
 
@@ -2628,12 +2745,16 @@ reviewPage
                             }
 
 
-                            alert(
-                                data.message
-                            );
-
-
-                            refreshReviewAfterAction();
+                            if (responseType === 'accept') {
+                                showApprovalModal({
+                                    transaction_id: data.transaction_id,
+                                    transaction_reference: data.transaction_reference,
+                                    offer_amount: data.offer_amount
+                                });
+                            } else {
+                                alert(data.message);
+                                refreshReviewAfterAction();
+                            }
 
                         } catch (error) {
 

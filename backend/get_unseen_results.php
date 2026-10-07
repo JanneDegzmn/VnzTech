@@ -57,8 +57,7 @@ if (
 |--------------------------------------------------------------------------
 |
 | Only surfaces submissions where result_seen_by_seller = 0, which
-| is ONLY ever set by backend/admin_respond_offer.php (Admin
-| accepting/declining the seller's own counter-offer). Submissions
+| is set by Admin acceptance/decline flows. Submissions
 | accepted/declined through the seller's own action in
 | backend/respond_offer.php never flip this flag, so they never
 | appear here — the seller already knows, they just did it.
@@ -85,7 +84,28 @@ try {
                     WHERE o.submission_id = s.id
                     ORDER BY o.id DESC
                     LIMIT 1
-                ) AS offer_amount
+                ) AS offer_amount,
+                (
+                    SELECT t.id
+                    FROM transactions t
+                    WHERE t.submission_id = s.id
+                    ORDER BY t.id DESC
+                    LIMIT 1
+                ) AS transaction_id,
+                (
+                    SELECT t.transaction_reference
+                    FROM transactions t
+                    WHERE t.submission_id = s.id
+                    ORDER BY t.id DESC
+                    LIMIT 1
+                ) AS transaction_reference,
+                (
+                    SELECT t.final_amount
+                    FROM transactions t
+                    WHERE t.submission_id = s.id
+                    ORDER BY t.id DESC
+                    LIMIT 1
+                ) AS final_amount
             FROM submissions s
             WHERE s.user_id = ?
               AND s.status IN ('accepted', 'declined')

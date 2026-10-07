@@ -60,6 +60,7 @@ $sql = "
         t.payment_method,
         t.payment_status,
         t.transaction_status,
+        o.offer_amount,
         t.notes,
         t.completed_at,
         t.created_at,
@@ -75,6 +76,8 @@ $sql = "
         s.admin_feedback
 
     FROM transactions t
+    LEFT JOIN offers o
+        ON o.id = t.offer_id
 
     LEFT JOIN submissions s
         ON s.id = t.submission_id
@@ -1037,6 +1040,23 @@ function reviewDamageLabel($level): string
     <?php endif; ?>
 
 
+
+    <?php
+    $transactionChatId = (int) $transaction['id'];
+    ?>
+    <button
+        type="button"
+        class="transaction-chat-shortcut"
+        data-open-transaction-chat
+        data-transaction-id="<?= $transactionChatId ?>"
+        data-transaction-reference="<?= reviewEscape($transaction['transaction_reference'] ?? '') ?>"
+    >
+        <span>
+            <strong>Open transaction chat</strong>
+            <small>Continue this conversation in the floating chat window.</small>
+        </span>
+        <span aria-hidden="true">→</span>
+    </button>
 
     <!-- =========================================================
          FOOTER

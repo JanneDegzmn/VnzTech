@@ -12,6 +12,7 @@ node_modules/
 
 # Local mail credentials
 /backend/mail_config.local.php
+/backend/scaledrone_config.local.php
 
 # OS files
 .DS_Store

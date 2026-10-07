@@ -147,6 +147,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         session_regenerate_id(true);
+        clearAdminSessionState();
         $_SESSION['user_logged_in'] = true;
         $_SESSION['user_id'] = (int) $user['id'];
         $_SESSION['user_email'] = $user['email'];

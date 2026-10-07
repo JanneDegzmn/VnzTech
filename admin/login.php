@@ -313,6 +313,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     );
                     $pdo->commit();
                     session_regenerate_id(true);
+                    clearSellerSessionState();
                     unset(
                         $_SESSION['admin_2fa_pending_id'],
                         $_SESSION['admin_2fa_pending_at'],
@@ -385,6 +386,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 logAdminActivity((int) $admin['id'], 'auth.2fa_challenge_started', 'Password accepted; authenticator code required.');
             } else {
                 session_regenerate_id(true);
+                clearSellerSessionState();
                 $_SESSION['admin_id'] = (int) $admin['id'];
                 $_SESSION['admin_role_id'] = (int) $admin['role_id'];
                 $_SESSION['admin_role'] = $admin['role_name'];

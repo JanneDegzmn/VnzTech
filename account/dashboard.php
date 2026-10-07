@@ -229,6 +229,18 @@ $initialAlertMessage =
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/seller_dashboard.css?v=20261006-seller-2fa-preference"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261008-floating"
+    >
+    <script
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261008-floating"
+        defer
+    ></script>
+    <script
+        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261008-floating"
+        defer
+    ></script>
 
 </head>
 
@@ -3283,6 +3295,11 @@ $initialAlertMessage =
             'sellerAlertModalMessage'
         );
 
+    const sellerAlertModalTitle =
+        document.getElementById(
+            'sellerAlertModalTitle'
+        );
+
 
     const sellerAlertModalPrimary =
         document.getElementById(
@@ -3331,10 +3348,15 @@ $initialAlertMessage =
         sellerAlertModalMessage.textContent =
             message;
 
+        if (sellerAlertModalTitle) {
+            sellerAlertModalTitle.textContent =
+                options.title || 'Heads up';
+        }
+
 
         if (
             options.actionLabel &&
-            options.actionPage
+            (options.actionPage || typeof options.onAction === 'function')
         ) {
 
             sellerAlertModalPrimary.style.display =
@@ -3350,13 +3372,12 @@ $initialAlertMessage =
 
                     closeSellerAlertModal();
 
+                    if (typeof options.onAction === 'function') {
+                        options.onAction();
+                        return;
+                    }
 
-                    loadPage(
-                        options.actionPage,
-                        true,
-                        options.actionParams ||
-                            {}
-                    );
+                    loadPage(options.actionPage, true, options.actionParams || {});
 
                 };
 
@@ -3419,6 +3440,34 @@ $initialAlertMessage =
         }
 
     }
+
+    window.showSellerTransactionApproval = function (result, onClose = null) {
+        const rawAmount = result.offer_amount ?? result.final_amount;
+        const amount = Number(rawAmount);
+        const amountText = rawAmount !== null && rawAmount !== undefined && Number.isFinite(amount)
+            ? '\nApproved amount: ' + amount.toLocaleString('en-PH', {
+                style: 'currency',
+                currency: 'PHP'
+            })
+            : '';
+
+        enqueueSellerAlert(
+            'Your request has been approved successfully.\nSubmission: ' +
+                (result.submission_reference || '—') +
+                '\nTransaction: ' +
+                (result.transaction_reference || 'Created') +
+                amountText,
+            {
+                title: 'Request Approved',
+                actionLabel: 'Chat with Admin',
+                onAction: function () {
+                    window.closeSellerSubmissionModal?.();
+                    window.openTransactionChat?.(Number(result.transaction_id));
+                },
+                onClose
+            }
+        );
+    };
 
 
     function showNextQueuedSellerAlert() {
@@ -3595,10 +3644,10 @@ $initialAlertMessage =
 
 
                     const amountText =
-                        result.offer_amount
+                        (result.offer_amount || result.final_amount)
                             ? '₱' +
                                 Number(
-                                    result.offer_amount
+                                    result.offer_amount || result.final_amount
                                 ).toLocaleString(
                                     'en-PH',
                                     {
@@ -3609,17 +3658,27 @@ $initialAlertMessage =
                             : '';
 
 
+                    if (isAccepted && Number(result.transaction_id) > 0) {
+                        window.showSellerTransactionApproval(
+                            result,
+                            function () {
+                                markResultSeen(result.id);
+                            }
+                        );
+                        return;
+                    }
+
                     const message =
                         isAccepted
-
                             ? (
-                                'Magandang balita! Na-accept ng VNZ TECH ang submission mo (' +
+                                'Your request has been approved successfully.\nSubmission: ' +
                                 result.reference_number +
-                                ')' +
+                                '\nTransaction: ' +
+                                (result.transaction_reference || 'Created') +
                                 (
                                     amountText
-                                        ? ' sa halagang ' + amountText + '.'
-                                        : '.'
+                                        ? '\nApproved amount: ' + amountText
+                                        : ''
                                 )
                             )
 
@@ -3638,15 +3697,26 @@ $initialAlertMessage =
                     enqueueSellerAlert(
                         message,
                         {
-                            actionLabel:
-                                'View Submission',
+                            title: isAccepted
+                                ? 'Request Approved'
+                                : 'Heads up',
 
-                            actionPage:
-                                'submission',
+                            actionLabel: isAccepted && Number(result.transaction_id) > 0
+                                ? 'Chat with Admin'
+                                : 'View Submission',
 
-                            actionParams: {
-                                ref: result.reference_number
-                            },
+                            actionPage: isAccepted && Number(result.transaction_id) > 0
+                                ? 'transaction'
+                                : 'submission',
+
+                            actionParams: isAccepted && Number(result.transaction_id) > 0
+                                ? {
+                                    id: result.transaction_id,
+                                    open_chat: 1
+                                }
+                                : {
+                                    ref: result.reference_number
+                                },
 
                             onClose:
                                 function () {
@@ -3995,6 +4065,7 @@ $initialAlertMessage =
 
 </script>
 
+<?php require __DIR__ . '/../includes/floating-messages.php'; ?>
 
 </body>
 </html>
