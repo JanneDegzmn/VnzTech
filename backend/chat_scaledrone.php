@@ -180,10 +180,10 @@ function chatCreateScaledroneClientToken(
     ];
 }
 
-function chatPublishPersistedMessage(
+function chatPublishConversationEvent(
     int $conversationId,
     array $actor,
-    array $message
+    array $event
 ): string {
     try {
         $roomContext = chatGetAuthorizedScaledroneRoom(
@@ -196,12 +196,12 @@ function chatPublishPersistedMessage(
         }
 
         error_log(
-            'Saved chat message could not be authorized for realtime publish.'
+            'Chat event could not be authorized for realtime publish.'
         );
 
         return 'failed';
     } catch (Throwable $e) {
-        error_log('Saved chat message realtime authorization failed.');
+        error_log('Chat event realtime authorization failed.');
 
         return 'failed';
     }
@@ -211,13 +211,11 @@ function chatPublishPersistedMessage(
         return 'failed';
     }
 
-    $event = [
-        'event' => 'message.created',
+    $payload = array_merge([
         'conversation_id' => $conversationId,
-        'message_id' => (int) $message['id'],
-        'created_at' => (string) $message['created_at'],
-        'message_type' => (string) $message['message_type']
-    ];
+        'actor_type' => $actor['actor_type'],
+        'actor_id' => (int) $actor['actor_id']
+    ], $event);
 
     try {
         $url = 'https://api2.scaledrone.com/'
@@ -236,7 +234,7 @@ function chatPublishPersistedMessage(
         curl_setopt_array($curl, [
             CURLOPT_POST => true,
             CURLOPT_POSTFIELDS => json_encode(
-                $event,
+                $payload,
                 JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
             ),
             CURLOPT_HTTPHEADER => [
@@ -285,4 +283,21 @@ function chatPublishPersistedMessage(
 
         return 'failed';
     }
+}
+
+function chatPublishPersistedMessage(
+    int $conversationId,
+    array $actor,
+    array $message
+): string {
+    return chatPublishConversationEvent(
+        $conversationId,
+        $actor,
+        [
+            'event' => 'message.created',
+            'message_id' => (int) $message['id'],
+            'created_at' => (string) $message['created_at'],
+            'message_type' => (string) $message['message_type']
+        ]
+    );
 }

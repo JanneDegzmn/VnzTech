@@ -214,19 +214,35 @@ foreach ($transactionChatItems as $transactionChatItem) {
         <label class="visually-hidden" for="transaction-chat-input-<?= htmlspecialchars($transactionChatInputId, ENT_QUOTES, 'UTF-8') ?>">
             Write a message
         </label>
-        <textarea
-            id="transaction-chat-input-<?= htmlspecialchars($transactionChatInputId, ENT_QUOTES, 'UTF-8') ?>"
-            data-chat-input
-            name="content"
-            rows="2"
-            maxlength="4000"
-            placeholder="Write a message…"
-            autocomplete="off"
-            required
-            disabled
-        ></textarea>
+        <div class="transaction-chat-composer-input-row">
+            <button
+                type="button"
+                class="transaction-chat-emoji-toggle"
+                data-chat-emoji-toggle
+                aria-label="Choose emoji"
+                aria-expanded="false"
+                disabled
+            >😀</button>
+            <textarea
+                id="transaction-chat-input-<?= htmlspecialchars($transactionChatInputId, ENT_QUOTES, 'UTF-8') ?>"
+                data-chat-input
+                name="content"
+                rows="2"
+                maxlength="4000"
+                placeholder="Write a message…"
+                autocomplete="off"
+                required
+                disabled
+            ></textarea>
+        </div>
         <div class="transaction-chat-composer-footer">
-            <span>Text messages · up to 4,000 characters</span>
+            <span>
+                Up to 4,000 characters
+                <?= $transactionChatActor['actor_type'] === 'admin'
+                    ? ' · /bookme shares Lalamove drop-off details'
+                    : ''
+                ?>
+            </span>
             <button type="submit" data-chat-send disabled>
                 <span>Send</span>
                 <span aria-hidden="true">↗</span>

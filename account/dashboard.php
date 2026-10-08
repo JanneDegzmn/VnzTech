@@ -231,14 +231,14 @@ $initialAlertMessage =
     >
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261008-floating"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261008-composer-emoji"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261008-floating"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261008-typing-admin-label"
         defer
     ></script>
     <script
-        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261008-floating"
+        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261008-messenger-ui"
         defer
     ></script>
 

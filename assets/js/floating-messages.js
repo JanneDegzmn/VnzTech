@@ -381,6 +381,180 @@
         });
     }
 
+    function getConversationWindowEndpoint(actorType) {
+        return actorType === 'admin'
+            ? '/VNZ-TECH/admin/pages/transaction-chat-window.php'
+            : '/VNZ-TECH/account/pages/transaction-chat-window.php';
+    }
+
+    async function loadConversationWindow(root, windowElement, details) {
+        const body = windowElement.querySelector('.floating-chat-window-body');
+        const title = windowElement.querySelector('.floating-chat-window-header > strong');
+        const actorType = root.dataset.actorType;
+        const endpoint = getConversationWindowEndpoint(actorType);
+        const requestId = details.conversationType === 'transaction'
+            ? details.transactionId
+            : details.conversationId;
+        const requestField = details.conversationType === 'transaction'
+            ? 'transaction_id'
+            : 'conversation_id';
+
+        windowElement.dataset.conversationType = details.conversationType;
+        windowElement.dataset.conversationId = String(details.conversationId || 0);
+        windowElement.dataset.transactionId = String(details.transactionId || 0);
+        if (details.targetType) {
+            windowElement.dataset.targetType = details.targetType;
+            windowElement.dataset.targetId = String(details.targetId);
+        } else {
+            delete windowElement.dataset.targetType;
+            delete windowElement.dataset.targetId;
+        }
+
+        body.replaceChildren();
+        const loading = document.createElement('p');
+        loading.className = 'floating-chat-window-loading';
+        loading.textContent = 'Opening conversation…';
+        body.append(loading);
+
+        try {
+            const response = await fetch(
+                `${endpoint}?${requestField}=${encodeURIComponent(requestId)}`,
+                {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                }
+            );
+            const html = await response.text();
+            if (!response.ok) {
+                throw new Error(html.replace(/<[^>]*>/g, ' ').trim() || 'Unable to open this conversation.');
+            }
+
+            body.innerHTML = html;
+            const widget = body.querySelector('[data-transaction-chat]');
+            const headerReference = widget?.dataset.transactionReference;
+            const conversationTitle = widget?.dataset.conversationTitle;
+            title.textContent = details.conversationType === 'transaction' && headerReference
+                ? headerReference
+                : (conversationTitle || details.displayName || 'Conversation');
+            windowElement.classList.add('is-mobile-chat-open');
+            widget?.querySelector('[data-chat-input]')?.focus();
+            refreshUnread(root);
+        } catch (error) {
+            body.replaceChildren();
+            const message = document.createElement('p');
+            message.className = 'floating-chat-window-error';
+            message.textContent = error.message || 'Unable to open this conversation.';
+            body.append(message);
+        }
+    }
+
+    function renderWorkspaceSection(list, title) {
+        const heading = document.createElement('h3');
+        heading.className = 'floating-chat-workspace-section';
+        heading.textContent = title;
+        list.append(heading);
+    }
+
+    function renderWorkspaceConversation(list, item, activeWindow) {
+        const button = document.createElement('button');
+        const icon = document.createElement('span');
+        const text = document.createElement('span');
+        const name = document.createElement('strong');
+        const preview = document.createElement('small');
+        button.type = 'button';
+        button.className = 'floating-chat-workspace-item';
+        button.dataset.workspaceConversation = '';
+        button.dataset.conversationType = item.conversation_type;
+        button.dataset.conversationId = String(item.conversation_id || 0);
+        button.dataset.transactionId = String(item.transaction_id || 0);
+        if (item.target_type) {
+            button.dataset.targetType = item.target_type;
+            button.dataset.targetId = String(item.target_id);
+        }
+        if (
+            item.conversation_type === activeWindow.dataset.conversationType
+            && Number(item.conversation_id || 0) === Number(activeWindow.dataset.conversationId || 0)
+            && Number(item.transaction_id || 0) === Number(activeWindow.dataset.transactionId || 0)
+        ) {
+            button.classList.add('is-active');
+        }
+
+        const displayName = String(item.display_name || 'Conversation');
+        icon.className = 'floating-chat-workspace-item-icon';
+        icon.setAttribute('aria-hidden', 'true');
+        icon.textContent = item.conversation_type === 'global'
+            ? 'G'
+            : initialsFor(displayName);
+        text.className = 'floating-chat-workspace-item-text';
+        name.textContent = displayName;
+        preview.textContent = item.conversation_type === 'transaction'
+            ? String(item.transaction_reference || 'Transaction chat')
+            : item.conversation_type === 'global'
+                ? 'Global conversation'
+                : (String(item.last_message || '').trim() || 'Private conversation');
+        text.append(name, preview);
+        button.append(icon, text);
+        list.append(button);
+    }
+
+    async function refreshWorkspaceSidebar(root, windowElement) {
+        const list = windowElement.querySelector('[data-workspace-conversation-list]');
+        list.replaceChildren();
+        const loading = document.createElement('p');
+        loading.className = 'floating-messages-list-state';
+        loading.textContent = 'Loading conversations…';
+        list.append(loading);
+
+        const [conversationData, contactData] = await Promise.all([
+            getJson('/VNZ-TECH/backend/chat_conversations.php?action=list'),
+            getJson('/VNZ-TECH/backend/chat_conversations.php?action=contacts&category=private')
+        ]);
+        const conversations = Array.isArray(conversationData.conversations)
+            ? conversationData.conversations
+            : [];
+        const contacts = Array.isArray(contactData.contacts)
+            ? contactData.contacts
+            : [];
+
+        list.replaceChildren();
+        const globalConversations = conversations.filter(item => item.conversation_type === 'global');
+        renderWorkspaceSection(list, 'Global');
+        if (globalConversations.length) {
+            globalConversations.forEach(item => renderWorkspaceConversation(list, item, windowElement));
+        } else {
+            renderWorkspaceConversation(list, {
+                conversation_type: 'global',
+                conversation_id: 0,
+                display_name: 'Global Chat'
+            }, windowElement);
+        }
+
+        renderWorkspaceSection(list, 'Private chats');
+        const privateConversations = conversations.filter(item => item.conversation_type === 'private');
+        privateConversations.forEach(item => {
+            renderWorkspaceConversation(list, item, windowElement);
+        });
+
+        const newContacts = contacts.filter(contact => !contact.conversation_id);
+        newContacts.forEach(contact => {
+            renderWorkspaceConversation(list, {
+                conversation_type: 'private',
+                conversation_id: 0,
+                display_name: contact.display_name,
+                last_message: 'Start private conversation',
+                target_type: contact.actor_type,
+                target_id: contact.actor_id
+            }, windowElement);
+        });
+
+        renderWorkspaceSection(list, 'Transaction chats');
+        conversations
+            .filter(item => item.conversation_type === 'transaction')
+            .forEach(item => renderWorkspaceConversation(list, item, windowElement));
+    }
+
     async function openFloatingWindow(root, details) {
         const existing = Array.from(root.querySelectorAll('[data-floating-chat-window]'))
             .find(item => details.conversationType === 'transaction'
@@ -426,22 +600,17 @@
 
         setPanelOpen(root, false);
         setCategoryMenuOpen(root, false);
-        const actorType = root.dataset.actorType;
-        const endpoint = actorType === 'admin'
-            ? '/VNZ-TECH/admin/pages/transaction-chat-window.php'
-            : '/VNZ-TECH/account/pages/transaction-chat-window.php';
-        const requestId = details.conversationType === 'transaction'
-            ? details.transactionId
-            : details.conversationId;
-        const requestField = details.conversationType === 'transaction'
-            ? 'transaction_id'
-            : 'conversation_id';
         const windowElement = document.createElement('section');
         const header = document.createElement('header');
         const title = document.createElement('strong');
         const actions = document.createElement('div');
+        const maximizeButton = document.createElement('button');
         const minimizeButton = document.createElement('button');
         const closeButton = document.createElement('button');
+        const sidebar = document.createElement('aside');
+        const sidebarHeader = document.createElement('div');
+        const sidebarList = document.createElement('nav');
+        const backButton = document.createElement('button');
         const body = document.createElement('div');
 
         windowElement.className = 'floating-chat-window is-opening';
@@ -458,6 +627,12 @@
             || details.reference
             || 'Conversation';
         actions.className = 'floating-chat-window-actions';
+        maximizeButton.type = 'button';
+        maximizeButton.dataset.chatMaximize = '';
+        maximizeButton.setAttribute('aria-label', 'Maximize chat');
+        maximizeButton.setAttribute('aria-pressed', 'false');
+        maximizeButton.title = 'Maximize chat';
+        maximizeButton.textContent = '□';
         minimizeButton.type = 'button';
         minimizeButton.dataset.chatMinimize = '';
         minimizeButton.setAttribute('aria-label', 'Minimize chat');
@@ -466,47 +641,75 @@
         closeButton.dataset.chatClose = '';
         closeButton.setAttribute('aria-label', 'Close chat');
         closeButton.textContent = '×';
+        sidebar.className = 'floating-chat-workspace-sidebar';
+        sidebarHeader.className = 'floating-chat-workspace-sidebar-header';
+        sidebarHeader.textContent = 'Conversations';
+        sidebarList.className = 'floating-chat-workspace-list';
+        sidebarList.dataset.workspaceConversationList = '';
+        sidebarList.setAttribute('aria-label', 'Conversations');
+        backButton.type = 'button';
+        backButton.className = 'floating-chat-workspace-back';
+        backButton.dataset.chatWorkspaceBack = '';
+        backButton.setAttribute('aria-label', 'Back to conversations');
+        backButton.textContent = '‹';
+        sidebar.append(sidebarHeader, sidebarList);
         body.className = 'floating-chat-window-body';
         body.innerHTML = '<p class="floating-chat-window-loading">Opening conversation…</p>';
-        actions.append(minimizeButton, closeButton);
+        actions.append(backButton, maximizeButton, minimizeButton, closeButton);
         header.append(title, actions);
-        windowElement.append(header, body);
+        windowElement.append(header, sidebar, body);
         windows.prepend(windowElement);
         updateWindowVisibility(root);
 
-        try {
-            const response = await fetch(
-                `${endpoint}?${requestField}=${encodeURIComponent(requestId)}`,
-                {
-                    method: 'GET',
-                    credentials: 'same-origin',
-                    cache: 'no-store',
-                    headers: {'X-Requested-With': 'XMLHttpRequest'}
-                }
+        await loadConversationWindow(root, windowElement, details);
+        windowElement.classList.remove('is-opening');
+        windowElement.classList.add('is-open');
+    }
+
+    async function openWorkspaceConversation(root, windowElement, button) {
+        const conversationType = button.dataset.conversationType;
+        let conversationId = Number(button.dataset.conversationId) || 0;
+        const transactionId = Number(button.dataset.transactionId) || 0;
+        const targetType = button.dataset.targetType || '';
+        const targetId = Number(button.dataset.targetId) || 0;
+
+        if (
+            conversationType !== 'transaction'
+            && conversationId <= 0
+        ) {
+            const fields = {
+                action: 'open',
+                conversation_type: conversationType,
+                csrf_token: root.dataset.csrfToken
+            };
+            if (conversationType === 'private') {
+                fields.target_type = targetType;
+                fields.target_id = String(targetId);
+            }
+            const opened = await postForm(fields);
+            conversationId = Number(opened.conversation_id);
+            button.dataset.conversationId = String(conversationId);
+        }
+
+        await loadConversationWindow(root, windowElement, {
+            conversationType,
+            conversationId,
+            transactionId,
+            displayName: button.querySelector('strong')?.textContent || 'Conversation',
+            targetType,
+            targetId
+        });
+        const sidebar = windowElement.querySelector('[data-workspace-conversation-list]');
+        sidebar.querySelectorAll('[data-workspace-conversation]').forEach(item => {
+            item.classList.toggle(
+                'is-active',
+                item.dataset.conversationType === conversationType
+                && Number(item.dataset.conversationId || 0) === conversationId
+                && Number(item.dataset.transactionId || 0) === transactionId
             );
-            const html = await response.text();
-            if (!response.ok) {
-                throw new Error(html.replace(/<[^>]*>/g, ' ').trim() || 'Unable to open this conversation.');
-            }
-            body.innerHTML = html;
-            const widget = body.querySelector('[data-transaction-chat]');
-            const headerReference = widget?.dataset.transactionReference;
-            const conversationTitle = widget?.dataset.conversationTitle;
-            if (details.conversationType === 'transaction' && headerReference) {
-                title.textContent = headerReference;
-            } else if (conversationTitle) {
-                title.textContent = conversationTitle;
-            }
-            widget?.querySelector('[data-chat-input]')?.focus();
-            windowElement.classList.remove('is-opening');
-            windowElement.classList.add('is-open');
-            refreshUnread(root);
-        } catch (error) {
-            body.replaceChildren();
-            const message = document.createElement('p');
-            message.className = 'floating-chat-window-error';
-            message.textContent = error.message || 'Unable to open this conversation.';
-            body.append(message);
+        });
+        if (window.innerWidth <= 700) {
+            windowElement.classList.add('is-mobile-chat-open');
         }
     }
 
@@ -706,6 +909,57 @@
         });
 
         root.querySelector('[data-floating-chat-windows]').addEventListener('click', event => {
+            const workspaceConversation = event.target.closest('[data-workspace-conversation]');
+            if (workspaceConversation) {
+                const windowElement = workspaceConversation.closest('[data-floating-chat-window]');
+                openWorkspaceConversation(root, windowElement, workspaceConversation)
+                    .catch(error => {
+                        const list = windowElement.querySelector('[data-workspace-conversation-list]');
+                        list.replaceChildren();
+                        const message = document.createElement('p');
+                        message.className = 'floating-messages-list-state';
+                        message.textContent = error.message || 'Unable to open this conversation.';
+                        list.append(message);
+                    });
+                return;
+            }
+
+            const maximize = event.target.closest('[data-chat-maximize]');
+            if (maximize) {
+                const windowElement = maximize.closest('[data-floating-chat-window]');
+                const maximized = !windowElement.classList.contains('is-maximized');
+                windowElement.classList.toggle('is-maximized', maximized);
+                windowElement.classList.remove('is-minimized');
+                windowElement.classList.toggle('is-mobile-chat-open', window.innerWidth > 700);
+                maximize.setAttribute('aria-pressed', String(maximized));
+                maximize.setAttribute(
+                    'aria-label',
+                    maximized ? 'Restore chat size' : 'Maximize chat'
+                );
+                maximize.title = maximized ? 'Restore chat size' : 'Maximize chat';
+                maximize.textContent = maximized ? '↙' : '□';
+                const minimize = windowElement.querySelector('[data-chat-minimize]');
+                minimize?.setAttribute('aria-label', 'Minimize chat');
+                if (maximized) {
+                    refreshWorkspaceSidebar(root, windowElement).catch(error => {
+                        const list = windowElement.querySelector('[data-workspace-conversation-list]');
+                        list.replaceChildren();
+                        const message = document.createElement('p');
+                        message.className = 'floating-messages-list-state';
+                        message.textContent = error.message || 'Unable to load conversations.';
+                        list.append(message);
+                    });
+                }
+                return;
+            }
+
+            const workspaceBack = event.target.closest('[data-chat-workspace-back]');
+            if (workspaceBack) {
+                workspaceBack.closest('[data-floating-chat-window]')
+                    ?.classList.remove('is-mobile-chat-open');
+                return;
+            }
+
             const close = event.target.closest('[data-chat-close]');
             const minimize = event.target.closest('[data-chat-minimize]');
             if (close) {
@@ -720,6 +974,14 @@
                 refreshUnread(root);
             } else if (minimize) {
                 const windowElement = minimize.closest('[data-floating-chat-window]');
+                windowElement?.classList.remove('is-maximized', 'is-mobile-chat-open');
+                const maximizeButton = windowElement?.querySelector('[data-chat-maximize]');
+                maximizeButton?.setAttribute('aria-pressed', 'false');
+                maximizeButton?.setAttribute('aria-label', 'Maximize chat');
+                if (maximizeButton) {
+                    maximizeButton.title = 'Maximize chat';
+                    maximizeButton.textContent = '□';
+                }
                 windowElement?.classList.toggle('is-minimized');
                 minimize.setAttribute(
                     'aria-label',
