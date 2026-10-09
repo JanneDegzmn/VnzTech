@@ -918,6 +918,10 @@ try {
             throw new ChatHttpException('Message not found in this conversation.', 404);
         }
 
+        if ($message['message_type'] === 'system') {
+            throw new ChatHttpException('Call summaries cannot be edited.', 409);
+        }
+
         if ($message['message_type'] === 'voice') {
             throw new ChatHttpException('Voice messages cannot be edited.', 409);
         }
@@ -1041,7 +1045,7 @@ try {
 
         global $pdo;
         $messageStmt = $pdo->prepare("
-            SELECT id, sender_type, sender_id, deleted_at
+            SELECT id, sender_type, sender_id, message_type, deleted_at
             FROM messages
             WHERE id = ?
               AND conversation_id = ?
@@ -1052,6 +1056,10 @@ try {
 
         if (!$message) {
             throw new ChatHttpException('Message not found in this conversation.', 404);
+        }
+
+        if ($message['message_type'] === 'system') {
+            throw new ChatHttpException('Call summaries cannot be deleted.', 409);
         }
 
         if ($message['deleted_at'] !== null) {
@@ -1130,7 +1138,7 @@ try {
 
         global $pdo;
         $messageStmt = $pdo->prepare("
-            SELECT id, deleted_at
+            SELECT id, message_type, deleted_at
             FROM messages
             WHERE id = ?
               AND conversation_id = ?
@@ -1141,6 +1149,10 @@ try {
 
         if (!$message) {
             throw new ChatHttpException('Message not found in this conversation.', 404);
+        }
+
+        if ($message['message_type'] === 'system') {
+            throw new ChatHttpException('Call summaries cannot be reacted to.', 409);
         }
 
         if ($message['deleted_at'] !== null) {

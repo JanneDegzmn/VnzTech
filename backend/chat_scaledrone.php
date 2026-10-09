@@ -108,6 +108,51 @@ function chatScaledroneConversationRoomName(
     return 'observable-vnz-chat-' . substr($roomDigest, 0, 32);
 }
 
+function chatScaledroneCallRoomName(
+    int $conversationId,
+    string $secretKey
+): string {
+    $roomDigest = hash_hmac(
+        'sha256',
+        'call-conversation:' . $conversationId,
+        $secretKey
+    );
+
+    return 'observable-vnz-call-' . substr($roomDigest, 0, 32);
+}
+
+function chatScaledroneCallInboxRoomName(
+    string $actorType,
+    int $actorId,
+    string $secretKey
+): string {
+    $roomDigest = hash_hmac(
+        'sha256',
+        'call-inbox:' . $actorType . ':' . $actorId,
+        $secretKey
+    );
+
+    return 'observable-vnz-call-inbox-' . substr($roomDigest, 0, 32);
+}
+
+function chatGetAuthorizedCallInbox(array $actor): array
+{
+    $config = chatScaledroneConfig();
+    if ($config === null) {
+        throw new ChatHttpException('Realtime messaging is not configured.', 503);
+    }
+
+    return [
+        'channel_id' => $config['channel_id'],
+        'secret_key' => $config['secret_key'],
+        'room' => chatScaledroneCallInboxRoomName(
+            $actor['actor_type'],
+            (int) $actor['actor_id'],
+            $config['secret_key']
+        )
+    ];
+}
+
 function chatGetAuthorizedScaledroneRoom(
     int $conversationId,
     array $actor
@@ -138,6 +183,7 @@ function chatGetAuthorizedScaledroneRoom(
 
     return [
         'conversation_id' => $conversationId,
+        'conversation_type' => $conversation['conversation_type'],
         'transaction_id' => $conversation['transaction_id'] === null
             ? null
             : (int) $conversation['transaction_id'],
@@ -147,21 +193,46 @@ function chatGetAuthorizedScaledroneRoom(
     ];
 }
 
+function chatGetAuthorizedScaledroneCallRoom(
+    int $conversationId,
+    array $actor
+): array {
+    chatGetOneToOneConversationPeer($conversationId, $actor);
+    $config = chatScaledroneConfig();
+    if ($config === null) {
+        throw new ChatHttpException('Realtime messaging is not configured.', 503);
+    }
+
+    return [
+        'conversation_id' => $conversationId,
+        'channel_id' => $config['channel_id'],
+        'secret_key' => $config['secret_key'],
+        'room' => chatScaledroneCallRoomName(
+            $conversationId,
+            $config['secret_key']
+        )
+    ];
+}
+
 function chatCreateScaledroneClientToken(
     array $roomContexts,
-    string $clientId
+    string $clientId,
+    ?array $callInboxContext = null
 ): array {
     if (!preg_match('/\A[A-Za-z0-9:_-]{1,128}\z/', $clientId)) {
         throw new ChatHttpException('Invalid realtime client ID.', 422);
     }
 
-    if ($roomContexts === []) {
+    if ($roomContexts === [] && $callInboxContext === null) {
         throw new ChatHttpException('At least one conversation is required.', 422);
     }
 
-    $firstRoom = reset($roomContexts);
+    $firstRoom = $roomContexts === []
+        ? $callInboxContext
+        : reset($roomContexts);
     $permissions = [];
     $rooms = [];
+    $callRooms = [];
     foreach ($roomContexts as $roomContext) {
         if (
             $roomContext['channel_id'] !== $firstRoom['channel_id']
@@ -181,6 +252,41 @@ function chatCreateScaledroneClientToken(
             'conversation_id' => $roomContext['conversation_id'],
             'room' => $roomContext['room']
         ];
+        if (isset($roomContext['call_room'])) {
+            $callRoom = $roomContext['call_room'];
+            if (
+                $callRoom['channel_id'] !== $firstRoom['channel_id']
+                || $callRoom['secret_key'] !== $firstRoom['secret_key']
+            ) {
+                throw new ChatHttpException(
+                    'Realtime channel configuration changed. Reload this page.',
+                    503
+                );
+            }
+            $permissions['^' . preg_quote($callRoom['room'], '/') . '$'] = [
+                'publish' => false,
+                'subscribe' => true
+            ];
+            $callRooms[] = [
+                'conversation_id' => $roomContext['conversation_id'],
+                'room' => $callRoom['room']
+            ];
+        }
+    }
+    if ($callInboxContext !== null) {
+        if (
+            $callInboxContext['channel_id'] !== $firstRoom['channel_id']
+            || $callInboxContext['secret_key'] !== $firstRoom['secret_key']
+        ) {
+            throw new ChatHttpException(
+                'Realtime channel configuration changed. Reload this page.',
+                503
+            );
+        }
+        $permissions['^' . preg_quote($callInboxContext['room'], '/') . '$'] = [
+            'publish' => false,
+            'subscribe' => true
+        ];
     }
 
     $expiresAt = time() + 120;
@@ -194,13 +300,19 @@ function chatCreateScaledroneClientToken(
         $firstRoom['secret_key']
     );
 
-    return [
+    $result = [
         'channel_id' => $firstRoom['channel_id'],
-        'room' => $rooms[0]['room'],
+        'room' => $rooms[0]['room'] ?? null,
         'rooms' => $rooms,
+        'call_rooms' => $callRooms,
         'token' => $token,
         'expires_at' => $expiresAt
     ];
+    if ($callInboxContext !== null) {
+        $result['call_inbox_room'] = $callInboxContext['room'];
+    }
+
+    return $result;
 }
 
 function chatPublishConversationEvent(
@@ -229,16 +341,79 @@ function chatPublishConversationEvent(
         return 'failed';
     }
 
-    if (!function_exists('curl_init')) {
-        error_log('Scaledrone realtime publish failed: PHP cURL is unavailable.');
+    $payload = array_merge([
+        'conversation_id' => $conversationId,
+        'actor_type' => $actor['actor_type'],
+        'actor_id' => (int) $actor['actor_id']
+    ], $event);
+
+    return chatScaledronePublishToRoom($roomContext, $payload);
+}
+
+function chatPublishCallEvent(
+    int $conversationId,
+    array $actor,
+    array $event
+): string {
+    try {
+        $roomContext = chatGetAuthorizedScaledroneCallRoom(
+            $conversationId,
+            $actor
+        );
+        $peer = chatGetOneToOneConversationPeer($conversationId, $actor)['peer'];
+    } catch (ChatHttpException $e) {
+        if ($e->httpStatus === 503) {
+            return 'not_configured';
+        }
+        return 'failed';
+    } catch (Throwable $e) {
+        error_log('Call signaling authorization failed.');
         return 'failed';
     }
 
     $payload = array_merge([
         'conversation_id' => $conversationId,
         'actor_type' => $actor['actor_type'],
-        'actor_id' => (int) $actor['actor_id']
+        'actor_id' => (int) $actor['actor_id'],
+        'actor_display_name' => chatParticipantDisplayNameForViewer(
+            $peer,
+            (string) $actor['actor_type'],
+            (string) ($actor['display_name'] ?? '')
+        ),
+        'actor_profile_picture' => preg_match(
+            '/\Auploads\/profile_pictures\/[A-Za-z0-9][A-Za-z0-9._-]*\z/',
+            (string) ($actor['profile_picture'] ?? '')
+        ) === 1
+            ? (string) $actor['profile_picture']
+            : '',
+        'to_actor_type' => $peer['actor_type'],
+        'to_actor_id' => $peer['actor_id']
     ], $event);
+
+    $delivery = chatScaledronePublishToRoom($roomContext, $payload);
+    if ($delivery !== 'published' || ($event['event'] ?? '') !== 'call.invite') {
+        return $delivery;
+    }
+
+    $inboxContext = [
+        'channel_id' => $roomContext['channel_id'],
+        'secret_key' => $roomContext['secret_key'],
+        'room' => chatScaledroneCallInboxRoomName(
+            $peer['actor_type'],
+            (int) $peer['actor_id'],
+            $roomContext['secret_key']
+        )
+    ];
+
+    return chatScaledronePublishToRoom($inboxContext, $payload);
+}
+
+function chatScaledronePublishToRoom(array $roomContext, array $payload): string
+{
+    if (!function_exists('curl_init')) {
+        error_log('Scaledrone realtime publish failed: PHP cURL is unavailable.');
+        return 'failed';
+    }
 
     try {
         $url = 'https://api2.scaledrone.com/'

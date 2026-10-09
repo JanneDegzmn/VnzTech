@@ -38,14 +38,14 @@ $csrfToken = generateCsrfToken();
     >
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261010-voice-messages"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261010-call-window"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261010-voice-messages"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261010-messaging-regression-fix"
         defer
     ></script>
     <script
-        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261010-presence-status"
+        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261010-messaging-regression-fix"
         defer
     ></script>
 

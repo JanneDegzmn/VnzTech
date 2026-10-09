@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../backend/chat_scaledrone.php';
 
 $floatingMessagesCsrfToken = generateCsrfToken();
+$floatingMessagesScaledroneConfig = chatScaledroneConfig();
 
 try {
     $floatingMessagesActor = chatGetCurrentActor();
@@ -19,6 +20,8 @@ try {
     class="floating-messages-root"
     data-floating-messages
     data-actor-type="<?= htmlspecialchars($floatingMessagesActor['actor_type'], ENT_QUOTES, 'UTF-8') ?>"
+    data-actor-id="<?= (int) $floatingMessagesActor['actor_id'] ?>"
+    data-channel-id="<?= htmlspecialchars($floatingMessagesScaledroneConfig['channel_id'] ?? '', ENT_QUOTES, 'UTF-8') ?>"
     data-csrf-token="<?= htmlspecialchars($floatingMessagesCsrfToken, ENT_QUOTES, 'UTF-8') ?>"
 >
     <section
@@ -153,4 +156,5 @@ try {
     </button>
 
     <div class="floating-chat-windows" data-floating-chat-windows></div>
+    <div data-call-owner-host hidden aria-hidden="true"></div>
 </div>

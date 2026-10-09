@@ -24,6 +24,25 @@ $transactionChatConversationType = $transactionChatConversationType ?? 'transact
 $transactionChatConversationDbId = $transactionChatConversationDbId ?? 0;
 $transactionChatDisplayName = $transactionChatDisplayName ?? (string) $transactionChatReference;
 $transactionChatHasContext = $transactionChatConversationType === 'transaction';
+$transactionChatCallsEnabled = in_array(
+    $transactionChatConversationType,
+    ['transaction', 'private'],
+    true
+);
+$transactionChatCallPeer = null;
+if ($transactionChatCallsEnabled && (int) $transactionChatConversationDbId > 0) {
+    try {
+        $transactionChatCallPeer = chatGetOneToOneConversationPeer(
+            (int) $transactionChatConversationDbId,
+            $transactionChatActor
+        )['peer'];
+    } catch (ChatHttpException $e) {
+        $transactionChatCallsEnabled = false;
+    }
+}
+$transactionChatIceServers = $transactionChatCallsEnabled
+    ? chatWebRtcIceServers()
+    : [];
 $transactionChatInputId = $transactionChatHasContext
     ? 'transaction-' . (int) $transactionChatId
     : 'conversation-' . (int) $transactionChatConversationDbId;
@@ -73,6 +92,16 @@ foreach ($transactionChatItems as $transactionChatItem) {
         ENT_QUOTES,
         'UTF-8'
     ) ?>"
+    data-conversation-peer-name="<?= htmlspecialchars(
+        (string) ($transactionChatCallPeer['display_name'] ?? ''),
+        ENT_QUOTES,
+        'UTF-8'
+    ) ?>"
+    data-conversation-peer-picture="<?= htmlspecialchars(
+        (string) ($transactionChatCallPeer['profile_picture'] ?? ''),
+        ENT_QUOTES,
+        'UTF-8'
+    ) ?>"
     data-channel-id="<?= htmlspecialchars(
         $transactionChatChannelId,
         ENT_QUOTES,
@@ -87,6 +116,12 @@ foreach ($transactionChatItems as $transactionChatItem) {
     data-document-max-bytes="<?= chatDocumentMaxBytes() ?>"
     data-voice-max-bytes="<?= chatVoiceMaxBytes() ?>"
     data-voice-max-duration-seconds="<?= chatVoiceMaxDurationSeconds() ?>"
+    data-call-enabled="<?= $transactionChatCallsEnabled ? 'true' : 'false' ?>"
+    data-call-ice-servers="<?= htmlspecialchars(
+        json_encode($transactionChatIceServers, JSON_THROW_ON_ERROR),
+        ENT_QUOTES,
+        'UTF-8'
+    ) ?>"
 >
     <header class="transaction-chat-header">
         <div>
@@ -106,11 +141,96 @@ foreach ($transactionChatItems as $transactionChatItem) {
             <?php endif; ?>
             <p class="transaction-chat-presence-label" data-chat-presence>Presence unavailable</p>
         </div>
-        <span class="transaction-chat-connection" data-chat-connection>
-            <span class="transaction-chat-connection-dot" aria-hidden="true"></span>
-            <span data-chat-connection-label>Connecting</span>
-        </span>
+        <div class="transaction-chat-header-actions">
+            <?php if ($transactionChatCallsEnabled): ?>
+                <button type="button" class="transaction-chat-call-button" data-chat-call-audio disabled>
+                    <span aria-hidden="true">☎</span> Audio call
+                </button>
+                <button type="button" class="transaction-chat-call-button" data-chat-call-video disabled>
+                    <span aria-hidden="true">▣</span> Video call
+                </button>
+            <?php endif; ?>
+            <span class="transaction-chat-connection" data-chat-connection>
+                <span class="transaction-chat-connection-dot" aria-hidden="true"></span>
+                <span data-chat-connection-label>Connecting</span>
+            </span>
+        </div>
     </header>
+
+    <?php if ($transactionChatCallsEnabled): ?>
+    <section
+        class="transaction-chat-call-panel"
+        data-chat-call-panel
+        role="dialog"
+        aria-modal="false"
+        aria-label="Voice and video call"
+        hidden
+    >
+        <div class="transaction-chat-call-card">
+            <header class="transaction-chat-call-header" data-chat-call-drag-handle>
+                <div class="transaction-chat-call-heading">
+                    <strong class="transaction-chat-call-title" data-chat-call-title>Call</strong>
+                    <span class="transaction-chat-call-kind" data-chat-call-kind></span>
+                </div>
+                <div class="transaction-chat-call-window-actions">
+                    <button type="button" data-chat-call-maximize aria-label="Maximize call window" title="Maximize call window">□</button>
+                    <button type="button" data-chat-call-minimize aria-label="Minimize call" title="Minimize call">—</button>
+                    <button type="button" data-chat-call-close aria-label="End call" title="End call">×</button>
+                </div>
+            </header>
+            <div class="transaction-chat-call-body">
+                <div class="transaction-chat-call-details">
+                    <div class="transaction-chat-call-avatar" data-chat-call-avatar></div>
+                    <span class="transaction-chat-call-status" data-chat-call-status>Ready</span>
+                    <audio data-chat-call-remote-audio autoplay hidden></audio>
+                    <div class="transaction-chat-call-controls">
+                        <button type="button" class="is-accept-call" data-chat-call-accept hidden><span aria-hidden="true">✓</span> Accept</button>
+                        <button type="button" class="is-decline-call" data-chat-call-decline hidden><span aria-hidden="true">✕</span> Decline</button>
+                        <button type="button" data-chat-call-cancel hidden>Cancel call</button>
+                        <button type="button" data-chat-call-sound hidden>Enable sound</button>
+                        <button type="button" data-chat-call-mute hidden>Mute microphone</button>
+                        <button type="button" data-chat-call-camera hidden>Turn camera off</button>
+                        <button type="button" class="is-end-call" data-chat-call-end hidden>End call</button>
+                    </div>
+                </div>
+                <div class="transaction-chat-call-media" data-chat-call-media hidden>
+                    <div class="transaction-chat-call-video-placeholder" data-chat-call-video-placeholder>
+                        Video will appear when the participant's camera connects.
+                    </div>
+                    <video
+                        class="transaction-chat-call-remote-video"
+                        data-chat-call-remote-video
+                        autoplay
+                        playsinline
+                        aria-label="Other participant video"
+                    ></video>
+                    <video
+                        class="transaction-chat-call-local-video"
+                        data-chat-call-local-video
+                        autoplay
+                        muted
+                        playsinline
+                        aria-label="Your camera preview"
+                    ></video>
+                </div>
+            </div>
+        </div>
+        <span class="transaction-chat-call-resize-handle is-n" data-chat-call-resize="n" aria-hidden="true"></span>
+        <span class="transaction-chat-call-resize-handle is-ne" data-chat-call-resize="ne" aria-hidden="true"></span>
+        <span class="transaction-chat-call-resize-handle is-e" data-chat-call-resize="e" aria-hidden="true"></span>
+        <span class="transaction-chat-call-resize-handle is-se" data-chat-call-resize="se" aria-hidden="true"></span>
+        <span class="transaction-chat-call-resize-handle is-s" data-chat-call-resize="s" aria-hidden="true"></span>
+        <span class="transaction-chat-call-resize-handle is-sw" data-chat-call-resize="sw" aria-hidden="true"></span>
+        <span class="transaction-chat-call-resize-handle is-w" data-chat-call-resize="w" aria-hidden="true"></span>
+        <span class="transaction-chat-call-resize-handle is-nw" data-chat-call-resize="nw" aria-hidden="true"></span>
+    </section>
+    <button type="button" class="transaction-chat-call-indicator" data-chat-call-indicator hidden>
+        <span class="transaction-chat-call-indicator-dot" aria-hidden="true"></span>
+        <span class="transaction-chat-call-indicator-name" data-chat-call-indicator-name>Active call</span>
+        <time data-chat-call-indicator-duration>00:00</time>
+        <span class="transaction-chat-call-indicator-restore" aria-hidden="true">↗</span>
+    </button>
+    <?php endif; ?>
 
     <?php if ($transactionChatHasContext): ?>
     <section class="transaction-chat-info" aria-label="Transaction information">

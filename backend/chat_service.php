@@ -450,7 +450,7 @@ function chatValidateActorIdentity(string $actorType, int $actorId): array
 
     if ($actorType === 'seller') {
         $stmt = $pdo->prepare("
-            SELECT id, full_name AS display_name
+            SELECT id, full_name AS display_name, profile_picture
             FROM users
             WHERE id = ?
               AND is_active = 1
@@ -465,7 +465,13 @@ function chatValidateActorIdentity(string $actorType, int $actorId): array
         return [
             'actor_type' => 'seller',
             'actor_id' => $actorId,
-            'display_name' => (string) $identity['display_name']
+            'display_name' => (string) $identity['display_name'],
+            'profile_picture' => preg_match(
+                '/\Auploads\/profile_pictures\/[A-Za-z0-9][A-Za-z0-9._-]*\z/',
+                (string) ($identity['profile_picture'] ?? '')
+            ) === 1
+                ? (string) $identity['profile_picture']
+                : ''
         ];
     }
 
@@ -495,7 +501,8 @@ function chatValidateActorIdentity(string $actorType, int $actorId): array
         return [
             'actor_type' => 'admin',
             'actor_id' => $actorId,
-            'display_name' => trim((string) $identity['display_name']) ?: 'Admin'
+            'display_name' => trim((string) $identity['display_name']) ?: 'Admin',
+            'profile_picture' => ''
         ];
     }
 
@@ -785,6 +792,18 @@ function chatListPrivateContacts(array $actor, string $category): array
         $contact['conversation_id'] = chatFindPrivateConversationId($actor, $contact);
         $contact['last_message'] = '';
         if ($contact['conversation_id'] !== null) {
+            try {
+                chatGetOneToOneConversationPeer(
+                    (int) $contact['conversation_id'],
+                    $actor
+                );
+                $contact['call_eligible'] = true;
+            } catch (ChatHttpException $e) {
+                if (!in_array($e->httpStatus, [403, 404, 409], true)) {
+                    throw $e;
+                }
+                $contact['call_eligible'] = false;
+            }
             $contact['presence'] = chatGetConversationPresence(
                 (int) $contact['conversation_id'],
                 $actor
@@ -801,6 +820,8 @@ function chatListPrivateContacts(array $actor, string $category): array
             $contact['last_message'] = mb_strlen($lastMessage, 'UTF-8') > 120
                 ? mb_substr($lastMessage, 0, 120, 'UTF-8') . '…'
                 : $lastMessage;
+        } else {
+            $contact['call_eligible'] = false;
         }
     }
     unset($contact);
@@ -967,6 +988,8 @@ function chatRequireConversationMembership(
             $context['transaction_status'];
         $conversation['seller_full_name'] =
             $context['seller_full_name'];
+        $conversation['seller_id'] =
+            $context['seller_id'];
         $conversation['responsible_admin_id'] =
             $context['responsible_admin_id'];
     } elseif ($conversation['conversation_type'] === 'global') {
@@ -1027,4 +1050,135 @@ function chatRequireConversationMembership(
     }
 
     return $conversation;
+}
+
+function chatGetOneToOneConversationPeer(
+    int $conversationId,
+    array $actor
+): array {
+    $conversation = chatRequireConversationMembership($conversationId, $actor);
+    if (!in_array($conversation['conversation_type'], ['transaction', 'private'], true)) {
+        throw new ChatHttpException('Calls are only available in one-to-one conversations.', 403);
+    }
+
+    global $pdo;
+    $stmt = $pdo->prepare("
+        SELECT actor_type, actor_id
+        FROM conversation_participants
+        WHERE conversation_id = ?
+        ORDER BY actor_type, actor_id
+    ");
+    $stmt->execute([$conversationId]);
+    $participants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (
+        count($participants) !== 2
+        || count(array_unique(array_column($participants, 'actor_type'))) !== 2
+        || !in_array('admin', array_column($participants, 'actor_type'), true)
+        || !in_array('seller', array_column($participants, 'actor_type'), true)
+    ) {
+        throw new ChatHttpException('Calls are only available between one Admin and one Seller.', 403);
+    }
+
+    $participantsByType = [];
+    foreach ($participants as $participant) {
+        $participantsByType[$participant['actor_type']] = chatValidateActorIdentity(
+            (string) $participant['actor_type'],
+            (int) $participant['actor_id']
+        );
+    }
+
+    if (
+        $conversation['conversation_type'] === 'transaction'
+        && (
+            (int) $participantsByType['seller']['actor_id']
+                !== (int) $conversation['seller_id']
+            || (int) $participantsByType['admin']['actor_id']
+                !== (int) $conversation['responsible_admin_id']
+        )
+    ) {
+        throw new ChatHttpException(
+            'Calls are unavailable because this transaction conversation does not match its current seller and responsible Admin.',
+            403
+        );
+    }
+
+    $peer = null;
+    foreach ($participantsByType as $participantType => $identity) {
+        if (
+            $participantType === $actor['actor_type']
+            && (int) $participant['actor_id'] === (int) $actor['actor_id']
+        ) {
+            continue;
+        }
+        $peer = [
+            'actor_type' => $identity['actor_type'],
+            'actor_id' => $identity['actor_id'],
+            'display_name' => chatParticipantDisplayNameForViewer(
+                $actor,
+                $identity['actor_type'],
+                $identity['display_name']
+            ),
+            'profile_picture' => $identity['profile_picture'] ?? ''
+        ];
+    }
+
+    if ($peer === null) {
+        throw new ChatHttpException('Unauthorized.', 403);
+    }
+
+    return [
+        'conversation' => $conversation,
+        'peer' => $peer
+    ];
+}
+
+function chatWebRtcIceServers(): array
+{
+    $configured = getenv('WEBRTC_ICE_SERVERS');
+    if ($configured === false || trim($configured) === '') {
+        $localConfigPath = __DIR__ . '/scaledrone_config.local.php';
+        $localConfig = is_file($localConfigPath)
+            ? require $localConfigPath
+            : [];
+        if (!is_array($localConfig)) {
+            throw new RuntimeException('Realtime local configuration must return an array.');
+        }
+        $servers = $localConfig['ice_servers'] ?? [
+            ['urls' => 'stun:stun.l.google.com:19302']
+        ];
+    } else {
+        try {
+            $servers = json_decode($configured, true, 16, JSON_THROW_ON_ERROR);
+        } catch (JsonException $e) {
+            throw new RuntimeException('WebRTC ICE server configuration is invalid.');
+        }
+    }
+
+    if (!is_array($servers) || !array_is_list($servers) || count($servers) > 8) {
+        throw new RuntimeException('WebRTC ICE server configuration is invalid.');
+    }
+    foreach ($servers as $server) {
+        if (!is_array($server) || !isset($server['urls'])) {
+            throw new RuntimeException('WebRTC ICE server configuration is invalid.');
+        }
+        $urls = is_array($server['urls']) ? $server['urls'] : [$server['urls']];
+        if ($urls === [] || count($urls) > 4) {
+            throw new RuntimeException('WebRTC ICE server configuration is invalid.');
+        }
+        foreach ($urls as $url) {
+            if (
+                !is_string($url)
+                || preg_match('/\A(?:stun|stuns|turn|turns):[^\s]{1,500}\z/i', $url) !== 1
+            ) {
+                throw new RuntimeException('WebRTC ICE server configuration is invalid.');
+            }
+        }
+        foreach (['username', 'credential'] as $key) {
+            if (isset($server[$key]) && !is_string($server[$key])) {
+                throw new RuntimeException('WebRTC ICE server configuration is invalid.');
+            }
+        }
+    }
+
+    return $servers;
 }

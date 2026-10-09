@@ -5,6 +5,8 @@
     const pendingOpens = new WeakMap();
     const unreadRefreshVersions = new WeakMap();
     const selectionRefreshVersions = new WeakMap();
+    const callControllerPromises = new WeakMap();
+    const callableConversations = new WeakMap();
     const refreshEvents = [
         'vnz:chat-state-changed',
         'vnz:chat-message-received'
@@ -259,6 +261,31 @@
                 button.append(badge);
             }
         };
+        const appendCallActions = (row, conversation) => {
+            if (!conversation.call_eligible) {
+                return;
+            }
+            const actions = document.createElement('span');
+            actions.className = 'floating-messages-call-actions';
+            ['audio', 'video'].forEach(mode => {
+                const callButton = document.createElement('button');
+                callButton.type = 'button';
+                callButton.className = 'floating-messages-call-action';
+                callButton.dataset.callRequest = '';
+                callButton.dataset.callMode = mode;
+                callButton.dataset.conversationId = String(conversation.conversation_id);
+                callButton.dataset.conversationType = conversation.conversation_type;
+                callButton.dataset.transactionId = String(conversation.transaction_id || 0);
+                callButton.setAttribute(
+                    'aria-label',
+                    `${mode === 'audio' ? 'Voice' : 'Video'} call ${conversation.display_name || 'participant'}`
+                );
+                callButton.title = mode === 'audio' ? 'Start voice call' : 'Start video call';
+                callButton.textContent = mode === 'audio' ? '☎' : '▣';
+                actions.append(callButton);
+            });
+            row.append(actions);
+        };
         const transactionItems = conversations.filter(
             conversation => conversation.conversation_type === 'transaction'
         );
@@ -266,13 +293,16 @@
         if (category === 'contacts' && transactionItems.length > 0) {
             addHeading('TRANSACTION CHATS');
             transactionItems.forEach(conversation => {
+                const row = document.createElement('div');
                 const button = document.createElement('button');
                 const title = document.createElement('strong');
                 const reference = document.createElement('span');
                 const status = document.createElement('small');
                 button.type = 'button';
                 button.className = 'floating-messages-conversation';
+                row.className = 'floating-messages-call-row';
                 button.dataset.transactionId = String(conversation.transaction_id);
+                button.dataset.conversationId = String(conversation.conversation_id);
                 button.dataset.transactionReference = String(conversation.transaction_reference || '');
                 title.textContent = String(conversation.display_name || 'ADMIN');
                 reference.textContent = String(
@@ -283,7 +313,9 @@
                 ).replaceAll('_', ' ')}`;
                 button.append(title, reference, status);
                 addUnread(button, conversation.unread_count);
-                list.append(button);
+                row.append(button);
+                appendCallActions(row, conversation);
+                list.append(row);
             });
         }
 
@@ -298,12 +330,14 @@
         if (candidates.length > 0) {
             addHeading('AVAILABLE PEOPLE');
             candidates.forEach(contact => {
+                const row = document.createElement('div');
                 const button = document.createElement('button');
                 const avatar = document.createElement('span');
                 const name = document.createElement('strong');
                 const status = document.createElement('small');
                 button.type = 'button';
                 button.className = 'floating-messages-conversation is-contact';
+                row.className = 'floating-messages-call-row';
                 avatar.className = 'floating-messages-contact-avatar';
                 avatar.setAttribute('aria-hidden', 'true');
                 const displayName = String(contact.display_name || 'Contact');
@@ -340,7 +374,14 @@
                     button,
                     unreadByConversationId.get(Number(contact.conversation_id)) || 0
                 );
-                list.append(button);
+                row.append(button);
+                appendCallActions(row, {
+                    conversation_id: contact.conversation_id,
+                    conversation_type: 'private',
+                    call_eligible: contact.call_eligible,
+                    display_name: contact.display_name
+                });
+                list.append(row);
             });
         }
 
@@ -450,6 +491,227 @@
         });
     }
 
+    function preserveCallOwners(root, container) {
+        const host = root.querySelector('[data-call-owner-host]');
+        if (!host || !container) {
+            return;
+        }
+        container.querySelectorAll('[data-transaction-chat][data-active-call-owner]')
+            .forEach(widget => host.append(widget));
+    }
+
+    function controllerMap(root) {
+        let controllers = callControllerPromises.get(root);
+        if (!controllers) {
+            controllers = new Map();
+            callControllerPromises.set(root, controllers);
+        }
+        return controllers;
+    }
+
+    function callableConversationMap(root) {
+        let conversations = callableConversations.get(root);
+        if (!conversations) {
+            conversations = new Map();
+            callableConversations.set(root, conversations);
+        }
+        return conversations;
+    }
+
+    async function loadCallableConversations(root) {
+        const data = await getJson('/VNZ-TECH/backend/chat_conversations.php?action=list');
+        const conversations = Array.isArray(data.conversations)
+            ? data.conversations.filter(conversation => (
+                conversation.call_eligible === true
+                && ['transaction', 'private'].includes(conversation.conversation_type)
+                && Number(conversation.conversation_id) > 0
+            ))
+            : [];
+        const byId = callableConversationMap(root);
+        byId.clear();
+        conversations.forEach(conversation => {
+            byId.set(Number(conversation.conversation_id), conversation);
+        });
+        return conversations;
+    }
+
+    function waitForCallController(widget) {
+        return new Promise((resolve, reject) => {
+            let timeoutId = null;
+            const finish = error => {
+                observer.disconnect();
+                if (timeoutId !== null) {
+                    window.clearTimeout(timeoutId);
+                }
+                if (error) {
+                    reject(error);
+                } else {
+                    resolve(widget);
+                }
+            };
+            const check = () => {
+                if (widget.dataset.callControllerState === 'ready') {
+                    finish();
+                } else if (widget.dataset.callControllerState === 'unavailable') {
+                    finish(new Error(
+                        widget.dataset.callControllerError
+                        || 'Calling is unavailable for this conversation.'
+                    ));
+                }
+            };
+            const observer = new MutationObserver(check);
+            observer.observe(widget, {
+                attributes: true,
+                attributeFilter: ['data-call-controller-state']
+            });
+            timeoutId = window.setTimeout(() => {
+                finish(new Error('The call controller did not become ready.'));
+            }, 20000);
+            check();
+        });
+    }
+
+    function ensureCallController(root, conversation) {
+        const conversationId = Number(conversation.conversation_id);
+        const controllers = controllerMap(root);
+        if (controllers.has(conversationId)) {
+            return controllers.get(conversationId);
+        }
+
+        const opening = (async () => {
+            const host = root.querySelector('[data-call-owner-host]');
+            if (!host) {
+                throw new Error('The persistent call host is unavailable.');
+            }
+            const actorType = root.dataset.actorType;
+            const endpoint = getConversationWindowEndpoint(actorType);
+            const response = await fetch(
+                `${endpoint}?conversation_id=${encodeURIComponent(conversationId)}`,
+                {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                }
+            );
+            const html = await response.text();
+            if (!response.ok) {
+                throw new Error(html.replace(/<[^>]*>/g, ' ').trim() || 'Unable to prepare calling.');
+            }
+            const template = document.createElement('template');
+            template.innerHTML = html;
+            const widget = template.content.querySelector('[data-transaction-chat]');
+            if (!widget) {
+                throw new Error('The server did not return an authorized conversation.');
+            }
+            if (
+                Number(widget.dataset.conversationId) !== conversationId
+                || (
+                    conversation.conversation_type === 'transaction'
+                    && Number(widget.dataset.transactionId) !== Number(conversation.transaction_id)
+                )
+            ) {
+                throw new Error('The server returned a different conversation than the one selected.');
+            }
+            if (widget.dataset.callEnabled !== 'true') {
+                throw new Error('Calling is not available for this conversation.');
+            }
+            widget.dataset.callControllerOnly = '';
+            widget.dataset.callControllerConversationId = String(conversationId);
+            host.append(widget);
+            window.VNZTransactionChat?.scan?.(widget);
+            try {
+                return await waitForCallController(widget);
+            } catch (error) {
+                widget.remove();
+                window.VNZTransactionChat?.scan?.(document);
+                throw error;
+            }
+        })();
+        controllers.set(conversationId, opening);
+        opening.catch(() => controllers.delete(conversationId));
+        return opening;
+    }
+
+    function showCallRequestError(root, error) {
+        const errorPanel = root.querySelector('[data-floating-messages-error]');
+        errorPanel.textContent = error.message || 'Unable to start this call.';
+        errorPanel.hidden = false;
+        setPanelOpen(root, true);
+    }
+
+    async function requestCall(root, conversationId, mode) {
+        if (!Number.isInteger(conversationId) || conversationId <= 0 || !['audio', 'video'].includes(mode)) {
+            throw new Error('The selected call destination is invalid.');
+        }
+        await loadCallableConversations(root);
+        const conversation = callableConversationMap(root).get(conversationId);
+        if (!conversation) {
+            throw new Error('No authorized one-to-one conversation is available for this call.');
+        }
+        const widget = await ensureCallController(root, conversation);
+        const button = widget.querySelector(
+            mode === 'audio' ? '[data-chat-call-audio]' : '[data-chat-call-video]'
+        );
+        if (!button || button.disabled) {
+            throw new Error('Calling is not ready yet. Please try again shortly.');
+        }
+        button.click();
+    }
+
+    async function handleIncomingCallInvite(root, payload) {
+        const conversationId = Number(payload?.conversation_id);
+        if (
+            payload?.event !== 'call.invite'
+            || !Number.isInteger(conversationId)
+            || conversationId <= 0
+            || payload.to_actor_type !== root.dataset.actorType
+            || Number(payload.to_actor_id) !== Number(root.dataset.actorId)
+            || payload.actor_type === root.dataset.actorType
+            || !['audio', 'video'].includes(payload.mode)
+            || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+                .test(String(payload.call_id || ''))
+        ) {
+            return;
+        }
+        await loadCallableConversations(root);
+        const conversation = callableConversationMap(root).get(conversationId);
+        if (!conversation) {
+            return;
+        }
+        const widget = await ensureCallController(root, conversation);
+        widget.dispatchEvent(new CustomEvent('vnz:call-signal', {detail: payload}));
+    }
+
+    function initializeCallInbox(root) {
+        const channelId = root.dataset.channelId || '';
+        let incomingQueue = Promise.resolve();
+        if (!channelId || !window.VNZTransactionChat?.acquireCallInbox) {
+            console.error('Incoming call monitoring is unavailable on this page.');
+            return;
+        }
+        window.VNZTransactionChat.acquireCallInbox(
+            channelId,
+            root.dataset.csrfToken || '',
+            {
+                onEvent: payload => {
+                    incomingQueue = incomingQueue.then(
+                        () => handleIncomingCallInvite(root, payload)
+                    ).catch(error => {
+                        console.error('Unable to prepare the incoming call:', error);
+                    });
+                },
+                onState: (ready, error) => {
+                    if (!ready && error) {
+                        console.error('Incoming call monitoring is unavailable:', error.message);
+                    }
+                }
+            }
+        ).catch(error => {
+            console.error('Incoming call monitoring could not be initialized:', error.message);
+        });
+    }
+
     function getConversationWindowEndpoint(actorType) {
         return actorType === 'admin'
             ? '/VNZ-TECH/admin/pages/transaction-chat-window.php'
@@ -461,12 +723,11 @@
         const title = windowElement.querySelector('[data-floating-chat-title]');
         const actorType = root.dataset.actorType;
         const endpoint = getConversationWindowEndpoint(actorType);
-        const requestId = details.conversationType === 'transaction'
-            ? details.transactionId
-            : details.conversationId;
-        const requestField = details.conversationType === 'transaction'
-            ? 'transaction_id'
-            : 'conversation_id';
+        const hasConversationId = Number(details.conversationId) > 0;
+        const requestId = hasConversationId
+            ? details.conversationId
+            : details.transactionId;
+        const requestField = hasConversationId ? 'conversation_id' : 'transaction_id';
 
         windowElement.dataset.conversationType = details.conversationType;
         windowElement.dataset.conversationId = String(details.conversationId || 0);
@@ -479,6 +740,7 @@
             delete windowElement.dataset.targetId;
         }
 
+        preserveCallOwners(root, body);
         body.replaceChildren();
         const loading = document.createElement('p');
         loading.className = 'floating-chat-window-loading';
@@ -502,6 +764,22 @@
 
             body.innerHTML = html;
             const widget = body.querySelector('[data-transaction-chat]');
+            if (!widget) {
+                throw new Error('The server did not return a conversation widget.');
+            }
+            if (
+                hasConversationId
+                && Number(widget.dataset.conversationId) !== Number(details.conversationId)
+            ) {
+                throw new Error('The server returned a different conversation than the one selected.');
+            }
+            if (
+                details.conversationType === 'transaction'
+                && Number(details.transactionId) > 0
+                && Number(widget.dataset.transactionId) !== Number(details.transactionId)
+            ) {
+                throw new Error('The selected transaction does not match this conversation.');
+            }
             const headerReference = widget?.dataset.transactionReference;
             const conversationTitle = widget?.dataset.conversationTitle;
             title.textContent = details.conversationType === 'transaction' && headerReference
@@ -789,14 +1067,19 @@
         }
     }
 
-    async function openTransactionWindow(root, transactionId, reference = '') {
+    async function openTransactionWindow(
+        root,
+        transactionId,
+        reference = '',
+        conversationId = 0
+    ) {
         if (!Number.isInteger(transactionId) || transactionId <= 0) {
             return;
         }
         return openFloatingWindow(root, {
             conversationType: 'transaction',
             transactionId,
-            conversationId: 0,
+            conversationId,
             reference,
             displayName: reference || 'Transaction chat'
         });
@@ -963,12 +1246,24 @@
         });
 
         list.addEventListener('click', event => {
+            const callRequest = event.target.closest('[data-call-request]');
+            if (callRequest) {
+                event.preventDefault();
+                event.stopPropagation();
+                requestCall(
+                    root,
+                    Number(callRequest.dataset.conversationId),
+                    callRequest.dataset.callMode
+                ).catch(error => showCallRequestError(root, error));
+                return;
+            }
             const transaction = event.target.closest('[data-transaction-id]');
             if (transaction) {
                 openTransactionWindow(
                     root,
                     Number(transaction.dataset.transactionId),
-                    transaction.dataset.transactionReference || ''
+                    transaction.dataset.transactionReference || '',
+                    Number(transaction.dataset.conversationId) || 0
                 );
                 return;
             }
@@ -1041,6 +1336,7 @@
             const minimize = event.target.closest('[data-chat-minimize]');
             if (close) {
                 const windowElement = close.closest('[data-floating-chat-window]');
+                preserveCallOwners(root, windowElement);
                 windowElement?.classList.add('is-closing');
                 if (windowElement) {
                     chatCloseTimers.set(windowElement, window.setTimeout(() => {
@@ -1111,6 +1407,18 @@
         });
         window.addEventListener('vnz:chat-presence-changed', () => refreshUnread(root));
         window.addEventListener('resize', () => updateWindowVisibility(root));
+        window.addEventListener('vnz:call-request', event => {
+            const conversationId = Number(event.detail?.conversationId);
+            const mode = event.detail?.mode;
+            requestCall(root, conversationId, mode)
+                .catch(error => showCallRequestError(root, error));
+        });
+        window.addEventListener('vnz:call-controller-released', event => {
+            const conversationId = Number(event.detail?.conversationId);
+            if (Number.isInteger(conversationId)) {
+                controllerMap(root).delete(conversationId);
+            }
+        });
 
         const sendPresenceHeartbeat = () => {
             fetch('/VNZ-TECH/backend/chat_presence.php', {
@@ -1138,6 +1446,7 @@
         refreshUnread(root);
         window.setInterval(() => refreshUnread(root), 15000);
         updateWindowVisibility(root);
+        initializeCallInbox(root);
     }
 
     function scan(root = document) {

@@ -157,6 +157,17 @@ try {
                 'unread_count' => $unreadCount,
                 'updated_at' => $conversation['updated_at']
             ];
+            $conversationData['call_eligible'] = false;
+            if (in_array($conversation['conversation_type'], ['transaction', 'private'], true)) {
+                try {
+                    chatGetOneToOneConversationPeer($conversationId, $actor);
+                    $conversationData['call_eligible'] = true;
+                } catch (ChatHttpException $e) {
+                    if (!in_array($e->httpStatus, [403, 404, 409], true)) {
+                        throw $e;
+                    }
+                }
+            }
 
             if ($conversation['conversation_type'] === 'transaction') {
                 $conversationData['transaction_reference'] =

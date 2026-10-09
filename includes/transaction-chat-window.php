@@ -12,6 +12,7 @@ $transactionChatConversationId = filter_input(
     'conversation_id',
     FILTER_VALIDATE_INT
 );
+$transactionChatResolvedConversationId = 0;
 
 try {
     $transactionChatActor = chatGetCurrentActor();
@@ -25,29 +26,35 @@ try {
             (int) $transactionChatConversationId,
             $transactionChatActor
         );
-        if (!in_array($conversation['conversation_type'], ['global', 'private'], true)) {
+        if ($conversation['conversation_type'] === 'transaction') {
+            if ($conversation['transaction_id'] === null) {
+                throw new ChatHttpException('Unauthorized.', 403);
+            }
+            $transactionChatWindowId = (int) $conversation['transaction_id'];
+            $transactionChatResolvedConversationId = (int) $conversation['conversation_id'];
+        } elseif (in_array($conversation['conversation_type'], ['global', 'private'], true)) {
+            $transactionChatConversationType = $conversation['conversation_type'];
+            $transactionChatConversationDbId = (int) $conversation['conversation_id'];
+            $transactionChatDisplayName = (string) $conversation['display_name'];
+            $transactionChatId = 0;
+            $transactionChatReference = '';
+            $transactionChatStatus = null;
+            $transactionChatPaymentStatus = null;
+            $transactionChatSubmissionReference = null;
+            $transactionChatSubmissionStatus = null;
+            $transactionChatOfferAmount = null;
+            $transactionChatFinalAmount = null;
+            $transactionChatSubmissionItems = [];
+            $transactionChatPhotosByItem = [];
+
+            require __DIR__ . '/transaction-chat.php';
+            return;
+        } else {
             throw new ChatHttpException(
-                'This conversation must be opened from its transaction.',
+                'This conversation is not available.',
                 422
             );
         }
-
-        $transactionChatConversationType = $conversation['conversation_type'];
-        $transactionChatConversationDbId = (int) $conversation['conversation_id'];
-        $transactionChatDisplayName = (string) $conversation['display_name'];
-        $transactionChatId = 0;
-        $transactionChatReference = '';
-        $transactionChatStatus = null;
-        $transactionChatPaymentStatus = null;
-        $transactionChatSubmissionReference = null;
-        $transactionChatSubmissionStatus = null;
-        $transactionChatOfferAmount = null;
-        $transactionChatFinalAmount = null;
-        $transactionChatSubmissionItems = [];
-        $transactionChatPhotosByItem = [];
-
-        require __DIR__ . '/transaction-chat.php';
-        return;
     }
 
     if ($transactionChatWindowId === false || $transactionChatWindowId === null || $transactionChatWindowId <= 0) {
@@ -172,7 +179,7 @@ if ($transactionChatSubmissionItems) {
 
 $transactionChatId = (int) $transactionChatData['id'];
 $transactionChatConversationType = 'transaction';
-$transactionChatConversationDbId = 0;
+$transactionChatConversationDbId = $transactionChatResolvedConversationId;
 $transactionChatDisplayName = (string) $transactionChatData['transaction_reference'];
 $transactionChatReference = $transactionChatData['transaction_reference'];
 $transactionChatStatus = $transactionChatData['transaction_status'];

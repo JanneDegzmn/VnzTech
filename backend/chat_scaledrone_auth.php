@@ -12,9 +12,11 @@ try {
 
     $actor = chatGetCurrentActor();
     $conversationIds = [];
-    $requestedIds = $_POST['conversation_ids'] ?? $_POST['conversation_id'] ?? null;
+    $requestedIds = $_POST['conversation_ids'] ?? $_POST['conversation_id'] ?? [];
     if (is_string($requestedIds)) {
-        $requestedIds = explode(',', $requestedIds);
+        $requestedIds = trim($requestedIds) === ''
+            ? []
+            : explode(',', $requestedIds);
     }
     if (!is_array($requestedIds) || count($requestedIds) > 10) {
         throw new ChatHttpException('Invalid conversation list.', 422);
@@ -26,7 +28,8 @@ try {
         );
     }
     $conversationIds = array_values(array_unique($conversationIds));
-    if ($conversationIds === []) {
+    $callInboxRequested = ($_POST['call_inbox'] ?? '') === '1';
+    if ($conversationIds === [] && !$callInboxRequested) {
         throw new ChatHttpException('At least one conversation is required.', 422);
     }
     $clientId = $_POST['client_id'] ?? null;
@@ -37,14 +40,25 @@ try {
 
     $roomContexts = [];
     foreach ($conversationIds as $conversationId) {
-        $roomContexts[] = chatGetAuthorizedScaledroneRoom(
+        $roomContext = chatGetAuthorizedScaledroneRoom(
             $conversationId,
             $actor
         );
+        if (in_array($roomContext['conversation_type'] ?? '', ['transaction', 'private'], true)) {
+            $roomContext['call_room'] = chatGetAuthorizedScaledroneCallRoom(
+                $conversationId,
+                $actor
+            );
+        }
+        $roomContexts[] = $roomContext;
     }
+    $callInboxContext = $callInboxRequested
+        ? chatGetAuthorizedCallInbox($actor)
+        : null;
     $authorization = chatCreateScaledroneClientToken(
         $roomContexts,
-        trim($clientId)
+        trim($clientId),
+        $callInboxContext
     );
 
     chatJsonResponse(
