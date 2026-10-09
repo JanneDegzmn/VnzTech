@@ -1,5 +1,10 @@
 # Uploaded/generated files
 uploads/
+!uploads/
+uploads/*
+!uploads/chat_attachments/
+uploads/chat_attachments/*
+!uploads/chat_attachments/.htaccess
 
 # Environment / secrets
 .env

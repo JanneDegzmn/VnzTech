@@ -5,6 +5,7 @@ ini_set('display_errors', '0');
 
 require_once __DIR__ . '/chat_service.php';
 require_once __DIR__ . '/chat_scaledrone.php';
+require_once __DIR__ . '/chat_attachments.php';
 
 function chatMessageReactionOptions(): array
 {
@@ -27,6 +28,7 @@ function chatMessageReplyPayload(PDO $pdo, int $conversationId, int $messageId, 
                 ELSE 'Admin'
             END AS sender_display_name,
             m.content,
+            m.message_type,
             m.deleted_at,
             m.edited_at,
             m.created_at
@@ -53,6 +55,12 @@ function chatMessageReplyPayload(PDO $pdo, int $conversationId, int $messageId, 
     $content = (string) ($reply['content'] ?? '');
     if (!empty($reply['deleted_at'])) {
         $content = 'This message was deleted';
+    } elseif ($content === '' && in_array($reply['message_type'] ?? '', ['image', 'file', 'voice'], true)) {
+        $content = match ($reply['message_type']) {
+            'file' => 'PDF document',
+            'voice' => 'Voice message',
+            default => 'Image'
+        };
     }
 
     return [
@@ -319,6 +327,26 @@ function chatNormalizeMessagePayload(
     ?array $reactionMap = null
 ): array
 {
+    $attachmentName = '';
+    if (
+        empty($message['deleted_at'])
+        && in_array($message['message_type'], ['image', 'file', 'voice'], true)
+        && !empty($message['attachment_path'])
+    ) {
+        $attachmentExtension = $message['message_type'] === 'file'
+            ? 'pdf'
+            : strtolower((string) pathinfo(
+                (string) $message['attachment_path'],
+                PATHINFO_EXTENSION
+            ));
+        if (in_array($attachmentExtension, ['jpg', 'png', 'webp', 'pdf', 'ogg', 'webm'], true)) {
+            $attachmentName = chatSanitizeAttachmentName(
+                (string) ($message['attachment_name'] ?? ''),
+                $attachmentExtension
+            );
+        }
+    }
+
     $response = [
         'id' => (int) $message['id'],
         'conversation_id' => $conversationId,
@@ -333,7 +361,22 @@ function chatNormalizeMessagePayload(
         'message_type' => $message['message_type'],
         'content' => !empty($message['deleted_at'])
             ? 'This message was deleted'
-            : (string) ($message['content'] ?? ''),
+            : (
+                $message['message_type'] === 'voice'
+                && trim((string) ($message['content'] ?? '')) === ''
+                    ? 'Voice message'
+                    : (string) ($message['content'] ?? '')
+            ),
+        'attachment_url' => in_array($message['message_type'], ['image', 'file', 'voice'], true)
+            && empty($message['deleted_at'])
+            && !empty($message['attachment_path'])
+                ? '/VNZ-TECH/backend/chat_attachment.php?message_id='
+                    . (int) $message['id']
+                : null,
+        'attachment_name' => $attachmentName,
+        'attachment_size' => empty($message['deleted_at'])
+            ? (int) ($message['attachment_size'] ?? 0)
+            : 0,
         'created_at' => $message['created_at'],
         'edited_at' => $message['edited_at'] ?: null,
         'deleted_at' => $message['deleted_at'] ?: null,
@@ -462,6 +505,9 @@ try {
                 END AS sender_display_name,
                 m.message_type,
                 m.content,
+                m.attachment_path,
+                m.attachment_name,
+                m.attachment_size,
                 m.reply_to_message_id,
                 m.deleted_at,
                 m.edited_at,
@@ -608,21 +654,32 @@ try {
 
         $messageType = strtolower(trim($messageTypeInput));
 
-        if ($messageType !== 'text') {
+        if (!in_array($messageType, ['text', 'image', 'file', 'voice'], true)) {
             throw new ChatHttpException(
-                'Only text messages are supported.',
+                'Unsupported message type.',
                 422
             );
         }
 
-        $content = $_POST['content'] ?? null;
+        $content = $_POST['content'] ?? '';
         if (!is_string($content)) {
             throw new ChatHttpException('Invalid message content.', 422);
         }
 
         $content = trim($content);
+        $attachmentFile = $_FILES['attachment'] ?? null;
+        $hasAttachment = is_array($attachmentFile)
+            && ($attachmentFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
+        if (
+            (in_array($messageType, ['image', 'file', 'voice'], true)) !== $hasAttachment
+        ) {
+            throw new ChatHttpException(
+                'Select an attachment that matches the selected message type.',
+                422
+            );
+        }
 
-        if (strtolower($content) === '/bookme') {
+        if ($messageType === 'text' && strtolower($content) === '/bookme') {
             if ($actor['actor_type'] !== 'admin') {
                 throw new ChatHttpException(
                     'Only Admin can use the /bookme command.',
@@ -638,7 +695,7 @@ try {
             ]);
         }
 
-        if ($content === '') {
+        if ($content === '' && !$hasAttachment) {
             throw new ChatHttpException(
                 'Message content cannot be empty.',
                 422
@@ -685,9 +742,16 @@ try {
 
         global $pdo;
 
-        $pdo->beginTransaction();
+        $storedAttachment = $hasAttachment
+            ? match ($messageType) {
+                'image' => chatStoreImageAttachment($attachmentFile),
+                'file' => chatStorePdfAttachment($attachmentFile),
+                'voice' => chatStoreVoiceAttachment($attachmentFile)
+            }
+            : null;
 
         try {
+            $pdo->beginTransaction();
             $insertStmt = $pdo->prepare("
                 INSERT INTO messages (
                     conversation_id,
@@ -695,15 +759,22 @@ try {
                     sender_id,
                     message_type,
                     content,
+                    attachment_path,
+                    attachment_name,
+                    attachment_size,
                     reply_to_message_id
                 )
-                VALUES (?, ?, ?, 'text', ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             ");
             $insertStmt->execute([
                 $conversationId,
                 $actor['actor_type'],
                 $actor['actor_id'],
+                $messageType,
                 $content,
+                $storedAttachment['path'] ?? null,
+                $storedAttachment['name'] ?? null,
+                $storedAttachment['size'] ?? null,
                 $replyToMessageId
             ]);
 
@@ -716,6 +787,9 @@ try {
                     u.profile_picture AS sender_profile_picture,
                     m.message_type,
                     m.content,
+                    m.attachment_path,
+                    m.attachment_name,
+                    m.attachment_size,
                     m.reply_to_message_id,
                     m.deleted_at,
                     m.edited_at,
@@ -768,6 +842,9 @@ try {
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
+            }
+            if ($storedAttachment !== null && is_file($storedAttachment['absolute_path'])) {
+                @unlink($storedAttachment['absolute_path']);
             }
 
             throw $e;
@@ -828,7 +905,7 @@ try {
 
         global $pdo;
         $messageStmt = $pdo->prepare("
-            SELECT id, sender_type, sender_id, deleted_at, edited_at, content
+            SELECT id, sender_type, sender_id, message_type, deleted_at, edited_at, content
             FROM messages
             WHERE id = ?
               AND conversation_id = ?
@@ -839,6 +916,10 @@ try {
 
         if (!$message) {
             throw new ChatHttpException('Message not found in this conversation.', 404);
+        }
+
+        if ($message['message_type'] === 'voice') {
+            throw new ChatHttpException('Voice messages cannot be edited.', 409);
         }
 
         if ($message['deleted_at'] !== null) {
@@ -881,6 +962,9 @@ try {
                 u.profile_picture AS sender_profile_picture,
                 m.message_type,
                 m.content,
+                m.attachment_path,
+                m.attachment_name,
+                m.attachment_size,
                 m.reply_to_message_id,
                 m.deleted_at,
                 m.edited_at,

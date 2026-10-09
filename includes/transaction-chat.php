@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../backend/csrf.php';
 require_once __DIR__ . '/../backend/chat_scaledrone.php';
+require_once __DIR__ . '/../backend/chat_attachments.php';
 
 try {
     $transactionChatActor = chatGetCurrentActor();
@@ -52,6 +53,16 @@ foreach ($transactionChatItems as $transactionChatItem) {
         'UTF-8'
     ) ?>"
     data-actor-id="<?= (int) $transactionChatActor['actor_id'] ?>"
+    data-actor-display-name="<?= htmlspecialchars(
+        $transactionChatActor['display_name'],
+        ENT_QUOTES,
+        'UTF-8'
+    ) ?>"
+    data-actor-profile-picture="<?= htmlspecialchars(
+        $transactionChatActor['profile_picture'],
+        ENT_QUOTES,
+        'UTF-8'
+    ) ?>"
     data-transaction-reference="<?= htmlspecialchars(
         (string) $transactionChatReference,
         ENT_QUOTES,
@@ -72,6 +83,10 @@ foreach ($transactionChatItems as $transactionChatItem) {
         ENT_QUOTES,
         'UTF-8'
     ) ?>"
+    data-attachment-max-bytes="<?= chatAttachmentMaxBytes() ?>"
+    data-document-max-bytes="<?= chatDocumentMaxBytes() ?>"
+    data-voice-max-bytes="<?= chatVoiceMaxBytes() ?>"
+    data-voice-max-duration-seconds="<?= chatVoiceMaxDurationSeconds() ?>"
 >
     <header class="transaction-chat-header">
         <div>
@@ -224,6 +239,28 @@ foreach ($transactionChatItems as $transactionChatItem) {
                 aria-expanded="false"
                 disabled
             >😀</button>
+            <button
+                type="button"
+                class="transaction-chat-attachment-toggle"
+                data-chat-attachment-toggle
+                aria-label="Attach an image or PDF"
+                title="Attach an image or PDF"
+                disabled
+            >＋</button>
+            <input
+                type="file"
+                data-chat-attachment-input
+                accept="image/jpeg,image/png,image/webp,application/pdf,.pdf"
+                hidden
+            >
+            <button
+                type="button"
+                class="transaction-chat-voice-toggle"
+                data-chat-voice-toggle
+                aria-label="Record a voice message"
+                title="Record a voice message"
+                disabled
+            >🎙</button>
             <textarea
                 id="transaction-chat-input-<?= htmlspecialchars($transactionChatInputId, ENT_QUOTES, 'UTF-8') ?>"
                 data-chat-input
@@ -232,9 +269,30 @@ foreach ($transactionChatItems as $transactionChatItem) {
                 maxlength="4000"
                 placeholder="Write a message…"
                 autocomplete="off"
-                required
                 disabled
             ></textarea>
+        </div>
+        <section class="transaction-chat-voice-composer" data-chat-voice-composer hidden>
+            <span class="transaction-chat-voice-recording-status" data-chat-voice-status aria-live="polite">
+                Ready to record
+            </span>
+            <audio data-chat-voice-preview controls preload="metadata" hidden></audio>
+            <div class="transaction-chat-voice-actions">
+                <button type="button" data-chat-voice-cancel>Cancel</button>
+                <button type="button" data-chat-voice-send hidden>Send voice message</button>
+            </div>
+        </section>
+        <div class="transaction-chat-attachment-preview" data-chat-attachment-preview hidden>
+            <img data-chat-attachment-preview-image alt="Selected image preview" hidden>
+            <span data-chat-attachment-name></span>
+            <button
+                type="button"
+                data-chat-attachment-remove
+                aria-label="Remove selected attachment"
+            >×</button>
+        </div>
+        <div class="transaction-chat-upload-progress" data-chat-upload-progress hidden>
+            <span data-chat-upload-progress-bar></span>
         </div>
         <div class="transaction-chat-composer-footer">
             <span>
@@ -249,5 +307,6 @@ foreach ($transactionChatItems as $transactionChatItem) {
                 <span aria-hidden="true">↗</span>
             </button>
         </div>
+        <div class="transaction-chat-upload-error" data-chat-upload-error role="status" aria-live="polite" hidden></div>
     </form>
 </section>

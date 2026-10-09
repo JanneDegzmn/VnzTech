@@ -174,7 +174,7 @@ function chatCreateScaledroneClientToken(
         }
 
         $permissions['^' . preg_quote($roomContext['room'], '/') . '$'] = [
-            'publish' => false,
+            'publish' => true,
             'subscribe' => true
         ];
         $rooms[] = [

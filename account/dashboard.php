@@ -231,10 +231,10 @@ $initialAlertMessage =
     >
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261010-avatar-messages"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261010-voice-messages"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261010-avatar-messages-fix1"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261010-voice-messages"
         defer
     ></script>
     <script

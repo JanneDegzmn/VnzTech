@@ -247,21 +247,30 @@ function chatGetCurrentActor(): array
         }
 
         $stmt = $pdo->prepare("
-            SELECT id
+            SELECT id, full_name, profile_picture
             FROM users
             WHERE id = ?
               AND is_active = 1
             LIMIT 1
         ");
         $stmt->execute([$sellerId]);
+        $seller = $stmt->fetch();
 
-        if (!$stmt->fetchColumn()) {
+        if (!$seller) {
             throw new ChatHttpException('Authentication required.', 401);
         }
 
+        $profilePicture = (string) ($seller['profile_picture'] ?? '');
         return [
             'actor_type' => 'seller',
-            'actor_id' => (int) $sellerId
+            'actor_id' => (int) $sellerId,
+            'display_name' => trim((string) ($seller['full_name'] ?? '')) ?: 'Seller',
+            'profile_picture' => preg_match(
+                '/\Auploads\/profile_pictures\/[A-Za-z0-9][A-Za-z0-9._-]*\z/',
+                $profilePicture
+            ) === 1
+                ? $profilePicture
+                : ''
         ];
     }
 
@@ -277,7 +286,9 @@ function chatGetCurrentActor(): array
 
     return [
         'actor_type' => 'admin',
-        'actor_id' => (int) $admin['id']
+        'actor_id' => (int) $admin['id'],
+        'display_name' => 'Admin',
+        'profile_picture' => ''
     ];
 }
 
