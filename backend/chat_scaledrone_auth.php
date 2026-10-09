@@ -11,22 +11,39 @@ try {
     chatRequireCsrf();
 
     $actor = chatGetCurrentActor();
-    $conversationId = chatPositiveInteger(
-        $_POST['conversation_id'] ?? null,
-        'conversation ID'
-    );
+    $conversationIds = [];
+    $requestedIds = $_POST['conversation_ids'] ?? $_POST['conversation_id'] ?? null;
+    if (is_string($requestedIds)) {
+        $requestedIds = explode(',', $requestedIds);
+    }
+    if (!is_array($requestedIds) || count($requestedIds) > 10) {
+        throw new ChatHttpException('Invalid conversation list.', 422);
+    }
+    foreach ($requestedIds as $requestedId) {
+        $conversationIds[] = chatPositiveInteger(
+            $requestedId,
+            'conversation ID'
+        );
+    }
+    $conversationIds = array_values(array_unique($conversationIds));
+    if ($conversationIds === []) {
+        throw new ChatHttpException('At least one conversation is required.', 422);
+    }
     $clientId = $_POST['client_id'] ?? null;
 
     if (!is_string($clientId)) {
         throw new ChatHttpException('Invalid realtime client ID.', 422);
     }
 
-    $roomContext = chatGetAuthorizedScaledroneRoom(
-        $conversationId,
-        $actor
-    );
+    $roomContexts = [];
+    foreach ($conversationIds as $conversationId) {
+        $roomContexts[] = chatGetAuthorizedScaledroneRoom(
+            $conversationId,
+            $actor
+        );
+    }
     $authorization = chatCreateScaledroneClientToken(
-        $roomContext,
+        $roomContexts,
         trim($clientId)
     );
 

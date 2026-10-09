@@ -148,33 +148,56 @@ function chatGetAuthorizedScaledroneRoom(
 }
 
 function chatCreateScaledroneClientToken(
-    array $roomContext,
+    array $roomContexts,
     string $clientId
 ): array {
     if (!preg_match('/\A[A-Za-z0-9:_-]{1,128}\z/', $clientId)) {
         throw new ChatHttpException('Invalid realtime client ID.', 422);
     }
 
+    if ($roomContexts === []) {
+        throw new ChatHttpException('At least one conversation is required.', 422);
+    }
+
+    $firstRoom = reset($roomContexts);
+    $permissions = [];
+    $rooms = [];
+    foreach ($roomContexts as $roomContext) {
+        if (
+            $roomContext['channel_id'] !== $firstRoom['channel_id']
+            || $roomContext['secret_key'] !== $firstRoom['secret_key']
+        ) {
+            throw new ChatHttpException(
+                'Realtime channel configuration changed. Reload this page.',
+                503
+            );
+        }
+
+        $permissions['^' . preg_quote($roomContext['room'], '/') . '$'] = [
+            'publish' => false,
+            'subscribe' => true
+        ];
+        $rooms[] = [
+            'conversation_id' => $roomContext['conversation_id'],
+            'room' => $roomContext['room']
+        ];
+    }
+
     $expiresAt = time() + 120;
-    $roomPattern = '^' . preg_quote($roomContext['room'], '/') . '$';
     $token = chatScaledroneSignJwt(
         [
             'client' => $clientId,
-            'channel' => $roomContext['channel_id'],
-            'permissions' => [
-                $roomPattern => [
-                    'publish' => false,
-                    'subscribe' => true
-                ]
-            ],
+            'channel' => $firstRoom['channel_id'],
+            'permissions' => $permissions,
             'exp' => $expiresAt
         ],
-        $roomContext['secret_key']
+        $firstRoom['secret_key']
     );
 
     return [
-        'channel_id' => $roomContext['channel_id'],
-        'room' => $roomContext['room'],
+        'channel_id' => $firstRoom['channel_id'],
+        'room' => $rooms[0]['room'],
+        'rooms' => $rooms,
         'token' => $token,
         'expires_at' => $expiresAt
     ];

@@ -3,10 +3,20 @@
 require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/admin_activity.php';
+require_once __DIR__ . '/../backend/chat_presence_store.php';
+
+$chatAuthenticationStartedAt = microtime(true);
 
 if (isset($_SESSION['admin_id'])) {
-    logAdminActivity((int) $_SESSION['admin_id'], 'auth.logout', 'Admin signed out.');
+    $adminId = (int) $_SESSION['admin_id'];
+    try {
+        chatEndPresenceSession('admin', $adminId);
+    } catch (Throwable $e) {
+        error_log('Admin logout presence cleanup failed: ' . $e->getMessage());
+    }
+    logAdminActivity($adminId, 'auth.logout', 'Admin signed out.');
 }
+chatLogAuthenticationTiming('admin_logout', $chatAuthenticationStartedAt);
 
 
 // Clear all session data

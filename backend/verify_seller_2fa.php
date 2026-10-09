@@ -5,6 +5,9 @@ require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/admin_totp.php';
+require_once __DIR__ . '/chat_presence_store.php';
+
+$chatAuthenticationStartedAt = microtime(true);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -126,12 +129,27 @@ try {
     $_SESSION['user_id'] = (int) $user['id'];
     $_SESSION['user_email'] = $user['email'];
     $_SESSION['user_name'] = $user['full_name'];
+    chatRegisterPresenceSession('seller', (int) $user['id']);
+    chatLogAuthenticationTiming('seller_2fa_login', $chatAuthenticationStartedAt);
     header('Location: /VNZ-TECH/account/dashboard.php');
     exit;
 } catch (Throwable $e) {
     if ($pdo->inTransaction()) {
         $pdo->rollBack();
     }
+    if (isset($user['id'])) {
+        try {
+            chatEndPresenceSession('seller', (int) $user['id']);
+        } catch (Throwable $presenceError) {
+            error_log('Seller 2FA presence rollback failed: ' . $presenceError->getMessage());
+        }
+    }
+    unset(
+        $_SESSION['user_logged_in'],
+        $_SESSION['user_id'],
+        $_SESSION['user_email'],
+        $_SESSION['user_name']
+    );
     error_log('Seller two-factor login verification failed: ' . $e->getMessage());
     header('Location: /VNZ-TECH/account/login.php?two_factor=1&error=' . urlencode('Unable to verify the authenticator code. Please try again.'));
     exit;

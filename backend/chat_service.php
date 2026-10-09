@@ -16,6 +16,133 @@ class ChatHttpException extends RuntimeException
     }
 }
 
+function chatParticipantDisplayNameForViewer(
+    array $viewer,
+    string $participantType,
+    string $displayName
+): string {
+    if (
+        $viewer['actor_type'] === 'seller'
+        && $participantType === 'admin'
+    ) {
+        return 'Admin';
+    }
+
+    $displayName = trim($displayName);
+    if ($displayName !== '') {
+        return $displayName;
+    }
+
+    return $participantType === 'seller' ? 'Seller' : 'Admin';
+}
+
+function chatGetConversationPresence(int $conversationId, array $actor): array
+{
+    global $pdo;
+
+    $membershipStmt = $pdo->prepare("
+        SELECT type
+        FROM conversations
+        WHERE id = ?
+          AND EXISTS (
+              SELECT 1
+              FROM conversation_participants current_participant
+              WHERE current_participant.conversation_id = conversations.id
+                AND current_participant.actor_type = ?
+                AND current_participant.actor_id = ?
+          )
+        LIMIT 1
+    ");
+    $membershipStmt->execute([
+        $conversationId,
+        $actor['actor_type'],
+        $actor['actor_id']
+    ]);
+    $conversationType = $membershipStmt->fetchColumn();
+    if ($conversationType === false) {
+        throw new ChatHttpException('Unauthorized.', 403);
+    }
+
+    if ($conversationType === 'global') {
+        $onlineStmt = $pdo->prepare("
+            SELECT COUNT(DISTINCT CONCAT(p.actor_type, ':', p.actor_id))
+            FROM conversation_participants p
+            INNER JOIN chat_presence_sessions presence
+                ON presence.actor_type = p.actor_type
+               AND presence.actor_id = p.actor_id
+               AND presence.ended_at IS NULL
+               AND presence.heartbeat_at >= DATE_SUB(NOW(), INTERVAL 60 SECOND)
+            WHERE p.conversation_id = ?
+              AND NOT (p.actor_type = ? AND p.actor_id = ?)
+        ");
+        $onlineStmt->execute([
+            $conversationId,
+            $actor['actor_type'],
+            $actor['actor_id']
+        ]);
+        return ['online_count' => (int) $onlineStmt->fetchColumn()];
+    }
+
+    $participantStmt = $pdo->prepare("
+        SELECT
+            p.actor_type,
+            p.actor_id,
+            CASE
+                WHEN p.actor_type = 'seller' THEN COALESCE(
+                    NULLIF(TRIM(u.full_name), ''),
+                    'Seller'
+                )
+                ELSE COALESCE(
+                    NULLIF(TRIM(CONCAT(a.first_name, ' ', a.last_name)), ''),
+                    'Admin'
+                )
+            END AS display_name,
+            MAX(COALESCE(presence.ended_at, presence.heartbeat_at)) AS last_seen_at,
+            MAX(
+                CASE
+                    WHEN presence.ended_at IS NULL
+                     AND presence.heartbeat_at >= DATE_SUB(NOW(), INTERVAL 60 SECOND)
+                    THEN 1
+                    ELSE 0
+                END
+            ) AS is_online
+        FROM conversation_participants p
+        LEFT JOIN users u
+            ON p.actor_type = 'seller'
+           AND u.id = p.actor_id
+        LEFT JOIN admins a
+            ON p.actor_type = 'admin'
+           AND a.id = p.actor_id
+        LEFT JOIN chat_presence_sessions presence
+            ON presence.actor_type = p.actor_type
+           AND presence.actor_id = p.actor_id
+        WHERE p.conversation_id = ?
+          AND NOT (p.actor_type = ? AND p.actor_id = ?)
+        GROUP BY p.actor_type, p.actor_id, display_name
+    ");
+    $participantStmt->execute([
+        $conversationId,
+        $actor['actor_type'],
+        $actor['actor_id']
+    ]);
+
+    $participants = [];
+    foreach ($participantStmt->fetchAll(PDO::FETCH_ASSOC) as $participant) {
+        $lastSeen = $participant['last_seen_at'] ?: null;
+        $participants[] = [
+            'display_name' => chatParticipantDisplayNameForViewer(
+                $actor,
+                (string) $participant['actor_type'],
+                (string) $participant['display_name']
+            ),
+            'is_online' => (bool) $participant['is_online'],
+            'last_seen_at' => $lastSeen
+        ];
+    }
+
+    return ['participants' => $participants];
+}
+
 function chatJsonResponse(
     bool $success,
     string $message,
@@ -546,7 +673,11 @@ function chatGetOrCreatePrivateConversation(
         return [
             'conversation_id' => $conversationId,
             'conversation_type' => 'private',
-            'display_name' => $target['display_name'],
+            'display_name' => chatParticipantDisplayNameForViewer(
+                $actor,
+                $target['actor_type'],
+                $target['display_name']
+            ),
             'target_type' => $target['actor_type'],
             'target_id' => (int) $target['actor_id']
         ];
@@ -629,7 +760,11 @@ function chatListPrivateContacts(array $actor, string $category): array
             $contacts[] = [
                 'actor_type' => 'admin',
                 'actor_id' => (int) $row['actor_id'],
-                'display_name' => trim((string) $row['display_name']) ?: 'Admin',
+                'display_name' => chatParticipantDisplayNameForViewer(
+                    $actor,
+                    'admin',
+                    (string) $row['display_name']
+                ),
                 'profile_picture' => ''
             ];
         }
@@ -639,6 +774,10 @@ function chatListPrivateContacts(array $actor, string $category): array
         $contact['conversation_id'] = chatFindPrivateConversationId($actor, $contact);
         $contact['last_message'] = '';
         if ($contact['conversation_id'] !== null) {
+            $contact['presence'] = chatGetConversationPresence(
+                (int) $contact['conversation_id'],
+                $actor
+            );
             $messageStmt = $pdo->prepare("
                 SELECT content
                 FROM messages
@@ -867,7 +1006,11 @@ function chatRequireConversationMembership(
             (string) $otherParticipant['actor_type'],
             (int) $otherParticipant['actor_id']
         );
-        $conversation['display_name'] = $otherActor['display_name'];
+        $conversation['display_name'] = chatParticipantDisplayNameForViewer(
+            $actor,
+            $otherActor['actor_type'],
+            $otherActor['display_name']
+        );
     } else {
         throw new ChatHttpException('Unauthorized.', 403);
     }

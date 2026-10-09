@@ -143,20 +143,10 @@ try {
             }
 
             $conversationId = (int) $conversation['conversation_id'];
-            try {
-                $unreadCount = chatCountUnreadMessages(
-                    $conversationId,
-                    $actor
-                );
-            } catch (Throwable $e) {
-                error_log(
-                    'Chat unread count failed for conversation '
-                    . $conversationId
-                    . ': '
-                    . $e->getMessage()
-                );
-                $unreadCount = 0;
-            }
+            $unreadCount = chatCountUnreadMessages(
+                $conversationId,
+                $actor
+            );
 
             $conversationData = [
                 'conversation_id' => $conversationId,
@@ -182,6 +172,10 @@ try {
                 $conversationData['display_name'] =
                     $context['display_name'];
             }
+            $conversationData['presence'] = chatGetConversationPresence(
+                $conversationId,
+                $actor
+            );
 
             $authorizedConversations[] = $conversationData;
         }

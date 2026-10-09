@@ -59,8 +59,10 @@ function chatMessageReplyPayload(PDO $pdo, int $conversationId, int $messageId, 
         'id' => (int) $reply['id'],
         'sender_type' => $reply['sender_type'],
         'sender_id' => (int) $reply['sender_id'],
-        'sender_display_name' => trim((string) ($reply['sender_display_name'] ?? '')) ?: (
-            $reply['sender_type'] === 'seller' ? 'Seller' : 'Admin'
+        'sender_display_name' => chatParticipantDisplayNameForViewer(
+            $actor,
+            (string) $reply['sender_type'],
+            (string) ($reply['sender_display_name'] ?? '')
         ),
         'content' => $content,
         'created_at' => $reply['created_at'],
@@ -70,6 +72,77 @@ function chatMessageReplyPayload(PDO $pdo, int $conversationId, int $messageId, 
             ? mb_substr($content, 0, 140, 'UTF-8') . '…'
             : $content
     ];
+}
+
+function chatLoadGlobalReadReceiptReaders(
+    PDO $pdo,
+    int $conversationId,
+    array $messageIds,
+    array $actor
+): array {
+    $messageIds = array_values(array_unique(array_filter(
+        array_map('intval', $messageIds),
+        static fn (int $messageId): bool => $messageId > 0
+    )));
+    if ($messageIds === []) {
+        return [];
+    }
+
+    $placeholders = implode(',', array_fill(0, count($messageIds), '?'));
+    $stmt = $pdo->prepare("
+        SELECT
+            m.id AS message_id,
+            reader.actor_type,
+            CASE
+                WHEN reader.actor_type = 'seller' THEN COALESCE(
+                    NULLIF(TRIM(u.full_name), ''),
+                    'Seller'
+                )
+                ELSE COALESCE(
+                    NULLIF(TRIM(CONCAT(a.first_name, ' ', a.last_name)), ''),
+                    'Admin'
+                )
+            END AS display_name
+        FROM messages m
+        INNER JOIN conversations c
+            ON c.id = m.conversation_id
+           AND c.type = 'global'
+        INNER JOIN conversation_participants reader
+            ON reader.conversation_id = m.conversation_id
+           AND reader.last_read_message_id >= m.id
+           AND NOT (
+               reader.actor_type = m.sender_type
+               AND reader.actor_id = m.sender_id
+           )
+        LEFT JOIN users u
+            ON reader.actor_type = 'seller'
+           AND u.id = reader.actor_id
+        LEFT JOIN admins a
+            ON reader.actor_type = 'admin'
+           AND a.id = reader.actor_id
+        WHERE m.conversation_id = ?
+          AND m.id IN ($placeholders)
+          AND m.sender_type = ?
+          AND m.sender_id = ?
+        ORDER BY m.id, reader.actor_type, display_name
+    ");
+    $stmt->execute(array_merge(
+        [$conversationId],
+        $messageIds,
+        [$actor['actor_type'], $actor['actor_id']]
+    ));
+
+    $readersByMessageId = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $row) {
+        $messageId = (int) $row['message_id'];
+        $readersByMessageId[$messageId][] = chatParticipantDisplayNameForViewer(
+            $actor,
+            (string) $row['actor_type'],
+            (string) $row['display_name']
+        );
+    }
+
+    return $readersByMessageId;
 }
 
 function chatLoadMessageReactions(
@@ -139,12 +212,11 @@ function chatLoadMessageReactions(
         ) {
             $messageReactions[$messageId][$reaction]['active'] = true;
         }
-        $displayName = trim((string) ($reactionRow['display_name'] ?? ''));
-        if ($displayName === '') {
-            $displayName = $reactionRow['actor_type'] === 'seller'
-                ? 'Seller'
-                : 'Admin';
-        }
+        $displayName = chatParticipantDisplayNameForViewer(
+            $actor,
+            (string) $reactionRow['actor_type'],
+            (string) ($reactionRow['display_name'] ?? '')
+        );
         $messageReactions[$messageId][$reaction]['users'][] = $displayName;
     }
 
@@ -201,6 +273,44 @@ function chatMessageActorDisplayName(PDO $pdo, array $actor): string
         : ($actor['actor_type'] === 'seller' ? 'Seller' : 'Admin');
 }
 
+function chatMessageActorProfilePicture(PDO $pdo, array $actor): string
+{
+    if ($actor['actor_type'] !== 'seller') {
+        return '';
+    }
+
+    $stmt = $pdo->prepare("
+        SELECT profile_picture
+        FROM users
+        WHERE id = ?
+        LIMIT 1
+    ");
+    $stmt->execute([(int) $actor['actor_id']]);
+    $profilePicture = (string) ($stmt->fetchColumn() ?: '');
+
+    return preg_match(
+        '/\Auploads\/profile_pictures\/[A-Za-z0-9][A-Za-z0-9._-]*\z/',
+        $profilePicture
+    ) === 1
+        ? $profilePicture
+        : '';
+}
+
+function chatMessagePayloadProfilePicture(array $message): string
+{
+    if (($message['sender_type'] ?? '') !== 'seller') {
+        return '';
+    }
+
+    $profilePicture = (string) ($message['sender_profile_picture'] ?? '');
+    return preg_match(
+        '/\Auploads\/profile_pictures\/[A-Za-z0-9][A-Za-z0-9._-]*\z/',
+        $profilePicture
+    ) === 1
+        ? $profilePicture
+        : '';
+}
+
 function chatNormalizeMessagePayload(
     PDO $pdo,
     array $message,
@@ -214,9 +324,12 @@ function chatNormalizeMessagePayload(
         'conversation_id' => $conversationId,
         'sender_type' => $message['sender_type'],
         'sender_id' => (int) $message['sender_id'],
-        'sender_display_name' => trim((string) ($message['sender_display_name'] ?? '')) ?: (
-            $message['sender_type'] === 'seller' ? 'Seller' : 'Admin'
+        'sender_display_name' => chatParticipantDisplayNameForViewer(
+            $actor,
+            (string) $message['sender_type'],
+            (string) ($message['sender_display_name'] ?? '')
         ),
+        'sender_profile_picture' => chatMessagePayloadProfilePicture($message),
         'message_type' => $message['message_type'],
         'content' => !empty($message['deleted_at'])
             ? 'This message was deleted'
@@ -230,6 +343,34 @@ function chatNormalizeMessagePayload(
         'reactions' => $reactionMap[(int) $message['id']]
             ?? chatMessageReactionSummary($pdo, (int) $message['id'], $actor)
     ];
+
+    if (
+        $message['sender_type'] === $actor['actor_type']
+        && (int) $message['sender_id'] === (int) $actor['actor_id']
+    ) {
+        $recipientCount = (int) ($message['receipt_recipient_count'] ?? 0);
+        $deliveredCount = (int) ($message['delivered_count'] ?? 0);
+        $readCount = (int) ($message['read_count'] ?? 0);
+        $isGroupConversation = ($message['conversation_type'] ?? '') === 'global';
+        $receiptStatus = 'sent';
+        if (
+            $readCount > 0
+            && ($isGroupConversation || $readCount >= $recipientCount)
+        ) {
+            $receiptStatus = 'read';
+        } elseif (
+            $deliveredCount > 0
+            && ($isGroupConversation || $deliveredCount >= $recipientCount)
+        ) {
+            $receiptStatus = 'delivered';
+        }
+        $response['receipt_status'] = $receiptStatus;
+        $response['receipt_counts'] = [
+            'delivered' => $deliveredCount,
+            'read' => $readCount,
+            'recipients' => $recipientCount
+        ];
+    }
 
     if ($response['reply_to_message_id'] !== null) {
         $response['reply'] = chatMessageReplyPayload(
@@ -257,7 +398,10 @@ try {
             $_GET['conversation_id'] ?? null,
             'conversation ID'
         );
-        chatRequireConversationMembership($conversationId, $actor);
+        $conversationContext = chatRequireConversationMembership(
+            $conversationId,
+            $actor
+        );
 
         $limit = isset($_GET['limit'])
             ? chatPositiveInteger($_GET['limit'], 'limit')
@@ -307,6 +451,7 @@ try {
                 m.id,
                 m.sender_type,
                 m.sender_id,
+                u.profile_picture AS sender_profile_picture,
                 CASE
                     WHEN m.sender_type = 'seller' THEN u.full_name
                     WHEN c.type = 'private' THEN COALESCE(
@@ -320,7 +465,32 @@ try {
                 m.reply_to_message_id,
                 m.deleted_at,
                 m.edited_at,
-                m.created_at
+                m.created_at,
+                c.type AS conversation_type,
+                (
+                    SELECT COUNT(*)
+                    FROM conversation_participants recipient
+                    WHERE recipient.conversation_id = m.conversation_id
+                      AND NOT (
+                          recipient.actor_type = m.sender_type
+                          AND recipient.actor_id = m.sender_id
+                      )
+                ) AS receipt_recipient_count,
+                (
+                    SELECT COUNT(*)
+                    FROM message_deliveries delivery
+                    WHERE delivery.message_id = m.id
+                ) AS delivered_count,
+                (
+                    SELECT COUNT(*)
+                    FROM conversation_participants reader
+                    WHERE reader.conversation_id = m.conversation_id
+                      AND reader.last_read_message_id >= m.id
+                      AND NOT (
+                          reader.actor_type = m.sender_type
+                          AND reader.actor_id = m.sender_id
+                      )
+                ) AS read_count
             FROM messages m
             INNER JOIN conversations c
                 ON c.id = m.conversation_id
@@ -366,14 +536,36 @@ try {
             array_column($rows, 'id'),
             $actor
         );
+        $ownMessageIds = [];
+        if ($conversationContext['conversation_type'] === 'global') {
+            foreach ($rows as $row) {
+                if (
+                    $row['sender_type'] === $actor['actor_type']
+                    && (int) $row['sender_id'] === (int) $actor['actor_id']
+                ) {
+                    $ownMessageIds[] = (int) $row['id'];
+                }
+            }
+        }
+        $readersByMessageId = chatLoadGlobalReadReceiptReaders(
+            $pdo,
+            $conversationId,
+            $ownMessageIds,
+            $actor
+        );
         foreach ($rows as &$row) {
-            $row = chatNormalizeMessagePayload(
+            $normalized = chatNormalizeMessagePayload(
                 $pdo,
                 $row,
                 $actor,
                 $conversationId,
                 $reactionMap
             );
+            if (isset($readersByMessageId[(int) $row['id']])) {
+                $normalized['read_receipt_readers'] =
+                    $readersByMessageId[(int) $row['id']];
+            }
+            $row = $normalized;
         }
         unset($row);
 
@@ -521,6 +713,7 @@ try {
                     m.id,
                     m.sender_type,
                     m.sender_id,
+                    u.profile_picture AS sender_profile_picture,
                     m.message_type,
                     m.content,
                     m.reply_to_message_id,
@@ -563,6 +756,14 @@ try {
                 WHERE id = ?
             ");
             $updateConversation->execute([$conversationId]);
+
+            $normalizedMessage = chatNormalizeMessagePayload(
+                $pdo,
+                $message,
+                $actor,
+                $conversationId
+            );
+
             $pdo->commit();
         } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
@@ -590,12 +791,7 @@ try {
             [
                 'persisted' => true,
                 'realtime_delivery' => $realtimeDelivery,
-                'message' => chatNormalizeMessagePayload(
-                    $pdo,
-                    $message,
-                    $actor,
-                    $conversationId
-                )
+                'message' => $normalizedMessage
             ]
         );
     }
@@ -682,6 +878,7 @@ try {
                 m.id,
                 m.sender_type,
                 m.sender_id,
+                u.profile_picture AS sender_profile_picture,
                 m.message_type,
                 m.content,
                 m.reply_to_message_id,
@@ -967,7 +1164,8 @@ try {
                 'event' => 'typing.' . $state,
                 'display_name' => $actor['actor_type'] === 'admin'
                     ? 'Admin'
-                    : chatMessageActorDisplayName($pdo, $actor)
+                    : chatMessageActorDisplayName($pdo, $actor),
+                'profile_picture' => chatMessageActorProfilePicture($pdo, $actor)
             ]
         );
 
@@ -1046,6 +1244,7 @@ try {
             $actor['actor_type'],
             $actor['actor_id']
         ]);
+        $readCursorAdvanced = $updateStmt->rowCount() > 0;
 
         $readStmt = $pdo->prepare("
             SELECT last_read_message_id
@@ -1061,6 +1260,16 @@ try {
             $actor['actor_id']
         ]);
         $lastReadMessageId = $readStmt->fetchColumn();
+        if ($readCursorAdvanced) {
+            chatPublishConversationEvent(
+                $conversationId,
+                $actor,
+                [
+                    'event' => 'message.receipts_updated',
+                    'last_read_message_id' => (int) $lastReadMessageId
+                ]
+            );
+        }
 
         chatJsonResponse(
             true,
@@ -1074,6 +1283,109 @@ try {
                         : (int) $lastReadMessageId
             ]
         );
+    }
+
+    if ($action === 'delivered') {
+        chatRequireMethod('POST');
+        chatRequireCsrf();
+
+        $conversationId = chatPositiveInteger(
+            $_POST['conversation_id'] ?? null,
+            'conversation ID'
+        );
+        $messageIdsInput = $_POST['message_ids'] ?? null;
+        if (is_string($messageIdsInput)) {
+            $messageIdsInput = explode(',', $messageIdsInput);
+        }
+        if (!is_array($messageIdsInput) || count($messageIdsInput) > 30) {
+            throw new ChatHttpException('Invalid delivery receipt list.', 422);
+        }
+        $messageIds = [];
+        foreach ($messageIdsInput as $messageIdInput) {
+            $messageIds[] = chatPositiveInteger(
+                $messageIdInput,
+                'message ID'
+            );
+        }
+        $messageIds = array_values(array_unique($messageIds));
+        chatRequireConversationMembership($conversationId, $actor);
+        if ($messageIds === []) {
+            chatJsonResponse(true, 'No delivery receipts to record.', 200, [
+                'recorded_count' => 0
+            ]);
+        }
+
+        global $pdo;
+        $pdo->beginTransaction();
+        try {
+            $placeholders = implode(',', array_fill(0, count($messageIds), '?'));
+            $messageStmt = $pdo->prepare("
+                SELECT id, sender_type, sender_id
+                FROM messages
+                WHERE conversation_id = ?
+                  AND id IN ($placeholders)
+            ");
+            $messageStmt->execute(array_merge([$conversationId], $messageIds));
+            $messages = $messageStmt->fetchAll(PDO::FETCH_ASSOC);
+            if (count($messages) !== count($messageIds)) {
+                throw new ChatHttpException(
+                    'A message was not found in this conversation.',
+                    404
+                );
+            }
+
+            $incomingIds = [];
+            foreach ($messages as $message) {
+                if (
+                    $message['sender_type'] !== $actor['actor_type']
+                    || (int) $message['sender_id'] !== (int) $actor['actor_id']
+                ) {
+                    $incomingIds[] = (int) $message['id'];
+                }
+            }
+
+            $insertStmt = $pdo->prepare("
+                INSERT INTO message_deliveries (
+                    message_id,
+                    recipient_type,
+                    recipient_id
+                )
+                VALUES (?, ?, ?)
+                ON DUPLICATE KEY UPDATE message_id = VALUES(message_id)
+            ");
+            $newlyAcknowledged = [];
+            foreach ($incomingIds as $incomingId) {
+                $insertStmt->execute([
+                    $incomingId,
+                    $actor['actor_type'],
+                    $actor['actor_id']
+                ]);
+                if ($insertStmt->rowCount() === 1) {
+                    $newlyAcknowledged[] = $incomingId;
+                }
+            }
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
+        }
+
+        if ($newlyAcknowledged !== []) {
+            chatPublishConversationEvent(
+                $conversationId,
+                $actor,
+                [
+                    'event' => 'message.receipts_updated',
+                    'message_ids' => $newlyAcknowledged
+                ]
+            );
+        }
+
+        chatJsonResponse(true, 'Delivery receipts recorded.', 200, [
+            'recorded_count' => count($newlyAcknowledged)
+        ]);
     }
 
     throw new ChatHttpException('Invalid action.', 422);

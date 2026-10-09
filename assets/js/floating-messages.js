@@ -3,6 +3,8 @@
     const panelCloseTimers = new WeakMap();
     const chatCloseTimers = new WeakMap();
     const pendingOpens = new WeakMap();
+    const unreadRefreshVersions = new WeakMap();
+    const selectionRefreshVersions = new WeakMap();
     const refreshEvents = [
         'vnz:chat-state-changed',
         'vnz:chat-message-received'
@@ -83,6 +85,52 @@
             .join('');
     }
 
+    function presenceLabel(presence, includeLastSeen = false) {
+        if (Number.isInteger(Number(presence?.online_count))) {
+            return `${Number(presence.online_count)} online`;
+        }
+        const participant = presence?.participants?.[0];
+        if (!participant) {
+            return 'Offline';
+        }
+        let status;
+        if (participant.is_online) {
+            status = 'Online';
+        } else if (includeLastSeen && participant.last_seen_at) {
+            const lastSeen = new Date(String(participant.last_seen_at).replace(' ', 'T'));
+            if (!Number.isNaN(lastSeen.getTime())) {
+                status = `Last seen ${new Intl.DateTimeFormat(undefined, {
+                    dateStyle: 'short',
+                    timeStyle: 'short'
+                }).format(lastSeen)}`;
+            }
+        }
+        status = status || 'Offline';
+        return status;
+    }
+
+    function updateConversationPresence(root, conversations) {
+        const byId = new Map(conversations.map(conversation => [
+            Number(conversation.conversation_id),
+            conversation
+        ]));
+        root.querySelectorAll('[data-transaction-chat]').forEach(widget => {
+            const conversation = byId.get(Number(widget.dataset.conversationId));
+            const labelText = conversation
+                ? presenceLabel(conversation.presence, true)
+                : 'Offline';
+            const label = widget.querySelector('[data-chat-presence]');
+            if (label) {
+                label.textContent = labelText;
+            }
+            const floatingWindow = widget.closest('[data-floating-chat-window]');
+            const floatingLabel = floatingWindow?.querySelector('[data-floating-chat-presence]');
+            if (floatingLabel) {
+                floatingLabel.textContent = labelText;
+            }
+        });
+    }
+
     function setPanelOpen(root, open) {
         const panel = root.querySelector('[data-floating-messages-panel]');
         const closeTimer = panelCloseTimers.get(root);
@@ -131,6 +179,8 @@
     }
 
     function refreshUnread(root, pulse = false) {
+        const requestVersion = (unreadRefreshVersions.get(root) || 0) + 1;
+        unreadRefreshVersions.set(root, requestVersion);
         fetch('/VNZ-TECH/backend/chat_conversations.php?action=list', {
             method: 'GET',
             credentials: 'same-origin',
@@ -151,8 +201,12 @@
                     : [];
             })
             .then(conversations => {
+                if (unreadRefreshVersions.get(root) !== requestVersion) {
+                    return;
+                }
                 root.dataset.conversations = JSON.stringify(conversations);
                 updateUnreadBadges(root, conversations, pulse);
+                updateConversationPresence(root, conversations);
                 const panel = root.querySelector('[data-floating-messages-panel]');
                 const category = root.dataset.activeCategory;
                 if (!panel.hidden && category) {
@@ -160,6 +214,9 @@
                 }
             })
             .catch(error => {
+                if (unreadRefreshVersions.get(root) !== requestVersion) {
+                    return;
+                }
                 console.error('Unable to refresh messaging unread counts:', error);
                 root.querySelector('[data-floating-messages-badge]').hidden = true;
                 root.querySelectorAll('[data-category-unread-badge]').forEach(badge => {
@@ -221,8 +278,9 @@
                 reference.textContent = String(
                     conversation.transaction_reference || 'Transaction'
                 );
-                status.textContent = String(conversation.transaction_status || 'pending')
-                    .replaceAll('_', ' ');
+                status.textContent = `${presenceLabel(conversation.presence)} · ${String(
+                    conversation.transaction_status || 'pending'
+                ).replaceAll('_', ' ')}`;
                 button.append(title, reference, status);
                 addUnread(button, conversation.unread_count);
                 list.append(button);
@@ -273,7 +331,9 @@
                     : '';
                 name.textContent = displayName;
                 status.textContent = contact.conversation_id
-                    ? (String(contact.last_message || '').trim() || 'Private conversation')
+                    ? `${presenceLabel(contact.presence)} · ${
+                        String(contact.last_message || '').trim() || 'Private conversation'
+                    }`
                     : 'Start private conversation';
                 button.append(avatar, name, status);
                 addUnread(
@@ -330,6 +390,8 @@
     }
 
     async function refreshSelection(root, category, conversations = null) {
+        const requestVersion = (selectionRefreshVersions.get(root) || 0) + 1;
+        selectionRefreshVersions.set(root, requestVersion);
         const list = root.querySelector('[data-floating-messages-list]');
         const errorPanel = root.querySelector('[data-floating-messages-error]');
         try {
@@ -355,7 +417,10 @@
                     availableConversations = [];
                 }
             }
-            if (root.dataset.activeCategory !== category) {
+            if (
+                root.dataset.activeCategory !== category
+                || selectionRefreshVersions.get(root) !== requestVersion
+            ) {
                 return;
             }
             renderSelectionList(
@@ -365,7 +430,11 @@
                 category
             );
         } catch (error) {
-            if (root.dataset.activeCategory === category && !root.querySelector('[data-floating-messages-panel]').hidden) {
+            if (
+                root.dataset.activeCategory === category
+                && selectionRefreshVersions.get(root) === requestVersion
+                && !root.querySelector('[data-floating-messages-panel]').hidden
+            ) {
                 list.replaceChildren();
                 errorPanel.textContent = error.message || 'Unable to refresh eligible conversations.';
                 errorPanel.hidden = false;
@@ -389,7 +458,7 @@
 
     async function loadConversationWindow(root, windowElement, details) {
         const body = windowElement.querySelector('.floating-chat-window-body');
-        const title = windowElement.querySelector('.floating-chat-window-header > strong');
+        const title = windowElement.querySelector('[data-floating-chat-title]');
         const actorType = root.dataset.actorType;
         const endpoint = getConversationWindowEndpoint(actorType);
         const requestId = details.conversationType === 'transaction'
@@ -602,7 +671,9 @@
         setCategoryMenuOpen(root, false);
         const windowElement = document.createElement('section');
         const header = document.createElement('header');
+        const titleGroup = document.createElement('div');
         const title = document.createElement('strong');
+        const presence = document.createElement('small');
         const actions = document.createElement('div');
         const maximizeButton = document.createElement('button');
         const minimizeButton = document.createElement('button');
@@ -623,9 +694,14 @@
             windowElement.dataset.targetId = String(details.targetId);
         }
         header.className = 'floating-chat-window-header';
+        titleGroup.className = 'floating-chat-window-title';
+        title.dataset.floatingChatTitle = '';
         title.textContent = details.displayName
             || details.reference
             || 'Conversation';
+        presence.dataset.floatingChatPresence = '';
+        presence.textContent = 'Offline';
+        titleGroup.append(title, presence);
         actions.className = 'floating-chat-window-actions';
         maximizeButton.type = 'button';
         maximizeButton.dataset.chatMaximize = '';
@@ -656,7 +732,7 @@
         body.className = 'floating-chat-window-body';
         body.innerHTML = '<p class="floating-chat-window-loading">Opening conversation…</p>';
         actions.append(backButton, maximizeButton, minimizeButton, closeButton);
-        header.append(title, actions);
+        header.append(titleGroup, actions);
         windowElement.append(header, sidebar, body);
         windows.prepend(windowElement);
         updateWindowVisibility(root);
@@ -750,7 +826,7 @@
                 conversationType,
                 conversationId: Number(existing.dataset.conversationId),
                 transactionId: 0,
-                displayName: existing.querySelector('.floating-chat-window-header > strong')?.textContent
+                displayName: existing.querySelector('[data-floating-chat-title]')?.textContent
                     || 'Conversation'
             });
         }
@@ -857,6 +933,7 @@
         roots.add(root);
 
         const toggle = root.querySelector('[data-floating-messages-toggle]');
+        const csrfToken = root.dataset.csrfToken || '';
         const panel = root.querySelector('[data-floating-messages-panel]');
         const list = root.querySelector('[data-floating-messages-list]');
 
@@ -1032,7 +1109,31 @@
         refreshEvents.forEach(eventName => {
             window.addEventListener(eventName, () => refreshUnread(root, true));
         });
+        window.addEventListener('vnz:chat-presence-changed', () => refreshUnread(root));
         window.addEventListener('resize', () => updateWindowVisibility(root));
+
+        const sendPresenceHeartbeat = () => {
+            fetch('/VNZ-TECH/backend/chat_presence.php', {
+                method: 'POST',
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                },
+                body: new URLSearchParams({
+                    csrf_token: csrfToken
+                })
+            }).then(async response => {
+                const payload = await response.json();
+                if (!response.ok || payload.success !== true) {
+                    throw new Error(payload.message || 'Presence heartbeat failed.');
+                }
+            }).catch(error => {
+                console.warn('Chat presence heartbeat failed:', error.message);
+            });
+        };
+        sendPresenceHeartbeat();
+        window.setInterval(sendPresenceHeartbeat, 20000);
 
         refreshUnread(root);
         window.setInterval(() => refreshUnread(root), 15000);

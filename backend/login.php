@@ -4,6 +4,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/chat_presence_store.php';
+
+$chatAuthenticationStartedAt = microtime(true);
 
 function isAjaxRequest(): bool
 {
@@ -152,6 +155,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_id'] = (int) $user['id'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_name'] = $user['full_name'];
+        chatRegisterPresenceSession('seller', (int) $user['id']);
+        chatLogAuthenticationTiming('seller_login', $chatAuthenticationStartedAt);
         if (
             (int) $user['totp_reminder_dismissed'] !== 1
             && (
@@ -173,6 +178,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         redirectToDashboard();
     } catch (Throwable $e) {
+        if (isset($user['id'])) {
+            try {
+                chatEndPresenceSession('seller', (int) $user['id']);
+            } catch (Throwable $presenceError) {
+                error_log('Seller login presence rollback failed: ' . $presenceError->getMessage());
+            }
+        }
+        unset(
+            $_SESSION['user_logged_in'],
+            $_SESSION['user_id'],
+            $_SESSION['user_email'],
+            $_SESSION['user_name'],
+            $_SESSION['seller_2fa_reminder']
+        );
+        error_log('Seller login presence registration failed: ' . $e->getMessage());
         if (isAjaxRequest()) {
             sendJsonResponse([
                 'success' => false,

@@ -1,6 +1,19 @@
 <?php
 
 require_once __DIR__ . '/../backend/session.php';
+require_once __DIR__ . '/../backend/chat_presence_store.php';
+
+$chatAuthenticationStartedAt = microtime(true);
+
+if (!empty($_SESSION['user_logged_in']) && !empty($_SESSION['user_id'])) {
+    try {
+        $userId = (int) $_SESSION['user_id'];
+        chatEndPresenceSession('seller', $userId);
+    } catch (Throwable $e) {
+        error_log('Seller logout presence cleanup failed: ' . $e->getMessage());
+    }
+}
+chatLogAuthenticationTiming('seller_logout', $chatAuthenticationStartedAt);
 
 $_SESSION = [];
 

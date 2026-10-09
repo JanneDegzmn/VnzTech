@@ -202,6 +202,251 @@
         return readJsonResponse(response);
     }
 
+    const sharedRealtime = (() => {
+        let drone = null;
+        let channelId = null;
+        let connectionPromise = null;
+        let pendingAuthentication = null;
+        let reconciliation = Promise.resolve();
+        let reconciliationRequested = false;
+        const rooms = new Map();
+
+        function setRoomState(room, ready, error = null) {
+            room.ready = ready;
+            room.callbacks.forEach(callbacks => {
+                callbacks.onState?.(ready, error);
+            });
+        }
+
+        function notifyRoom(room, payload) {
+            room.callbacks.forEach(callbacks => callbacks.onEvent?.(payload));
+        }
+
+        function subscribeRoom(roomName, room) {
+            if (room.subscription) {
+                return Promise.resolve();
+            }
+
+            return new Promise((resolve, reject) => {
+                const subscription = drone.subscribe(roomName);
+                room.subscription = subscription;
+                subscription.on('open', error => {
+                    if (rooms.get(room.conversationId) !== room) {
+                        return;
+                    }
+                    if (error) {
+                        room.subscription = null;
+                        setRoomState(room, false, new Error('Could not subscribe to this conversation.'));
+                        reject(new Error('Could not subscribe to this conversation.'));
+                        return;
+                    }
+
+                    setRoomState(room, true);
+                    subscription.on('message', event => {
+                        if (rooms.get(room.conversationId) === room) {
+                            notifyRoom(room, event?.data);
+                        }
+                    });
+                    resolve();
+                });
+            });
+        }
+
+        async function authenticateForRooms() {
+            const desiredRooms = Array.from(rooms.entries())
+                .filter(([, room]) => room.callbacks.size > 0);
+            if (desiredRooms.length === 0) {
+                return;
+            }
+
+            const firstRoom = desiredRooms[0][1];
+            const authorization = await postForm(
+                '/VNZ-TECH/backend/chat_scaledrone_auth.php',
+                {
+                    conversation_ids: desiredRooms.map(([id]) => id).join(','),
+                    client_id: drone.clientId,
+                    csrf_token: firstRoom.csrfToken
+                }
+            );
+
+            if (authorization.channel_id !== channelId) {
+                throw new Error('Realtime channel configuration changed. Reload this page.');
+            }
+
+            const authorizedRoomNames = new Map(
+                (authorization.rooms || []).map(room => [
+                    String(room.conversation_id),
+                    room.room
+                ])
+            );
+
+            await new Promise((resolve, reject) => {
+                pendingAuthentication = {resolve, reject};
+                drone.authenticate(authorization.token);
+            });
+
+            for (const [conversationId, room] of desiredRooms) {
+                if (rooms.get(conversationId) !== room || room.subscription) {
+                    continue;
+                }
+                const roomName = authorizedRoomNames.get(conversationId);
+                if (!roomName) {
+                    throw new Error('Realtime authorization omitted an active conversation.');
+                }
+                room.roomName = roomName;
+                await subscribeRoom(roomName, room);
+            }
+        }
+
+        function requestReconciliation() {
+            reconciliationRequested = true;
+            reconciliation = reconciliation.catch(() => {}).then(async () => {
+                while (reconciliationRequested && drone) {
+                    reconciliationRequested = false;
+                    await authenticateForRooms();
+                }
+            });
+            return reconciliation;
+        }
+
+        async function connect(requestedChannelId) {
+            if (drone) {
+                if (channelId !== requestedChannelId) {
+                    throw new Error('A different realtime channel is already active on this page.');
+                }
+                return connectionPromise;
+            }
+
+            channelId = requestedChannelId;
+            await loadScaledroneLibrary();
+            drone = new window.Scaledrone(channelId);
+            connectionPromise = new Promise((resolve, reject) => {
+                let opened = false;
+                drone.on('open', error => {
+                    if (error) {
+                        if (!opened) {
+                            reject(new Error('Could not connect to realtime messaging.'));
+                        }
+                        return;
+                    }
+                    opened = true;
+                    resolve();
+                });
+
+                drone.on('authenticate', error => {
+                    const pending = pendingAuthentication;
+                    if (!pending) {
+                        return;
+                    }
+                    pendingAuthentication = null;
+                    if (error) {
+                        pending.reject(new Error('Realtime authentication was rejected.'));
+                    } else {
+                        pending.resolve();
+                    }
+                });
+
+                drone.on('disconnect', () => {
+                    rooms.forEach(room => setRoomState(room, false));
+                });
+
+                drone.on('reconnect', () => {
+                    rooms.forEach(room => {
+                        room.subscription?.unsubscribe?.();
+                        room.subscription = null;
+                        setRoomState(room, false);
+                    });
+                    requestReconciliation().catch(error => {
+                        rooms.forEach(room => setRoomState(room, false, error));
+                    });
+                });
+
+                drone.on('error', error => {
+                    rooms.forEach(room => setRoomState(room, false, error));
+                });
+            });
+            return connectionPromise;
+        }
+
+        async function acquire(requestedChannelId, conversationId, csrfToken, callbacks) {
+            try {
+                await connect(requestedChannelId);
+            } catch (error) {
+                drone?.close?.();
+                drone = null;
+                channelId = null;
+                connectionPromise = null;
+                pendingAuthentication = null;
+                throw error;
+            }
+            const key = String(conversationId);
+            let room = rooms.get(key);
+            if (!room) {
+                room = {
+                    conversationId: key,
+                    csrfToken,
+                    callbacks: new Map(),
+                    roomName: null,
+                    subscription: null,
+                    ready: false
+                };
+                rooms.set(key, room);
+            }
+
+            const callbackId = Symbol(key);
+            room.callbacks.set(callbackId, callbacks);
+            try {
+                await requestReconciliation();
+            } catch (error) {
+                room.callbacks.delete(callbackId);
+                if (room.callbacks.size === 0) {
+                    rooms.delete(key);
+                    room.subscription?.unsubscribe?.();
+                }
+                if (rooms.size === 0 && drone) {
+                    drone.close?.();
+                    drone = null;
+                    channelId = null;
+                    connectionPromise = null;
+                    pendingAuthentication = null;
+                    reconciliation = Promise.resolve();
+                    reconciliationRequested = false;
+                }
+                throw error;
+            }
+
+            let released = false;
+            return () => {
+                if (released) {
+                    return;
+                }
+                released = true;
+                room.callbacks.delete(callbackId);
+                if (room.callbacks.size > 0) {
+                    return;
+                }
+                rooms.delete(key);
+                room.subscription?.unsubscribe?.();
+                room.subscription = null;
+                if (rooms.size === 0 && drone) {
+                    drone.close?.();
+                    drone = null;
+                    channelId = null;
+                    connectionPromise = null;
+                    pendingAuthentication = null;
+                    reconciliation = Promise.resolve();
+                    reconciliationRequested = false;
+                } else if (drone) {
+                    requestReconciliation().catch(error => {
+                        rooms.forEach(activeRoom => setRoomState(activeRoom, false, error));
+                    });
+                }
+            };
+        }
+
+        return {acquire};
+    })();
+
     function toTimestamp(value) {
         const parsed = new Date(String(value).replace(' ', 'T'));
         return Number.isNaN(parsed.getTime()) ? null : parsed;
@@ -233,6 +478,44 @@
         return rawContent;
     }
 
+    function chatAvatarInitials(displayName) {
+        return String(displayName || 'Participant')
+            .trim()
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(part => Array.from(part)[0].toLocaleUpperCase())
+            .join('');
+    }
+
+    function createChatAvatar(profilePicture, fallbackName, className = 'transaction-chat-avatar') {
+        const avatar = document.createElement('span');
+        avatar.className = className;
+        avatar.setAttribute('aria-hidden', 'true');
+
+        const fallback = document.createElement('span');
+        fallback.className = 'transaction-chat-avatar-fallback';
+        fallback.textContent = chatAvatarInitials(fallbackName);
+        avatar.append(fallback);
+
+        const profilePath = String(profilePicture || '');
+        if (/^uploads\/profile_pictures\/[A-Za-z0-9][A-Za-z0-9._-]*$/.test(profilePath)) {
+            const image = document.createElement('img');
+            image.src = `/VNZ-TECH/${profilePath}`;
+            image.alt = '';
+            image.loading = 'lazy';
+            image.addEventListener('load', () => {
+                fallback.hidden = true;
+            }, {once: true});
+            image.addEventListener('error', () => {
+                image.remove();
+            }, {once: true});
+            avatar.append(image);
+        }
+
+        return avatar;
+    }
+
     function buildReactionMap(reactions) {
         const map = new Map();
         (Array.isArray(reactions) ? reactions : []).forEach(entry => {
@@ -254,13 +537,17 @@
         message,
         currentActorType,
         currentActorId,
-        conversationType
+        conversationType,
+        previousFromSender,
+        showAvatar
     ) {
         const row = document.createElement('article');
         row.tabIndex = 0;
         const ownMessage = message.sender_type === currentActorType
             && Number(message.sender_id) === currentActorId;
-        row.className = `transaction-chat-message${ownMessage ? ' is-own' : ''}`;
+        row.className = `transaction-chat-message${ownMessage ? ' is-own' : ''}${
+            !ownMessage && previousFromSender ? ' is-grouped' : ''
+        }`;
         row.dataset.messageId = String(message.id);
 
         const bubble = document.createElement('div');
@@ -268,21 +555,6 @@
 
         const meta = document.createElement('div');
         meta.className = 'transaction-chat-message-meta';
-
-        const sender = document.createElement('span');
-        sender.className = 'transaction-chat-sender';
-        if (conversationType === 'transaction') {
-            sender.textContent = ownMessage
-                ? `You · ${currentActorType === 'seller' ? 'Seller' : 'Admin'}`
-                : (message.sender_type === 'seller' ? 'Seller' : 'Admin');
-        } else {
-            sender.textContent = ownMessage
-                ? 'You'
-                : String(
-                    message.sender_display_name
-                    || (message.sender_type === 'seller' ? 'Seller' : 'Admin')
-                );
-        }
 
         const time = document.createElement('time');
         time.dateTime = String(message.created_at || '');
@@ -408,6 +680,43 @@
             edited.textContent = '(edited)';
             statusLine.append(edited);
         }
+        if (ownMessage) {
+            const receipt = document.createElement('span');
+            receipt.className = 'transaction-chat-receipt-status';
+            const state = String(message.receipt_status || 'sent');
+            const receiptCounts = message.receipt_counts || {};
+            if (conversationType === 'global' && state === 'read') {
+                receipt.textContent = `Read by ${Number(receiptCounts.read) || 0}`;
+                const readers = Array.isArray(message.read_receipt_readers)
+                    ? message.read_receipt_readers
+                    : [];
+                if (readers.length > 0) {
+                    receipt.classList.add('has-readers');
+                    receipt.tabIndex = 0;
+                    receipt.setAttribute('aria-label', `${receipt.textContent}: ${readers.join(', ')}`);
+                    const tooltip = document.createElement('span');
+                    tooltip.className = 'transaction-chat-read-receipt-tooltip';
+                    tooltip.setAttribute('role', 'tooltip');
+                    readers.slice(0, 100).forEach(readerName => {
+                        const reader = document.createElement('span');
+                        reader.textContent = readerName;
+                        tooltip.append(reader);
+                    });
+                    if (Number(receiptCounts.read) > Math.min(readers.length, 100)) {
+                        const more = document.createElement('span');
+                        more.className = 'transaction-chat-read-receipt-more';
+                        more.textContent = `Showing ${Math.min(readers.length, 100)} of ${Number(receiptCounts.read)} readers`;
+                        tooltip.append(more);
+                    }
+                    receipt.append(tooltip);
+                }
+            } else if (conversationType === 'global' && state === 'delivered') {
+                receipt.textContent = `Delivered to ${Number(receiptCounts.delivered) || 0}`;
+            } else {
+                receipt.textContent = state.charAt(0).toUpperCase() + state.slice(1);
+            }
+            statusLine.append(receipt);
+        }
 
         const reactionChips = document.createElement('div');
         reactionChips.className = 'transaction-chat-reaction-chips';
@@ -513,13 +822,27 @@
             actionToolbar.append(menuWrap);
         }
 
-        meta.append(sender, time);
+        meta.append(time);
         bubble.append(meta);
         if (replyPreview.childNodes.length) {
             bubble.append(replyPreview);
         }
 
         bubble.append(content, statusLine);
+        if (!ownMessage) {
+            const senderName = String(
+                message.sender_display_name
+                || (message.sender_type === 'seller' ? 'Seller' : 'Admin')
+            );
+            const avatar = createChatAvatar(
+                message.sender_profile_picture,
+                senderName
+            );
+            if (!showAvatar) {
+                avatar.classList.add('is-placeholder');
+            }
+            row.append(avatar);
+        }
         row.append(bubble);
         row.append(actionsToggle);
         if (reactionChips.childElementCount) {
@@ -559,17 +882,9 @@
         typingIndicator.setAttribute('role', 'status');
         typingIndicator.setAttribute('aria-live', 'polite');
         typingIndicator.setAttribute('aria-label', 'Another participant is typing');
-        const typingDots = document.createElement('span');
-        typingDots.className = 'transaction-chat-typing-dots';
-        typingDots.setAttribute('aria-hidden', 'true');
-        for (let index = 0; index < 3; index++) {
-            const dot = document.createElement('span');
-            dot.className = 'transaction-chat-typing-dot';
-            typingDots.append(dot);
-        }
-        const typingNames = document.createElement('span');
-        typingNames.className = 'transaction-chat-typing-names';
-        typingIndicator.append(typingNames, typingDots);
+        const typingPeople = document.createElement('span');
+        typingPeople.className = 'transaction-chat-typing-people';
+        typingIndicator.append(typingPeople);
         const composeState = document.createElement('div');
         composeState.className = 'transaction-chat-compose-state';
         composeState.hidden = true;
@@ -718,15 +1033,13 @@
         document.body.append(landmarkDialog);
 
         let actualConversationId = Number(widget.dataset.conversationId) || 0;
-        let drone = null;
-        let roomSubscription = null;
+        let releaseRealtime = null;
         let oldestMessageCursor = null;
         let hasMoreMessages = false;
         let loadingHistory = false;
         let historyRefreshQueued = false;
         let sendingMessage = false;
         let sendOutcomeUnknown = false;
-        let pendingAuthentication = null;
         let lastReadMessageId = 0;
         let readRequestInProgress = false;
         let queuedReadMessageId = 0;
@@ -739,6 +1052,7 @@
         let typingActive = false;
         let activeRoomName = null;
         let realtimeReady = false;
+        let visibilityObserver = null;
 
         function setStatus(message, kind = '') {
             status.textContent = message;
@@ -830,19 +1144,43 @@
         }
 
         function renderTypingStatus() {
-            const names = Array.from(typingUsers.values())
-                .map(entry => entry.name)
-                .filter(Boolean);
-            const typingLabel = names.length === 1
-                ? `${names[0]} is typing`
-                : names.length === 2
-                    ? `${names[0]} and ${names[1]} are typing`
-                    : names.length > 2
-                        ? `${names[0]}, ${names[1]} and ${names.length - 2} ${names.length - 2 === 1 ? 'other' : 'others'} are typing`
-                        : '';
-            typingIndicator.hidden = names.length === 0;
-            typingNames.textContent = typingLabel;
-            typingIndicator.setAttribute('aria-label', typingLabel || 'No one is typing');
+            const keepNearBottom = shouldAutoScroll();
+            const previousHeight = typingIndicator.getBoundingClientRect().height;
+            typingPeople.replaceChildren();
+            const users = Array.from(typingUsers.values());
+            typingIndicator.hidden = users.length === 0;
+            typingIndicator.setAttribute(
+                'aria-label',
+                users.length === 1
+                    ? 'One participant is typing'
+                    : `${users.length} participants are typing`
+            );
+            users.forEach(user => {
+                const typingPerson = document.createElement('span');
+                typingPerson.className = 'transaction-chat-typing-person';
+                typingPerson.append(
+                    createChatAvatar(
+                        user.profilePicture,
+                        user.fallbackName,
+                        'transaction-chat-avatar transaction-chat-typing-avatar'
+                    )
+                );
+
+                const dots = document.createElement('span');
+                dots.className = 'transaction-chat-typing-dots';
+                dots.setAttribute('aria-hidden', 'true');
+                for (let index = 0; index < 3; index++) {
+                    const dot = document.createElement('span');
+                    dot.className = 'transaction-chat-typing-dot';
+                    dots.append(dot);
+                }
+                typingPerson.append(dots);
+                typingPeople.append(typingPerson);
+            });
+            const addedHeight = typingIndicator.getBoundingClientRect().height - previousHeight;
+            if (keepNearBottom && addedHeight > 0) {
+                messageList.scrollTop += addedHeight;
+            }
         }
 
         function handleTypingEvent(payload) {
@@ -858,7 +1196,7 @@
             }
 
             const actorKey = `${payload.actor_type}:${payload.actor_id}`;
-            const actorName = payload.actor_type === 'admin'
+            const fallbackName = payload.actor_type === 'admin'
                 ? 'Admin'
                 : payload.display_name || 'Participant';
             if (payload.event === 'typing.started') {
@@ -870,7 +1208,11 @@
                     typingUsers.delete(actorKey);
                     renderTypingStatus();
                 }, 4000);
-                typingUsers.set(actorKey, {name: actorName, timer});
+                typingUsers.set(actorKey, {
+                    fallbackName,
+                    profilePicture: payload.profile_picture || '',
+                    timer
+                });
             } else if (payload.event === 'typing.stopped') {
                 const current = typingUsers.get(actorKey);
                 if (current) {
@@ -891,12 +1233,59 @@
 
         function isConversationViewed() {
             const floatingWindow = widget.closest('[data-floating-chat-window]');
-            return !document.hidden
-                && (!floatingWindow || (
+            const chatBody = widget.closest('.floating-chat-window-body');
+            if (
+                document.hidden
+                || widget.getClientRects().length === 0
+                || (chatBody && (
+                    chatBody.getClientRects().length === 0
+                    || getComputedStyle(chatBody).visibility === 'hidden'
+                ))
+            ) {
+                return false;
+            }
+            if (!floatingWindow) {
+                return true;
+            }
+            return !floatingWindow.hidden
+                && (!floatingWindow.classList.contains('is-maximized')
+                    || window.innerWidth > 700
+                    || floatingWindow.classList.contains('is-mobile-chat-open'))
+                && (
                     !floatingWindow.hidden
                     && !floatingWindow.classList.contains('is-closing')
                     && !floatingWindow.classList.contains('is-minimized')
-                ));
+                );
+        }
+
+        function markVisibleConversationRead() {
+            if (!isConversationViewed() || messageMap.size === 0) {
+                return;
+            }
+            const orderedMessages = Array.from(messageMap.values()).sort(compareMessages);
+            const newestMessage = orderedMessages[orderedMessages.length - 1];
+            if (newestMessage) {
+                markRead(Number(newestMessage.id));
+            }
+        }
+
+        document.addEventListener(
+            'visibilitychange',
+            markVisibleConversationRead,
+            {signal: widgetEventController.signal}
+        );
+        window.addEventListener(
+            'resize',
+            markVisibleConversationRead,
+            {signal: widgetEventController.signal}
+        );
+        const floatingWindow = widget.closest('[data-floating-chat-window]');
+        if (floatingWindow) {
+            visibilityObserver = new MutationObserver(markVisibleConversationRead);
+            visibilityObserver.observe(floatingWindow, {
+                attributes: true,
+                attributeFilter: ['class', 'hidden']
+            });
         }
 
         function notifyChatStateChanged() {
@@ -917,13 +1306,20 @@
             const sorted = Array.from(messageMap.values()).sort(compareMessages);
             const fragment = document.createDocumentFragment();
 
-            sorted.forEach(message => {
+            sorted.forEach((message, index) => {
+                const previous = sorted[index - 1];
+                const next = sorted[index + 1];
+                const sameSender = (candidate) => candidate
+                    && candidate.sender_type === message.sender_type
+                    && Number(candidate.sender_id) === Number(message.sender_id);
                 fragment.append(renderMessage(
                     widget,
                     message,
                     currentActorType,
                     currentActorId,
-                    conversationType
+                    conversationType,
+                    sameSender(previous),
+                    !sameSender(next)
                 ));
             });
 
@@ -961,13 +1357,22 @@
                 queuedReadMessageId = Math.max(queuedReadMessageId, messageId);
             }
 
-            if (readRequestInProgress || disposed || !actualConversationId) {
+            if (
+                readRequestInProgress
+                || disposed
+                || !actualConversationId
+                || !isConversationViewed()
+            ) {
                 return;
             }
 
             readRequestInProgress = true;
             try {
-                while (queuedReadMessageId > lastReadMessageId && !disposed) {
+                while (
+                    queuedReadMessageId > lastReadMessageId
+                    && !disposed
+                    && isConversationViewed()
+                ) {
                     const targetMessageId = queuedReadMessageId;
                     queuedReadMessageId = 0;
                     const data = await postForm('/VNZ-TECH/backend/chat_messages.php', {
@@ -1021,6 +1426,25 @@
                     forceScroll: options.forceScroll === true,
                     preserveScroll: options.preserveScroll === true
                 });
+                const incomingMessageIds = (data.messages || [])
+                    .filter(message => (
+                        message.sender_type !== currentActorType
+                        || Number(message.sender_id) !== currentActorId
+                    ))
+                    .map(message => Number(message.id))
+                    .filter(messageId => Number.isInteger(messageId) && messageId > 0);
+                if (incomingMessageIds.length > 0) {
+                    try {
+                        await postForm('/VNZ-TECH/backend/chat_messages.php', {
+                            action: 'delivered',
+                            conversation_id: String(actualConversationId),
+                            message_ids: incomingMessageIds.join(','),
+                            csrf_token: csrfToken
+                        });
+                    } catch (error) {
+                        setStatus(`Messages loaded, but delivery receipts could not be recorded: ${error.message}`, 'warning');
+                    }
+                }
                 if (!data.messages?.length && messageMap.size === 0) {
                     emptyState.hidden = false;
                 }
@@ -1037,102 +1461,66 @@
             }
         }
 
-        function subscribeAuthorizedRoom(roomName) {
-            if (roomSubscription) {
-                return Promise.resolve();
+        function handleRealtimeEvent(payload) {
+            if (!payload || Number(payload.conversation_id) !== actualConversationId) {
+                return;
             }
 
-            return new Promise((resolve, reject) => {
-                realtimeReady = false;
-                activeRoomName = roomName;
-                const subscription = drone.subscribe(roomName);
-                roomSubscription = subscription;
-
-                subscription.on('open', error => {
-                    if (error) {
-                        roomSubscription = null;
-                        activeRoomName = null;
-                        realtimeReady = false;
-                        reject(new Error('Could not subscribe to this conversation.'));
-                        return;
+            if (payload.event === 'presence.updated') {
+                window.dispatchEvent(new CustomEvent('vnz:chat-presence-changed', {
+                    detail: {
+                        conversationId: actualConversationId,
+                        actorType: payload.actor_type,
+                        actorId: payload.actor_id,
+                        presence: payload.presence
                     }
-
-                    realtimeReady = true;
-                    subscription.on('message', event => {
-                        const payload = event && event.data;
-                        if (!payload || Number(payload.conversation_id) !== actualConversationId) {
-                            return;
-                        }
-
-                        if (payload.event === 'message.created') {
-                            loadHistory().then(() => {
-                                window.dispatchEvent(new CustomEvent('vnz:chat-message-received', {
-                                    detail: {
-                                        transactionId,
-                                        conversationId: actualConversationId,
-                                        conversationType
-                                    }
-                                }));
-                            });
-                            return;
-                        }
-
-                        if (payload.event === 'message.edited' || payload.event === 'message.deleted' || payload.event === 'message.reaction_updated') {
-                            const targetId = Number(payload.message_id);
-                            if (!Number.isInteger(targetId) || !messageMap.has(targetId)) {
-                                loadHistory();
-                                return;
-                            }
-
-                            if (payload.event === 'message.deleted') {
-                                const existing = messageMap.get(targetId) || {};
-                                messageMap.set(targetId, {
-                                    ...existing,
-                                    deleted_at: payload.deleted_at || new Date().toISOString().slice(0, 19).replace('T', ' '),
-                                    content: 'This message was deleted'
-                                });
-                            } else if (payload.event === 'message.edited') {
-                                loadHistory();
-                                return;
-                            } else if (payload.event === 'message.reaction_updated') {
-                                loadHistory();
-                                return;
-                            }
-                            renderMessages(shouldAutoScroll());
-                            return;
-                        }
-
-                        if (payload.event === 'typing.started' || payload.event === 'typing.stopped') {
-                            handleTypingEvent(payload);
-                        }
-                    });
-                    resolve();
-                });
-            });
-        }
-
-        async function authorizeAndSubscribe(clientId) {
-            const authorization = await postForm(
-                '/VNZ-TECH/backend/chat_scaledrone_auth.php',
-                {
-                    conversation_id: String(actualConversationId),
-                    client_id: clientId,
-                    csrf_token: csrfToken
-                }
-            );
-
-            if (authorization.channel_id !== channelId) {
-                throw new Error('Realtime channel configuration changed. Reload this page.');
+                }));
+                return;
             }
 
-            await new Promise((resolve, reject) => {
-                pendingAuthentication = {
-                    resolve,
-                    reject,
-                    roomName: authorization.room
-                };
-                drone.authenticate(authorization.token);
-            });
+            if (payload.event === 'message.created') {
+                loadHistory().then(() => {
+                    window.dispatchEvent(new CustomEvent('vnz:chat-message-received', {
+                        detail: {
+                            transactionId,
+                            conversationId: actualConversationId,
+                            conversationType
+                        }
+                    }));
+                });
+                return;
+            }
+
+            if (
+                payload.event === 'message.edited'
+                || payload.event === 'message.deleted'
+                || payload.event === 'message.reaction_updated'
+                || payload.event === 'message.receipts_updated'
+            ) {
+                const targetId = Number(payload.message_id);
+                if (!Number.isInteger(targetId) || !messageMap.has(targetId)) {
+                    loadHistory();
+                    return;
+                }
+
+                if (payload.event === 'message.deleted') {
+                    const existing = messageMap.get(targetId) || {};
+                    messageMap.set(targetId, {
+                        ...existing,
+                        deleted_at: payload.deleted_at || new Date().toISOString().slice(0, 19).replace('T', ' '),
+                        content: 'This message was deleted'
+                    });
+                } else {
+                    loadHistory();
+                    return;
+                }
+                renderMessages(shouldAutoScroll());
+                return;
+            }
+
+            if (payload.event === 'typing.started' || payload.event === 'typing.stopped') {
+                handleTypingEvent(payload);
+            }
         }
 
         async function connectRealtime() {
@@ -1144,76 +1532,68 @@
 
             try {
                 setConnection('Connecting');
-                await loadScaledroneLibrary();
-                drone = new window.Scaledrone(channelId);
-
-                drone.on('authenticate', error => {
-                    const pending = pendingAuthentication;
-                    if (!pending) {
-                        return;
+                releaseRealtime = await sharedRealtime.acquire(
+                    channelId,
+                    actualConversationId,
+                    csrfToken,
+                    {
+                        onEvent: handleRealtimeEvent,
+                        onState: (ready, error) => {
+                            realtimeReady = ready;
+                            if (ready) {
+                                activeRoomName = String(actualConversationId);
+                                setConnection('Connected', 'connected');
+                                setStatus(`Connected to ${conversationTitle}.`);
+                            } else {
+                                activeRoomName = null;
+                                typingUsers.forEach(entry => clearTimeout(entry.timer));
+                                typingUsers.clear();
+                                renderTypingStatus();
+                                setConnection(error ? 'Unavailable' : 'Reconnecting', error ? 'error' : '');
+                                if (error) {
+                                    setStatus(`Realtime authorization failed: ${error.message}`, 'warning');
+                                }
+                            }
+                        }
                     }
-                    pendingAuthentication = null;
-
-                    if (error) {
-                        pending.reject(new Error('Realtime authentication was rejected.'));
-                        return;
-                    }
-
-                    subscribeAuthorizedRoom(pending.roomName)
-                        .then(pending.resolve)
-                        .catch(pending.reject);
-                });
-
-                drone.on('open', async error => {
-                    if (error || disposed) {
-                        setConnection('Offline', 'error');
-                        setStatus('Could not connect to realtime messaging. You can still use message history.', 'warning');
-                        return;
-                    }
-
-                    try {
-                        await authorizeAndSubscribe(drone.clientId);
-                        setConnection('Connected', 'connected');
-                        setStatus(`Connected to ${conversationTitle}.`);
-                        input.disabled = false;
-                        sendButton.disabled = false;
-                        emojiToggle.disabled = false;
-                    } catch (authError) {
-                        setConnection('Unavailable', 'error');
-                        setStatus(`Realtime authorization failed: ${authError.message}`, 'error');
-                    }
-                });
-
-                drone.on('disconnect', () => {
-                    realtimeReady = false;
-                    setConnection('Reconnecting');
-                });
-
-                drone.on('reconnect', async () => {
-                    if (disposed) {
-                        return;
-                    }
-                    try {
-                        roomSubscription = null;
-                        activeRoomName = null;
-                        realtimeReady = false;
-                        await authorizeAndSubscribe(drone.clientId);
-                        setConnection('Connected', 'connected');
-                        setStatus('Realtime connection restored.');
-                    } catch (error) {
-                        setConnection('Unavailable', 'error');
-                        setStatus(`Realtime reconnection failed: ${error.message}`, 'error');
-                    }
-                });
-
-                drone.on('error', () => {
-                    setConnection('Connection issue', 'error');
-                });
+                );
+                if (disposed) {
+                    releaseRealtime();
+                    releaseRealtime = null;
+                    return;
+                }
+                if (!disposed) {
+                    setConnection('Connected', 'connected');
+                    setStatus(`Connected to ${conversationTitle}.`);
+                    input.disabled = false;
+                    sendButton.disabled = false;
+                    emojiToggle.disabled = false;
+                }
             } catch (error) {
+                realtimeReady = false;
+                activeRoomName = null;
                 setConnection('Unavailable', 'error');
                 setStatus(`Realtime connection unavailable: ${error.message}`, 'warning');
             }
         }
+
+        input.addEventListener('keydown', event => {
+            if (
+                event.key !== 'Enter'
+                || event.shiftKey
+                || event.isComposing
+                || event.keyCode === 229
+            ) {
+                return;
+            }
+
+            event.preventDefault();
+            if (sendingMessage || sendOutcomeUnknown) {
+                return;
+            }
+
+            form.requestSubmit();
+        });
 
         form.addEventListener('submit', async event => {
             event.preventDefault();
@@ -1323,6 +1703,55 @@
             }
         });
 
+        function closeMessageMenu(menu, button) {
+            menu.hidden = true;
+            menu.classList.remove('opens-up', 'opens-left');
+            button?.setAttribute('aria-expanded', 'false');
+        }
+
+        function positionMessageMenu(menu) {
+            const bounds = messageList.getBoundingClientRect();
+            const leftBound = bounds.left + messageList.clientLeft;
+            const topBound = bounds.top + messageList.clientTop;
+            const rightBound = leftBound + messageList.clientWidth;
+            const bottomBound = topBound + messageList.clientHeight;
+            let bestPlacement = null;
+            let bestOverflow = Infinity;
+
+            for (const opensUp of [false, true]) {
+                for (const opensLeft of [false, true]) {
+                    menu.classList.toggle('opens-up', opensUp);
+                    menu.classList.toggle('opens-left', opensLeft);
+                    const rect = menu.getBoundingClientRect();
+                    const overflow = Math.max(0, leftBound - rect.left)
+                        + Math.max(0, rect.right - rightBound)
+                        + Math.max(0, topBound - rect.top)
+                        + Math.max(0, rect.bottom - bottomBound);
+                    if (overflow < bestOverflow) {
+                        bestOverflow = overflow;
+                        bestPlacement = {opensUp, opensLeft};
+                    }
+                }
+            }
+
+            menu.classList.toggle('opens-up', bestPlacement?.opensUp === true);
+            menu.classList.toggle('opens-left', bestPlacement?.opensLeft === true);
+        }
+
+        const repositionOpenMessageMenu = () => {
+            const menu = messageList.querySelector('[role="menu"]:not([hidden])');
+            if (menu) {
+                positionMessageMenu(menu);
+            }
+        };
+        messageList.addEventListener('scroll', repositionOpenMessageMenu, {
+            passive: true,
+            signal: widgetEventController.signal
+        });
+        window.addEventListener('resize', repositionOpenMessageMenu, {
+            signal: widgetEventController.signal
+        });
+
         messageList.addEventListener('click', async event => {
             const actionsToggle = event.target.closest('[data-chat-actions-toggle]');
             if (actionsToggle && messageList.contains(actionsToggle)) {
@@ -1344,15 +1773,15 @@
                 const menu = moreButton.parentElement.querySelector('[role="menu"]');
                 const opening = menu.hidden;
                 messageList.querySelectorAll('[data-chat-more]').forEach(button => {
-                    button.setAttribute('aria-expanded', 'false');
                     const otherMenu = button.parentElement.querySelector('[role="menu"]');
                     if (otherMenu) {
-                        otherMenu.hidden = true;
+                        closeMessageMenu(otherMenu, button);
                     }
                 });
                 menu.hidden = !opening;
                 moreButton.setAttribute('aria-expanded', String(opening));
                 if (opening) {
+                    positionMessageMenu(menu);
                     menu.querySelector('[role="menuitem"]')?.focus();
                 }
                 return;
@@ -1367,9 +1796,10 @@
             const editButton = event.target.closest('[data-chat-edit]');
             if (editButton && messageList.contains(editButton)) {
                 const menu = editButton.closest('[role="menu"]');
-                menu.hidden = true;
-                menu.parentElement.querySelector('[data-chat-more]')
-                    ?.setAttribute('aria-expanded', 'false');
+                closeMessageMenu(
+                    menu,
+                    menu.parentElement.querySelector('[data-chat-more]')
+                );
                 const row = editButton.closest('.transaction-chat-message');
                 row.classList.remove('is-actions-open');
                 row.querySelector('[data-chat-actions-toggle]')
@@ -1388,9 +1818,10 @@
             const deleteButton = event.target.closest('[data-chat-delete]');
             if (deleteButton && messageList.contains(deleteButton)) {
                 const menu = deleteButton.closest('[role="menu"]');
-                menu.hidden = true;
-                menu.parentElement.querySelector('[data-chat-more]')
-                    ?.setAttribute('aria-expanded', 'false');
+                closeMessageMenu(
+                    menu,
+                    menu.parentElement.querySelector('[data-chat-more]')
+                );
                 const row = deleteButton.closest('.transaction-chat-message');
                 row.classList.remove('is-actions-open');
                 row.querySelector('[data-chat-actions-toggle]')
@@ -1480,7 +1911,7 @@
                 button.setAttribute('aria-expanded', 'false');
                 const menu = button.parentElement.querySelector('[role="menu"]');
                 if (menu) {
-                    menu.hidden = true;
+                    closeMessageMenu(menu, button);
                 }
             });
         }, {signal: widgetEventController.signal});
@@ -1493,8 +1924,7 @@
             const openMenu = messageList.querySelector('[role="menu"]:not([hidden])');
             if (openMenu) {
                 const moreButton = openMenu.parentElement.querySelector('[data-chat-more]');
-                openMenu.hidden = true;
-                moreButton?.setAttribute('aria-expanded', 'false');
+                closeMessageMenu(openMenu, moreButton);
                 moreButton?.focus();
                 return;
             }
@@ -1537,12 +1967,16 @@
                 if (!actualConversationId) {
                     throw new Error('The conversation could not be opened.');
                 }
+                widget.dataset.conversationId = String(actualConversationId);
 
                 input.disabled = false;
                 sendButton.disabled = false;
                 emojiToggle.disabled = false;
                 await loadHistory(null, {forceScroll: true});
                 await connectRealtime();
+                window.dispatchEvent(new CustomEvent('vnz:chat-state-changed', {
+                    detail: {conversationId: actualConversationId}
+                }));
             } catch (error) {
                 setStatus(`Chat is unavailable: ${error.message}`, 'error');
                 setConnection('Unavailable', 'error');
@@ -1555,6 +1989,9 @@
         activeChats.set(widget, () => {
             disposed = true;
             widgetEventController.abort();
+            visibilityObserver?.disconnect();
+            releaseRealtime?.();
+            releaseRealtime = null;
             if (typingTimer) {
                 clearTimeout(typingTimer);
             }
@@ -1563,9 +2000,6 @@
                 landmarkDialog.close();
             }
             landmarkDialog.remove();
-            if (drone && typeof drone.close === 'function') {
-                drone.close();
-            }
             activeChats.delete(widget);
         });
 

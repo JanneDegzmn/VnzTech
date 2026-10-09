@@ -89,6 +89,7 @@ foreach ($transactionChatItems as $transactionChatItem) {
             <?php if ($transactionChatHasContext): ?>
                 <p><?= htmlspecialchars((string) $transactionChatReference, ENT_QUOTES, 'UTF-8') ?></p>
             <?php endif; ?>
+            <p class="transaction-chat-presence-label" data-chat-presence>Presence unavailable</p>
         </div>
         <span class="transaction-chat-connection" data-chat-connection>
             <span class="transaction-chat-connection-dot" aria-hidden="true"></span>

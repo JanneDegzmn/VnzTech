@@ -36,6 +36,9 @@ require_once __DIR__ . '/../backend/auth.php';
 require_once __DIR__ . '/../backend/csrf.php';
 require_once __DIR__ . '/../backend/admin_totp.php';
 require_once __DIR__ . '/../backend/admin_activity.php';
+require_once __DIR__ . '/../backend/chat_presence_store.php';
+
+$chatAuthenticationStartedAt = microtime(true);
 
 
 /*
@@ -314,6 +317,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $pdo->commit();
                     session_regenerate_id(true);
                     clearSellerSessionState();
+                    chatRegisterPresenceSession('admin', (int) $admin['id']);
                     unset(
                         $_SESSION['admin_2fa_pending_id'],
                         $_SESSION['admin_2fa_pending_at'],
@@ -326,6 +330,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['admin_first_name'] = $admin['first_name'];
                     $_SESSION['admin_last_name'] = $admin['last_name'];
                     $_SESSION['admin_email'] = $admin['email'];
+                    chatLogAuthenticationTiming('admin_2fa_login', $chatAuthenticationStartedAt);
                     header('Location: /VNZ-TECH/admin/dashboard.php');
                     exit;
                 }
@@ -387,6 +392,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
                 session_regenerate_id(true);
                 clearSellerSessionState();
+                chatRegisterPresenceSession('admin', (int) $admin['id']);
                 $_SESSION['admin_id'] = (int) $admin['id'];
                 $_SESSION['admin_role_id'] = (int) $admin['role_id'];
                 $_SESSION['admin_role'] = $admin['role_name'];
@@ -395,6 +401,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['admin_last_name'] = $admin['last_name'];
                 $_SESSION['admin_email'] = $admin['email'];
                 logAdminActivity((int) $admin['id'], 'auth.login', 'Admin signed in.');
+                chatLogAuthenticationTiming('admin_login', $chatAuthenticationStartedAt);
                 if (
                     !empty($admin['totp_enabled_at'])
                     && !empty($admin['totp_secret'])
