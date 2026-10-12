@@ -155,6 +155,11 @@ try {
                AND current_participant.actor_id = ?
             LEFT JOIN transactions t
                 ON t.id = c.transaction_id
+                OR (
+                    c.type = 'private'
+                    AND $submissionIdExpression IS NOT NULL
+                    AND t.submission_id = $submissionIdExpression
+                )
             LEFT JOIN submissions s
                 ON s.id = COALESCE(t.submission_id, $submissionIdExpression)
             LEFT JOIN offers o
@@ -215,20 +220,26 @@ try {
             $conversationData = [
                 'conversation_id' => $conversationId,
                 'conversation_type' => $conversation['conversation_type'],
-                'transaction_id' => $conversation['transaction_id'] === null
-                    ? null
-                    : (int) $conversation['transaction_id'],
-                'guest_submission' => $conversation['submission_id'] !== null,
+                'conversation_class' => $context['conversation_class'],
+                'transaction_id' => isset($context['transaction_id'])
+                    ? (int) $context['transaction_id']
+                    : ($conversation['transaction_id'] === null
+                        ? null
+                        : (int) $conversation['transaction_id']),
+                'guest_submission' => !empty($context['guest_submission']),
+                'claimed_submission' => !empty($context['claimed_submission']),
                 'unread_count' => $unreadCount,
                 'updated_at' => $conversation['updated_at']
             ];
             if (isset($context['submission_reference'])) {
                 $conversationData['submission_reference'] =
                     $context['submission_reference'];
-                $conversationData['guest_seller_name'] =
-                    $context['submission_seller_name'] !== ''
-                        ? $context['submission_seller_name']
-                        : 'Guest Seller';
+                if (!empty($context['guest_submission'])) {
+                    $conversationData['guest_seller_name'] =
+                        $context['submission_seller_name'] !== ''
+                            ? $context['submission_seller_name']
+                            : 'Guest Seller';
+                }
                 $conversationData['last_message'] =
                     (string) ($conversation['last_message'] ?? '');
             }
@@ -244,7 +255,13 @@ try {
                 }
             }
 
-            if ($conversation['conversation_type'] === 'transaction') {
+            if (
+                in_array(
+                    $context['conversation_class'],
+                    ['transaction', 'claimed_submission'],
+                    true
+                )
+            ) {
                 $conversationData['transaction_reference'] =
                     $context['transaction_reference'];
                 $conversationData['transaction_status'] =

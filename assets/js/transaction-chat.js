@@ -1491,6 +1491,10 @@
         const voiceSend = widget.querySelector('[data-chat-voice-send]');
         const audioCallButton = widget.querySelector('[data-chat-call-audio]');
         const videoCallButton = widget.querySelector('[data-chat-call-video]');
+        const guestCallDialog = widget.querySelector('[data-guest-call-dialog]');
+        const guestCallCloseButtons = widget.querySelectorAll('[data-guest-call-close]');
+        const isGuestCallPrompt = currentActorType === 'guest'
+            && widget.dataset.guestSubmissionChat === 'true';
         const callPanel = widget.querySelector('[data-chat-call-panel]');
         const callDragHandle = widget.querySelector('[data-chat-call-drag-handle]');
         const callAvatar = widget.querySelector('[data-chat-call-avatar]');
@@ -3541,28 +3545,40 @@
                 form.requestSubmit();
             }
         }, {signal: widgetEventController.signal});
-        audioCallButton?.addEventListener('click', () => {
+        const requestCallOrShowRegistration = mode => {
+            if (isGuestCallPrompt) {
+                if (guestCallDialog && !guestCallDialog.open) {
+                    guestCallDialog.showModal();
+                }
+                return;
+            }
             if (widget.hasAttribute('data-call-controller-only')) {
-                startCall('audio');
+                startCall(mode);
             } else {
                 window.dispatchEvent(new CustomEvent('vnz:call-request', {
                     detail: {
                         conversationId: actualConversationId,
-                        mode: 'audio'
+                        mode
                     }
                 }));
             }
+        };
+        audioCallButton?.addEventListener('click', () => {
+            requestCallOrShowRegistration('audio');
         }, {signal: widgetEventController.signal});
         videoCallButton?.addEventListener('click', () => {
-            if (widget.hasAttribute('data-call-controller-only')) {
-                startCall('video');
-            } else {
-                window.dispatchEvent(new CustomEvent('vnz:call-request', {
-                    detail: {
-                        conversationId: actualConversationId,
-                        mode: 'video'
-                    }
-                }));
+            requestCallOrShowRegistration('video');
+        }, {signal: widgetEventController.signal});
+        guestCallCloseButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                if (guestCallDialog?.open) {
+                    guestCallDialog.close();
+                }
+            }, {signal: widgetEventController.signal});
+        });
+        guestCallDialog?.addEventListener('click', event => {
+            if (event.target === guestCallDialog) {
+                guestCallDialog.close();
             }
         }, {signal: widgetEventController.signal});
         callAcceptButton?.addEventListener('click', acceptCall, {

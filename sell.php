@@ -81,10 +81,10 @@ $openFormRequested =
     >
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261012-guest-presence"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261013-guest-calls"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261012-guest-chat-drawer"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261013-guest-calls"
         defer
     ></script>
 
@@ -2481,16 +2481,28 @@ $openFormRequested =
                 && guestChatConversationId > 0
                 && String(submission.status || '').toLowerCase() === 'accepted'
                 ? `
-                    <section class="track-guest-chat" aria-label="Message Admin">
+                    <section class="track-guest-chat" aria-label="Accepted submission options">
                         <div>
                             <strong>Offer accepted</strong>
                             <p>Acceptance is confirmed; it does not mean payment has been made.</p>
+                            <p class="track-guest-claim-status" data-guest-claim-status role="status" aria-live="polite" hidden></p>
+                            <div class="track-guest-claim-next" data-guest-claim-next hidden>
+                                <p>Proof is staged in this browser. Continue here after email verification.</p>
+                                <a href="/VNZ-TECH/account/register.php">Create Seller Account</a>
+                                <a href="/VNZ-TECH/account/login.php">Sign in to an existing account</a>
+                            </div>
                         </div>
                         <button
                             type="button"
                             data-open-guest-chat
                             data-conversation-id="${guestChatConversationId}"
                         >Chat with Admin</button>
+                        <button
+                            type="button"
+                            class="track-guest-claim-button"
+                            data-stage-guest-claim
+                            data-submission-id="${Number(submission.id)}"
+                        >Claim with Seller account</button>
                     </section>
                 `
                 : '';
@@ -2613,6 +2625,53 @@ $openFormRequested =
         }
 
         trackSubmissionResult.addEventListener('click', function (event) {
+            const stageClaimButton = event.target.closest('[data-stage-guest-claim]');
+            if (stageClaimButton) {
+                const claimSection = stageClaimButton.closest('.track-guest-chat');
+                const claimStatus = claimSection
+                    ? claimSection.querySelector('[data-guest-claim-status]')
+                    : null;
+                const nextStep = claimSection
+                    ? claimSection.querySelector('[data-guest-claim-next]')
+                    : null;
+                stageClaimButton.disabled = true;
+                if (claimStatus) {
+                    claimStatus.hidden = false;
+                    claimStatus.textContent = 'Verifying this browser’s guest access…';
+                    claimStatus.classList.remove('is-error');
+                }
+
+                const data = new FormData();
+                data.set('action', 'stage');
+                data.set('submission_id', stageClaimButton.dataset.submissionId || '');
+                data.set('csrf_token', <?= json_encode($tradeCsrfToken, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+                fetch('/VNZ-TECH/backend/guest_submission_claim.php', {
+                    method: 'POST',
+                    body: data,
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                    headers: {'Accept': 'application/json'}
+                }).then(async response => {
+                    const result = await response.json();
+                    if (!response.ok || !result.success) {
+                        throw new Error(result.message || 'Unable to stage this submission.');
+                    }
+                    if (claimStatus) {
+                        claimStatus.textContent = result.message;
+                    }
+                    if (nextStep) {
+                        nextStep.hidden = false;
+                    }
+                }).catch(error => {
+                    if (claimStatus) {
+                        claimStatus.textContent = error.message || 'Unable to stage this submission.';
+                        claimStatus.classList.add('is-error');
+                    }
+                    stageClaimButton.disabled = false;
+                });
+                return;
+            }
+
             const guestChatButton = event.target.closest('[data-open-guest-chat]');
             if (guestChatButton) {
                 guestChatButton.disabled = true;

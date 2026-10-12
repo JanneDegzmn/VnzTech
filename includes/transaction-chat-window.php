@@ -14,6 +14,8 @@ $transactionChatConversationId = filter_input(
 );
 $transactionChatResolvedConversationId = 0;
 $transactionChatGuestSubmission = false;
+$transactionChatClaimedSubmission = false;
+$transactionChatConversationClass = 'transaction';
 
 try {
     $transactionChatActor = chatGetCurrentActor();
@@ -35,9 +37,14 @@ try {
             $transactionChatResolvedConversationId = (int) $conversation['conversation_id'];
         } elseif (in_array($conversation['conversation_type'], ['global', 'private'], true)) {
             $transactionChatConversationType = $conversation['conversation_type'];
+            $transactionChatConversationClass =
+                $conversation['conversation_class'];
             $transactionChatConversationDbId = (int) $conversation['conversation_id'];
             $transactionChatDisplayName = (string) $conversation['display_name'];
-            $transactionChatGuestSubmission = $conversation['submission_id'] !== null;
+            $transactionChatGuestSubmission =
+                !empty($conversation['guest_submission']);
+            $transactionChatClaimedSubmission =
+                !empty($conversation['claimed_submission']);
             $transactionChatId = 0;
             $transactionChatReference = '';
             $transactionChatStatus = null;
@@ -48,6 +55,105 @@ try {
             $transactionChatFinalAmount = null;
             $transactionChatSubmissionItems = [];
             $transactionChatPhotosByItem = [];
+
+            if ($conversation['submission_id'] !== null) {
+                $guestContextStmt = $pdo->prepare("
+                    SELECT
+                        s.id AS submission_id,
+                        s.reference_number AS submission_reference,
+                        s.status AS submission_status,
+                        t.id AS transaction_id,
+                        t.transaction_reference,
+                        t.transaction_status,
+                        t.payment_status,
+                        t.final_amount,
+                        o.offer_amount
+                    FROM submissions s
+                    LEFT JOIN transactions t
+                        ON t.id = (
+                            SELECT t2.id
+                            FROM transactions t2
+                            WHERE t2.submission_id = s.id
+                            ORDER BY t2.id DESC
+                            LIMIT 1
+                        )
+                    LEFT JOIN offers o
+                        ON o.id = COALESCE(
+                            t.offer_id,
+                            (
+                                SELECT o2.id
+                                FROM offers o2
+                                WHERE o2.submission_id = s.id
+                                ORDER BY o2.id DESC
+                                LIMIT 1
+                            )
+                        )
+                    WHERE s.id = ?
+                    LIMIT 1
+                ");
+                $guestContextStmt->execute([(int) $conversation['submission_id']]);
+                $guestContext = $guestContextStmt->fetch(PDO::FETCH_ASSOC);
+                if (!$guestContext) {
+                    throw new ChatHttpException('Submission not found.', 404);
+                }
+
+                $transactionChatShowTransactionContext = true;
+                $transactionChatId = (int) ($guestContext['transaction_id'] ?? 0);
+                $transactionChatReference =
+                    (string) ($guestContext['transaction_reference'] ?? '—');
+                $transactionChatStatus = $guestContext['transaction_status'];
+                $transactionChatPaymentStatus = $guestContext['payment_status'];
+                $transactionChatSubmissionReference =
+                    (string) $guestContext['submission_reference'];
+                $transactionChatSubmissionStatus = $guestContext['submission_status'];
+                $transactionChatOfferAmount = $guestContext['offer_amount'];
+                $transactionChatFinalAmount = $guestContext['final_amount'];
+
+                $guestItemsStmt = $pdo->prepare("
+                    SELECT
+                        id,
+                        item_type,
+                        brand,
+                        model,
+                        storage,
+                        issue,
+                        issue_details,
+                        board_code,
+                        quantity
+                    FROM submission_items
+                    WHERE submission_id = ?
+                    ORDER BY id ASC
+                ");
+                $guestItemsStmt->execute([(int) $guestContext['submission_id']]);
+                $transactionChatSubmissionItems = $guestItemsStmt->fetchAll(PDO::FETCH_ASSOC);
+                if ($transactionChatSubmissionItems) {
+                    $guestItemIds = array_map(
+                        static fn(array $item): int => (int) $item['id'],
+                        $transactionChatSubmissionItems
+                    );
+                    $guestPhotoPlaceholders = implode(
+                        ',',
+                        array_fill(0, count($guestItemIds), '?')
+                    );
+                    $guestPhotosStmt = $pdo->prepare("
+                        SELECT
+                            submission_item_id,
+                            file_path,
+                            original_name,
+                            photo_type,
+                            sort_order,
+                            id
+                        FROM submission_photos
+                        WHERE submission_item_id IN ($guestPhotoPlaceholders)
+                        ORDER BY submission_item_id ASC, sort_order ASC, id ASC
+                    ");
+                    $guestPhotosStmt->execute($guestItemIds);
+                    foreach ($guestPhotosStmt->fetchAll(PDO::FETCH_ASSOC) as $guestPhoto) {
+                        $transactionChatPhotosByItem[(int) $guestPhoto['submission_item_id']][] =
+                            $guestPhoto;
+                    }
+                }
+            }
 
             require __DIR__ . '/transaction-chat.php';
             return;
@@ -74,14 +180,26 @@ try {
         (int) $transactionChatWindowId,
         $transactionChatActor
     );
-    if (!empty($transactionChatContext['guest_submission'])) {
+    $transactionChatConversationClass =
+        $transactionChatContext['conversation_class'] ?? 'transaction';
+    if (!empty($transactionChatContext['guest_chat_conversation_id'])) {
         $transactionChatResolvedConversationId =
             (int) $transactionChatContext['guest_chat_conversation_id'];
         $transactionChatConversationType = 'private';
-        $transactionChatDisplayName = $transactionChatActor['actor_type'] === 'admin'
-            ? 'Guest Seller · ' . $transactionChatContext['submission_reference']
-            : 'Admin';
-        $transactionChatGuestSubmission = true;
+        $transactionChatDisplayName = $transactionChatContext['conversation_class']
+            === 'claimed_submission'
+                ? ($transactionChatActor['actor_type'] === 'admin'
+                    ? 'SELLER - '
+                        . (trim((string) ($transactionChatContext['seller_full_name'] ?? ''))
+                            ?: 'Seller')
+                    : 'ADMIN')
+                : ($transactionChatActor['actor_type'] === 'admin'
+                    ? 'Guest Seller · ' . $transactionChatContext['submission_reference']
+                    : 'Admin');
+        $transactionChatGuestSubmission =
+            !empty($transactionChatContext['guest_submission']);
+        $transactionChatClaimedSubmission =
+            !empty($transactionChatContext['claimed_submission']);
         $transactionChatShowTransactionContext = true;
     }
 } catch (ChatHttpException $e) {
@@ -190,11 +308,11 @@ if ($transactionChatSubmissionItems) {
 }
 
 $transactionChatId = (int) $transactionChatData['id'];
-$transactionChatConversationType = $transactionChatGuestSubmission
+$transactionChatConversationType = $transactionChatResolvedConversationId > 0
     ? 'private'
     : 'transaction';
 $transactionChatConversationDbId = $transactionChatResolvedConversationId;
-if (!$transactionChatGuestSubmission) {
+if (!$transactionChatGuestSubmission && !$transactionChatClaimedSubmission) {
     $transactionChatDisplayName = (string) $transactionChatData['transaction_reference'];
 }
 $transactionChatReference = $transactionChatData['transaction_reference'];

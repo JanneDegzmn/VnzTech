@@ -433,15 +433,26 @@ if (!$submission) {
 |--------------------------------------------------------------------------
 */
 
-$storedMobile =
-    normalizeMobile(
-        $submission['seller_mobile']
-    );
+$storedMobile = normalizeMobile($submission['seller_mobile']);
+$submissionUserId = $submission['user_id'] === null
+    ? null
+    : (int) $submission['user_id'];
+$authenticatedUserId = !empty($_SESSION['user_logged_in'])
+    ? (int) ($_SESSION['user_id'] ?? 0)
+    : 0;
 
+if ($submissionUserId !== null) {
+    if ($authenticatedUserId <= 0 || $authenticatedUserId !== $submissionUserId) {
+        http_response_code(403);
 
-if (
-    $storedMobile !== $mobile
-) {
+        echo json_encode([
+            'success' => false,
+            'message' => 'This submission is not available to this account.'
+        ]);
+
+        exit;
+    }
+} elseif ($storedMobile !== $mobile) {
 
     http_response_code(403);
 

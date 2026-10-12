@@ -2,6 +2,8 @@
 
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
+require_once __DIR__ . '/../../backend/csrf.php';
+require_once __DIR__ . '/../../backend/chat_service.php';
 
 if (
     empty($_SESSION['user_logged_in']) ||
@@ -49,6 +51,7 @@ try {
             full_name,
             mobile,
             email,
+            email_verified_at,
             profile_picture,
             language,
             is_active,
@@ -250,6 +253,58 @@ try {
 
     $recentTransactions = $recentTransactionsStmt->fetchAll();
 
+    $claimableGuestSubmissions = [];
+    $stagedProofs = $_SESSION['guest_submission_claim_proofs'] ?? [];
+    if (is_array($stagedProofs) && $stagedProofs && chatGuestSubmissionClaimsSchemaAvailable()) {
+        $stagedIds = [];
+        $now = time();
+        foreach ($stagedProofs as $stagedId => $proof) {
+            $stagedAt = is_array($proof)
+                ? filter_var($proof['staged_at'] ?? null, FILTER_VALIDATE_INT)
+                : false;
+            $identityId = is_array($proof)
+                ? filter_var($proof['guest_identity_id'] ?? null, FILTER_VALIDATE_INT)
+                : false;
+            if (
+                !ctype_digit((string) $stagedId)
+                || $stagedAt === false
+                || $stagedAt <= 0
+                || $now - $stagedAt > 1800
+                || $identityId === false
+                || $identityId <= 0
+            ) {
+                unset($stagedProofs[$stagedId]);
+                continue;
+            }
+            $stagedIds[(int) $stagedId] = (int) $identityId;
+        }
+
+        if ($stagedIds) {
+            $placeholders = implode(',', array_fill(0, count($stagedIds), '?'));
+            $claimableStmt = $pdo->prepare("
+                SELECT s.id, s.reference_number, s.status, g.id AS guest_identity_id
+                FROM submissions s
+                INNER JOIN guest_chat_identities g
+                    ON g.submission_id = s.id
+                WHERE s.id IN ($placeholders)
+                  AND s.user_id IS NULL
+                  AND s.status = 'accepted'
+                  AND g.revoked_at IS NULL
+                  AND g.expires_at > NOW()
+                ORDER BY s.created_at DESC
+            ");
+            $claimableStmt->execute(array_keys($stagedIds));
+            foreach ($claimableStmt->fetchAll(PDO::FETCH_ASSOC) as $claimable) {
+                $submissionId = (int) $claimable['id'];
+                if (
+                    (int) $claimable['guest_identity_id'] === ($stagedIds[$submissionId] ?? 0)
+                ) {
+                    $claimableGuestSubmissions[] = $claimable;
+                }
+            }
+        }
+        $_SESSION['guest_submission_claim_proofs'] = $stagedProofs;
+    }
 
 } catch (Throwable $e) {
 
@@ -460,6 +515,52 @@ $initial = strtoupper(
 
 <section class="dashboard-page">
 
+    <?php if ($claimableGuestSubmissions): ?>
+        <section class="guest-claim-card" aria-labelledby="guestClaimTitle">
+            <div class="guest-claim-heading">
+                <span class="eyebrow">GUEST SUBMISSIONS</span>
+                <h2 id="guestClaimTitle">Link your eligible submissions</h2>
+                <p>These submissions were verified from this browser. Select the ones to move into this Seller account; their existing Admin chat history will be preserved.</p>
+            </div>
+            <form data-guest-claim-form>
+                <input type="hidden" name="action" value="claim">
+                <input type="hidden" name="csrf_token" value="<?= dashboardEscape(generateCsrfToken()) ?>">
+                <fieldset <?= empty($user['email_verified_at']) ? 'disabled' : '' ?>>
+                    <legend class="visually-hidden">Select submissions to claim</legend>
+                    <?php foreach ($claimableGuestSubmissions as $claimable): ?>
+                        <label class="guest-claim-option">
+                            <input
+                                type="checkbox"
+                                name="submission_ids[]"
+                                value="<?= (int) $claimable['id'] ?>"
+                            >
+                            <span>
+                                <strong><?= dashboardEscape($claimable['reference_number']) ?></strong>
+                                <small><?= dashboardEscape(dashboardStatusLabel($claimable['status'])) ?></small>
+                            </span>
+                        </label>
+                    <?php endforeach; ?>
+                </fieldset>
+                <?php if (empty($user['email_verified_at'])): ?>
+                    <p class="guest-claim-note">Verify your email address in Settings before claiming submissions.</p>
+                <?php endif; ?>
+                <p class="guest-claim-feedback" data-guest-claim-feedback role="status" aria-live="polite"></p>
+                <button
+                    class="guest-claim-submit"
+                    type="submit"
+                    <?= empty($user['email_verified_at']) ? 'disabled' : '' ?>
+                >Review selected submissions</button>
+                <dialog class="guest-claim-confirm" data-guest-claim-dialog>
+                    <h3>Confirm submission claim</h3>
+                    <p>The selected submission ownership and its existing Admin conversation will be transferred to this Seller account. This cannot be automatically merged with another account.</p>
+                    <div>
+                        <button type="button" data-close-guest-claim>Cancel</button>
+                        <button type="button" data-confirm-guest-claim>Confirm claim</button>
+                    </div>
+                </dialog>
+            </form>
+        </section>
+    <?php endif; ?>
 
     <!-- =====================================================
          HEADER

@@ -71,7 +71,12 @@ function chatPersistCallEvent(
         }
 
         $callStmt = $pdo->prepare("
-            SELECT *
+            SELECT
+                *,
+                invited_at > DATE_SUB(
+                    CURRENT_TIMESTAMP(6),
+                    INTERVAL 30 SECOND
+                ) AS invite_is_fresh
             FROM chat_call_sessions
             WHERE call_id = ?
             FOR UPDATE
@@ -93,9 +98,7 @@ function chatPersistCallEvent(
 
         if ($event['event'] === 'call.invite') {
             if (
-                !chatCallParticipantMatches($call, 'caller', $actor)
-                || $call['call_mode'] !== $event['mode']
-                || $call['status'] !== 'ringing'
+                !chatCallInviteCanBeRelayed($call, $actor, $event['mode'])
             ) {
                 throw new ChatHttpException('Call session is no longer available.', 409);
             }
@@ -103,7 +106,7 @@ function chatPersistCallEvent(
                 $pdo->commit();
                 return [
                     'duplicate' => true,
-                    'relay' => false,
+                    'relay' => true,
                     'summary_message' => null
                 ];
             }
@@ -348,4 +351,20 @@ function chatPersistCallEvent(
         }
         throw $error;
     }
+}
+
+function chatCallInviteCanBeRelayed(
+    array $call,
+    array $actor,
+    string $mode
+): bool {
+    return chatCallParticipantMatches($call, 'caller', $actor)
+        && $call['call_mode'] === $mode
+        && $call['status'] === 'ringing'
+        && (bool) ($call['invite_is_fresh'] ?? false);
+}
+
+function chatCallSignalShouldPublishDuplicate(array $callResult): bool
+{
+    return ($callResult['relay'] ?? false) === true;
 }

@@ -454,6 +454,82 @@ function chatFindGuestSubmissionConversation(
         : (int) $conversationId;
 }
 
+function chatGetSubmissionResponsibleAdminId(int $submissionId): int
+{
+    global $pdo;
+
+    $stmt = $pdo->prepare("
+        SELECT
+            t.id,
+            t.submission_id,
+            t.offer_id,
+            t.processed_by_admin_id,
+            o.submission_id AS offer_submission_id,
+            o.created_by_admin_id AS offer_admin_id,
+            s.assigned_admin_id
+        FROM transactions t
+        INNER JOIN submissions s
+            ON s.id = t.submission_id
+        LEFT JOIN offers o
+            ON o.id = t.offer_id
+        WHERE s.id = ?
+        ORDER BY t.id ASC
+        LIMIT 2
+    ");
+    $stmt->execute([$submissionId]);
+    $transactions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    if (
+        count($transactions) !== 1
+        || (int) $transactions[0]['submission_id'] !== $submissionId
+        || $transactions[0]['offer_id'] !== null
+            && (int) $transactions[0]['offer_submission_id'] !== $submissionId
+    ) {
+        throw new ChatHttpException(
+            'Submission transaction relationship is unavailable or inconsistent.',
+            409
+        );
+    }
+
+    $adminIds = [];
+    foreach ([
+        $transactions[0]['processed_by_admin_id'],
+        $transactions[0]['offer_admin_id'],
+        $transactions[0]['assigned_admin_id']
+    ] as $adminId) {
+        if ($adminId !== null) {
+            $adminIds[(int) $adminId] = true;
+        }
+    }
+    if (count($adminIds) !== 1) {
+        throw new ChatHttpException(
+            'Submission Admin attribution is unavailable or inconsistent.',
+            409
+        );
+    }
+
+    return (int) array_key_first($adminIds);
+}
+
+function chatGuestSubmissionClaimsSchemaAvailable(): bool
+{
+    static $isAvailable = null;
+    if ($isAvailable !== null) {
+        return $isAvailable;
+    }
+
+    global $pdo;
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'guest_submission_claims'
+    ");
+    $stmt->execute();
+    $isAvailable = (int) $stmt->fetchColumn() === 1;
+
+    return $isAvailable;
+}
+
 function chatGetTransactionContext(
     int $transactionId,
     array $actor,
@@ -469,6 +545,7 @@ function chatGetTransactionContext(
             t.processed_by_admin_id,
             t.offer_id,
             o.created_by_admin_id AS offer_admin_id,
+            o.submission_id AS offer_submission_id,
             s.id AS submission_id,
             s.reference_number AS submission_reference,
             s.user_id AS seller_id,
@@ -495,6 +572,16 @@ function chatGetTransactionContext(
 
     if (!$context) {
         throw new ChatHttpException('Transaction not found.', 404);
+    }
+
+    if (
+        $context['offer_id'] !== null
+        && (int) $context['offer_submission_id'] !== (int) $context['submission_id']
+    ) {
+        throw new ChatHttpException(
+            'The transaction offer and submission relationship is inconsistent.',
+            409
+        );
     }
 
     if ($context['seller_id'] !== null) {
@@ -577,6 +664,75 @@ function chatGetTransactionContext(
         throw new ChatHttpException('Unauthorized.', 403);
     }
 
+    if ($context['seller_id'] !== null) {
+        $claim = null;
+        if (chatGuestSubmissionClaimsSchemaAvailable()) {
+            $claimedConversationStmt = $pdo->prepare("
+                SELECT
+                    c.id AS conversation_id,
+                    c.type AS conversation_type,
+                    c.transaction_id,
+                    claims.seller_id,
+                    claims.guest_identity_id,
+                    guest_identity.submission_id AS identity_submission_id,
+                    guest_identity.revoked_at AS identity_revoked_at
+                FROM guest_submission_claims claims
+                LEFT JOIN conversations c
+                    ON c.submission_id = claims.submission_id
+                LEFT JOIN guest_chat_identities guest_identity
+                    ON guest_identity.id = claims.guest_identity_id
+                WHERE claims.submission_id = ?
+                LIMIT 1
+            ");
+            $claimedConversationStmt->execute([(int) $context['submission_id']]);
+            $claim = $claimedConversationStmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        }
+        if ($claim) {
+            if (
+                (int) $claim['seller_id'] !== (int) $context['seller_id']
+                || (int) $claim['identity_submission_id'] !== (int) $context['submission_id']
+                || $claim['identity_revoked_at'] === null
+                || $claim['conversation_id'] === null
+                || $claim['conversation_type'] !== 'private'
+                || $claim['transaction_id'] !== null
+                || !in_array($actor['actor_type'], ['admin', 'seller'], true)
+                || $actor['actor_type'] === 'seller'
+                    && (int) $actor['actor_id'] !== (int) $claim['seller_id']
+            ) {
+                throw new ChatHttpException(
+                    'Claimed submission conversation is inconsistent.',
+                    409
+                );
+            }
+
+            $context['seller_id'] = (int) $claim['seller_id'];
+            $context['responsible_admin_id'] = $adminId;
+            $context['conversation_class'] = 'claimed_submission';
+            $context['claimed_submission'] = true;
+            $context['guest_submission'] = false;
+            $context['guest_chat_conversation_id'] =
+                (int) $claim['conversation_id'];
+            $context['guest_identity_id'] =
+                (int) $claim['guest_identity_id'];
+            return $context;
+        }
+
+        $submissionConversationStmt = $pdo->prepare("
+            SELECT id
+            FROM conversations
+            WHERE submission_id = ?
+            LIMIT 1
+        ");
+        $submissionConversationStmt->execute([(int) $context['submission_id']]);
+        if ($submissionConversationStmt->fetchColumn()) {
+            throw new ChatHttpException(
+                'Submission conversation claim is inconsistent.',
+                409
+            );
+        }
+
+    }
+
     if ($context['seller_id'] === null) {
         if ($actor['actor_type'] === 'guest') {
             $conversationId = chatFindGuestSubmissionConversation(
@@ -603,6 +759,8 @@ function chatGetTransactionContext(
         $context['seller_id'] = null;
         $context['seller_full_name'] = 'Guest Seller';
         $context['responsible_admin_id'] = $adminId;
+        $context['conversation_class'] = 'unclaimed_guest_submission';
+        $context['claimed_submission'] = false;
         $context['guest_submission'] = true;
         $context['guest_chat_conversation_id'] = $conversationId;
 
@@ -612,6 +770,9 @@ function chatGetTransactionContext(
     $sellerId = (int) $context['seller_id'];
     $context['seller_id'] = $sellerId;
     $context['responsible_admin_id'] = $adminId;
+    $context['conversation_class'] = 'transaction';
+    $context['claimed_submission'] = false;
+    $context['guest_submission'] = false;
 
     return $context;
 }
@@ -1116,7 +1277,7 @@ function getOrCreateTransactionConversation(
             true
         );
 
-        if (!empty($context['guest_submission'])) {
+        if (!empty($context['guest_chat_conversation_id'])) {
             $conversationId = (int) $context['guest_chat_conversation_id'];
             $conversation = chatRequireConversationMembership(
                 $conversationId,
@@ -1140,7 +1301,9 @@ function getOrCreateTransactionConversation(
                 'conversation_type' => 'private',
                 'transaction_id' => $transactionId,
                 'submission_id' => (int) $context['submission_id'],
-                'guest_submission' => true,
+                'conversation_class' => $context['conversation_class'],
+                'claimed_submission' => !empty($context['claimed_submission']),
+                'guest_submission' => !empty($context['guest_submission']),
                 'participants' => $participants
             ];
         }
@@ -1274,6 +1437,9 @@ function chatRequireConversationMembership(
             $context['seller_id'];
         $conversation['responsible_admin_id'] =
             $context['responsible_admin_id'];
+        $conversation['conversation_class'] = 'transaction';
+        $conversation['claimed_submission'] = false;
+        $conversation['guest_submission'] = false;
     } elseif ($conversation['conversation_type'] === 'global') {
         if (
             $conversation['transaction_id'] !== null
@@ -1282,6 +1448,9 @@ function chatRequireConversationMembership(
             throw new ChatHttpException('Unauthorized.', 403);
         }
         $conversation['display_name'] = 'Global Chat';
+        $conversation['conversation_class'] = 'global';
+        $conversation['claimed_submission'] = false;
+        $conversation['guest_submission'] = false;
     } elseif ($conversation['conversation_type'] === 'private') {
         if ($conversation['transaction_id'] !== null) {
             throw new ChatHttpException('Unauthorized.', 403);
@@ -1300,46 +1469,167 @@ function chatRequireConversationMembership(
             throw new ChatHttpException('Unauthorized.', 403);
         }
 
+        $guestParticipant = null;
+        $sellerParticipant = null;
+        $adminParticipant = null;
+        foreach ($participants as $participant) {
+            if ($participant['actor_type'] === 'guest') {
+                $guestParticipant = $participant;
+            } elseif ($participant['actor_type'] === 'seller') {
+                $sellerParticipant = $participant;
+            } elseif ($participant['actor_type'] === 'admin') {
+                $adminParticipant = $participant;
+            }
+        }
+
         if ($conversation['submission_id'] !== null) {
-            $guestParticipant = null;
-            $adminParticipantCount = 0;
-            foreach ($participants as $participant) {
-                if ($participant['actor_type'] === 'guest') {
-                    $guestParticipant = $participant;
-                } elseif ($participant['actor_type'] === 'admin') {
-                    $adminParticipantCount++;
-                }
-            }
-            if (
-                $guestParticipant === null
-                || $adminParticipantCount !== 1
-                || $actor['actor_type'] === 'seller'
-            ) {
-                throw new ChatHttpException('Unauthorized.', 403);
-            }
-            $guestSubmissionStmt = $pdo->prepare("
-                SELECT
-                    submission_id,
-                    revoked_at IS NULL AND expires_at > NOW() AS is_active
-                FROM guest_chat_identities
+            $submissionId = (int) $conversation['submission_id'];
+            $submissionStmt = $pdo->prepare("
+                SELECT id, user_id, reference_number, seller_name
+                FROM submissions
                 WHERE id = ?
                 LIMIT 1
             ");
-            $guestSubmissionStmt->execute([(int) $guestParticipant['actor_id']]);
-            $guestIdentity = $guestSubmissionStmt->fetch(PDO::FETCH_ASSOC);
-            if (
-                !$guestIdentity
-                || (int) $guestIdentity['submission_id'] !== (int) $conversation['submission_id']
-                || $actor['actor_type'] === 'guest'
-                    && !(bool) $guestIdentity['is_active']
-            ) {
+            $submissionStmt->execute([$submissionId]);
+            $submission = $submissionStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$submission || !$adminParticipant) {
                 throw new ChatHttpException('Unauthorized.', 403);
             }
-        } elseif (array_filter(
-            $participants,
-            static fn(array $participant): bool => $participant['actor_type'] === 'guest'
-        )) {
+
+            $identityStmt = $pdo->prepare("
+                SELECT
+                    id,
+                    revoked_at IS NULL AND expires_at > NOW() AS is_active,
+                    revoked_at
+                FROM guest_chat_identities
+                WHERE submission_id = ?
+                LIMIT 1
+            ");
+            $identityStmt->execute([$submissionId]);
+            $guestIdentity = $identityStmt->fetch(PDO::FETCH_ASSOC);
+            if (!$guestIdentity) {
+                throw new ChatHttpException('Unauthorized.', 403);
+            }
+
+            $responsibleAdminId =
+                chatGetSubmissionResponsibleAdminId($submissionId);
+            if ((int) $adminParticipant['actor_id'] !== $responsibleAdminId) {
+                throw new ChatHttpException('Unauthorized.', 403);
+            }
+
+            $isUnclaimedGuestConversation =
+                count($participants) === 2
+                && $guestParticipant !== null
+                && $sellerParticipant === null
+                && $submission['user_id'] === null
+                && (int) $guestParticipant['actor_id'] === (int) $guestIdentity['id'];
+            $isClaimedSellerConversation =
+                count($participants) === 2
+                && $guestParticipant === null
+                && $sellerParticipant !== null
+                && $submission['user_id'] !== null
+                && (int) $sellerParticipant['actor_id'] === (int) $submission['user_id'];
+
+            if ($isUnclaimedGuestConversation) {
+                if (
+                    $actor['actor_type'] === 'guest'
+                    && (
+                        (int) $actor['actor_id'] !== (int) $guestIdentity['id']
+                        || !(bool) $guestIdentity['is_active']
+                    )
+                ) {
+                    throw new ChatHttpException('Unauthorized.', 403);
+                }
+                if (!in_array($actor['actor_type'], ['guest', 'admin'], true)) {
+                    throw new ChatHttpException('Unauthorized.', 403);
+                }
+                $conversation['conversation_class'] = 'unclaimed_guest_submission';
+                $conversation['claimed_submission'] = false;
+                $conversation['guest_submission'] = true;
+            } elseif ($isClaimedSellerConversation) {
+                if (!chatGuestSubmissionClaimsSchemaAvailable()) {
+                    throw new ChatHttpException('Unauthorized.', 403);
+                }
+                $auditStmt = $pdo->prepare("
+                    SELECT 1
+                    FROM guest_submission_claims
+                    WHERE submission_id = ?
+                      AND seller_id = ?
+                      AND guest_identity_id = ?
+                      AND proof_method = 'guest_chat_capability'
+                    LIMIT 1
+                ");
+                $auditStmt->execute([
+                    $submissionId,
+                    (int) $submission['user_id'],
+                    (int) $guestIdentity['id']
+                ]);
+                if (
+                    !$auditStmt->fetchColumn()
+                    || $guestIdentity['revoked_at'] === null
+                    || !in_array($actor['actor_type'], ['seller', 'admin'], true)
+                    || $actor['actor_type'] === 'seller'
+                        && (int) $actor['actor_id'] !== (int) $submission['user_id']
+                ) {
+                    throw new ChatHttpException('Unauthorized.', 403);
+                }
+
+                $transactionStmt = $pdo->prepare("
+                    SELECT id
+                    FROM transactions
+                    WHERE submission_id = ?
+                    ORDER BY id ASC
+                    LIMIT 2
+                ");
+                $transactionStmt->execute([$submissionId]);
+                $transactions = $transactionStmt->fetchAll(PDO::FETCH_COLUMN);
+                if (count($transactions) !== 1) {
+                    throw new ChatHttpException('Unauthorized.', 403);
+                }
+                $transactionContext = chatGetTransactionContext(
+                    (int) $transactions[0],
+                    $actor
+                );
+                if (
+                    ($transactionContext['conversation_class'] ?? null)
+                        !== 'claimed_submission'
+                    || (int) ($transactionContext['guest_chat_conversation_id'] ?? 0)
+                        !== $conversationId
+                    || (int) $sellerParticipant['actor_id']
+                        !== (int) $transactionContext['seller_id']
+                    || (int) $adminParticipant['actor_id']
+                        !== (int) $transactionContext['responsible_admin_id']
+                ) {
+                    throw new ChatHttpException('Unauthorized.', 403);
+                }
+
+                $conversation['conversation_class'] = 'claimed_submission';
+                $conversation['claimed_submission'] = true;
+                $conversation['guest_submission'] = false;
+                $conversation['transaction_id'] =
+                    (int) $transactionContext['transaction_id'];
+                $conversation['transaction_reference'] =
+                    $transactionContext['transaction_reference'];
+                $conversation['transaction_status'] =
+                    $transactionContext['transaction_status'];
+                $conversation['seller_id'] =
+                    (int) $transactionContext['seller_id'];
+                $conversation['responsible_admin_id'] =
+                    (int) $transactionContext['responsible_admin_id'];
+            } else {
+                throw new ChatHttpException('Unauthorized.', 403);
+            }
+
+            $conversation['submission_reference'] =
+                (string) $submission['reference_number'];
+            $conversation['submission_seller_name'] =
+                trim((string) ($submission['seller_name'] ?? ''));
+        } elseif ($guestParticipant !== null) {
             throw new ChatHttpException('Unauthorized.', 403);
+        } else {
+            $conversation['conversation_class'] = 'private';
+            $conversation['claimed_submission'] = false;
+            $conversation['guest_submission'] = false;
         }
 
         foreach ($participants as $participant) {
@@ -1373,30 +1663,15 @@ function chatRequireConversationMembership(
             $otherActor['display_name']
         );
         if ($conversation['submission_id'] !== null) {
-            if (
-                $guestParticipant === null
-                || !in_array($actor['actor_type'], ['admin', 'guest'], true)
-            ) {
-                throw new ChatHttpException('Unauthorized.', 403);
+            if ($conversation['conversation_class'] === 'claimed_submission') {
+                $conversation['display_name'] = $actor['actor_type'] === 'admin'
+                    ? 'SELLER - ' . (trim((string) $otherActor['display_name']) ?: 'Seller')
+                    : 'ADMIN';
+            } else {
+                $conversation['display_name'] = $actor['actor_type'] === 'admin'
+                    ? 'Guest Seller · ' . $conversation['submission_reference']
+                    : 'Admin';
             }
-            $referenceStmt = $pdo->prepare("
-                SELECT reference_number, seller_name
-                FROM submissions
-                WHERE id = ?
-                LIMIT 1
-            ");
-            $referenceStmt->execute([(int) $conversation['submission_id']]);
-            $submission = $referenceStmt->fetch(PDO::FETCH_ASSOC);
-            if (!$submission) {
-                throw new ChatHttpException('Conversation not found.', 404);
-            }
-            $submissionReference = (string) $submission['reference_number'];
-            $conversation['submission_reference'] = $submissionReference;
-            $conversation['submission_seller_name'] =
-                trim((string) ($submission['seller_name'] ?? ''));
-            $conversation['display_name'] = $actor['actor_type'] === 'admin'
-                ? 'Guest Seller · ' . $submissionReference
-                : 'Admin';
         }
     } else {
         throw new ChatHttpException('Unauthorized.', 403);
@@ -1412,6 +1687,15 @@ function chatGetOneToOneConversationPeer(
     $conversation = chatRequireConversationMembership($conversationId, $actor);
     if (!in_array($conversation['conversation_type'], ['transaction', 'private'], true)) {
         throw new ChatHttpException('Calls are only available in one-to-one conversations.', 403);
+    }
+    if (
+        $conversation['submission_id'] !== null
+        && ($conversation['conversation_class'] ?? null) !== 'claimed_submission'
+    ) {
+        throw new ChatHttpException(
+            'Calls are unavailable for guest-submission conversations.',
+            403
+        );
     }
 
     global $pdo;
@@ -1441,7 +1725,11 @@ function chatGetOneToOneConversationPeer(
     }
 
     if (
-        $conversation['conversation_type'] === 'transaction'
+        in_array(
+            $conversation['conversation_class'] ?? $conversation['conversation_type'],
+            ['transaction', 'claimed_submission'],
+            true
+        )
         && (
             (int) $participantsByType['seller']['actor_id']
                 !== (int) $conversation['seller_id']
@@ -1459,7 +1747,7 @@ function chatGetOneToOneConversationPeer(
     foreach ($participantsByType as $participantType => $identity) {
         if (
             $participantType === $actor['actor_type']
-            && (int) $participant['actor_id'] === (int) $actor['actor_id']
+            && (int) $identity['actor_id'] === (int) $actor['actor_id']
         ) {
             continue;
         }

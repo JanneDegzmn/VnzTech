@@ -2347,6 +2347,11 @@ $initialMobile =
             mobile
         );
 
+        body.append(
+            'csrf_token',
+            <?= json_encode($csrfToken) ?>
+        );
+
 
         const response =
             await fetch(

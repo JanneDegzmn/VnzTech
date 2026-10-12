@@ -3801,6 +3801,45 @@ select {
     cursor: wait;
 }
 
+.track-guest-chat > .track-guest-claim-button {
+    border-color: rgba(95, 200, 255, 0.48);
+    background: rgba(8, 18, 27, 0.78);
+    color: #d7f3ff;
+}
+
+.track-guest-chat > .track-guest-claim-button:hover,
+.track-guest-chat > .track-guest-claim-button:focus-visible {
+    background: rgba(14, 165, 233, 0.18);
+}
+
+.track-guest-chat .track-guest-claim-status {
+    margin-top: 10px;
+    color: #b9eaff;
+}
+
+.track-guest-chat .track-guest-claim-status.is-error {
+    color: #fecdd3;
+}
+
+.track-guest-claim-next {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.track-guest-claim-next[hidden] {
+    display: none;
+}
+
+.track-guest-claim-next a {
+    width: fit-content;
+    color: #8de7ff;
+    font-size: 12px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
 .track-guest-chat-error {
     padding: 12px;
     border: 1px solid rgba(251, 113, 133, 0.28);

@@ -60,6 +60,8 @@
             total += unread;
             if (conversation.conversation_type === 'global') {
                 totals.global += unread;
+            } else if (conversation.conversation_class === 'claimed_submission') {
+                totals.contacts += unread;
             } else if (conversation.conversation_type === 'private') {
                 const category = conversation.guest_submission === true
                     && root.dataset.actorType === 'admin'
@@ -296,7 +298,8 @@
             row.append(actions);
         };
         const transactionItems = conversations.filter(
-            conversation => conversation.conversation_type === 'transaction'
+            conversation => conversation.conversation_class === 'transaction'
+                || conversation.conversation_class === 'claimed_submission'
         );
 
         if (category === 'contacts' && transactionItems.length > 0) {
@@ -312,6 +315,7 @@
                 row.className = 'floating-messages-call-row';
                 button.dataset.transactionId = String(conversation.transaction_id);
                 button.dataset.conversationId = String(conversation.conversation_id);
+                button.dataset.conversationType = conversation.conversation_type;
                 button.dataset.transactionReference = String(conversation.transaction_reference || '');
                 title.textContent = String(conversation.display_name || 'ADMIN');
                 reference.textContent = String(
@@ -835,15 +839,14 @@
                 throw new Error('The server returned a different conversation than the one selected.');
             }
             if (
-                details.conversationType === 'transaction'
-                && Number(details.transactionId) > 0
+                Number(details.transactionId) > 0
                 && Number(widget.dataset.transactionId) !== Number(details.transactionId)
             ) {
                 throw new Error('The selected transaction does not match this conversation.');
             }
             const headerReference = widget?.dataset.transactionReference;
             const conversationTitle = widget?.dataset.conversationTitle;
-            title.textContent = details.conversationType === 'transaction' && headerReference
+            title.textContent = Number(details.transactionId) > 0 && headerReference
                 ? headerReference
                 : (conversationTitle || details.displayName || 'Conversation');
             windowElement.classList.add('is-mobile-chat-open');
@@ -897,7 +900,8 @@
             : initialsFor(displayName);
         text.className = 'floating-chat-workspace-item-text';
         name.textContent = displayName;
-        preview.textContent = item.conversation_type === 'transaction'
+        preview.textContent = item.conversation_class === 'transaction'
+            || item.conversation_class === 'claimed_submission'
             ? String(item.transaction_reference || 'Transaction chat')
             : item.conversation_type === 'global'
                 ? 'Global conversation'
@@ -940,7 +944,10 @@
         }
 
         renderWorkspaceSection(list, 'Private chats');
-        const privateConversations = conversations.filter(item => item.conversation_type === 'private');
+        const privateConversations = conversations.filter(item => (
+            item.conversation_type === 'private'
+            && item.conversation_class !== 'claimed_submission'
+        ));
         privateConversations.forEach(item => {
             renderWorkspaceConversation(list, item, windowElement);
         });
@@ -959,7 +966,8 @@
 
         renderWorkspaceSection(list, 'Transaction chats');
         conversations
-            .filter(item => item.conversation_type === 'transaction')
+            .filter(item => item.conversation_class === 'transaction'
+                || item.conversation_class === 'claimed_submission')
             .forEach(item => renderWorkspaceConversation(list, item, windowElement));
     }
 
@@ -1132,13 +1140,14 @@
         root,
         transactionId,
         reference = '',
-        conversationId = 0
+        conversationId = 0,
+        conversationType = 'transaction'
     ) {
         if (!Number.isInteger(transactionId) || transactionId <= 0) {
             return;
         }
         return openFloatingWindow(root, {
-            conversationType: 'transaction',
+            conversationType,
             transactionId,
             conversationId,
             reference,
@@ -1346,7 +1355,8 @@
                     root,
                     Number(transaction.dataset.transactionId),
                     transaction.dataset.transactionReference || '',
-                    Number(transaction.dataset.conversationId) || 0
+                    Number(transaction.dataset.conversationId) || 0,
+                    transaction.dataset.conversationType || 'transaction'
                 );
                 return;
             }

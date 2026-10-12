@@ -38,10 +38,10 @@ $csrfToken = generateCsrfToken();
     >
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261012-guest-presence"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261013-guest-calls"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261012-guest-presence"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261013-guest-calls"
         defer
     ></script>
     <script

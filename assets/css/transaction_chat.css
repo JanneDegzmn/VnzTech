@@ -2581,6 +2581,175 @@
     border: 0;
 }
 
+.transaction-chat-guest-call-dialog {
+    width: min(440px, calc(100vw - 32px));
+    max-width: none;
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    overflow: auto;
+    opacity: 0;
+    color: #eef4f8;
+    background: transparent;
+    border: 0;
+    border-radius: 18px;
+    transform: translateY(12px) scale(0.98);
+    transition:
+        opacity 180ms ease,
+        transform 220ms cubic-bezier(0.2, 0.75, 0.25, 1),
+        overlay 220ms allow-discrete,
+        display 220ms allow-discrete;
+}
+
+.transaction-chat-guest-call-dialog:open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+@starting-style {
+    .transaction-chat-guest-call-dialog:open {
+        opacity: 0;
+        transform: translateY(12px) scale(0.98);
+    }
+}
+
+.transaction-chat-guest-call-dialog::backdrop {
+    background: rgba(2, 7, 11, 0);
+    backdrop-filter: blur(4px);
+    transition:
+        background-color 180ms ease,
+        backdrop-filter 180ms ease,
+        overlay 220ms allow-discrete,
+        display 220ms allow-discrete;
+}
+
+.transaction-chat-guest-call-dialog:open::backdrop {
+    background: rgba(2, 7, 11, 0.76);
+}
+
+@starting-style {
+    .transaction-chat-guest-call-dialog:open::backdrop {
+        background: rgba(2, 7, 11, 0);
+    }
+}
+
+.transaction-chat-guest-call-card {
+    position: relative;
+    padding: 30px;
+    background:
+        radial-gradient(circle at 100% 0, rgba(34, 184, 238, 0.12), transparent 42%),
+        #101923;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 18px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
+}
+
+.transaction-chat-guest-call-close {
+    display: grid;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    padding: 0;
+    color: #cbd5e1;
+    background: rgba(148, 163, 184, 0.1);
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 9px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 20px;
+}
+
+.transaction-chat-guest-call-card h2 {
+    margin: 0;
+    padding-right: 24px;
+    color: #f1f5f9;
+    font-size: 22px;
+    font-weight: 760;
+    line-height: 1.2;
+}
+
+.transaction-chat-guest-call-card > p {
+    margin: 14px 0 0;
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.transaction-chat-guest-call-card > .transaction-chat-guest-call-note {
+    padding: 10px 12px;
+    color: #9fb0bd;
+    background: rgba(148, 163, 184, 0.07);
+    border-left: 2px solid #22b8ee;
+    border-radius: 0 8px 8px 0;
+    font-size: 12px;
+}
+
+.transaction-chat-guest-call-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.transaction-chat-guest-call-actions a,
+.transaction-chat-guest-call-actions button {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 16px;
+    border-radius: 9px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+    line-height: 1.2;
+    text-decoration: none;
+    transition:
+        filter 150ms ease,
+        background-color 150ms ease,
+        border-color 150ms ease,
+        transform 150ms ease;
+}
+
+.transaction-chat-guest-call-register {
+    flex: 1 1 auto;
+    color: #03131a;
+    background: linear-gradient(135deg, #53d3f4, #22b8ee);
+    border: 0;
+}
+
+.transaction-chat-guest-call-register:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+.transaction-chat-guest-call-actions button {
+    flex: 0 0 auto;
+    color: #dce6ed;
+    background: #18232e;
+    border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.transaction-chat-guest-call-actions button:hover {
+    background: #22313e;
+    border-color: rgba(148, 163, 184, 0.38);
+}
+
+.transaction-chat-guest-call-close:hover {
+    color: #ffffff;
+    background: rgba(148, 163, 184, 0.18);
+}
+
+.transaction-chat-guest-call-actions a:focus-visible,
+.transaction-chat-guest-call-actions button:focus-visible,
+.transaction-chat-guest-call-close:focus-visible {
+    outline: 2px solid #8be3fb;
+    outline-offset: 3px;
+}
+
 @media (max-width: 600px) {
     .floating-messages-launcher {
         right: 16px;
@@ -2763,6 +2932,29 @@
 
     .transaction-chat-composer {
         padding: 13px;
+    }
+
+    .transaction-chat-guest-call-card {
+        padding: 28px 20px 22px;
+    }
+
+    .transaction-chat-guest-call-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .transaction-chat-guest-call-actions a,
+    .transaction-chat-guest-call-actions button {
+        width: 100%;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .transaction-chat-guest-call-dialog,
+    .transaction-chat-guest-call-dialog::backdrop,
+    .transaction-chat-guest-call-actions a,
+    .transaction-chat-guest-call-actions button {
+        transition-duration: 0.01ms;
     }
 }
 

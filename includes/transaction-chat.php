@@ -21,6 +21,7 @@ $transactionChatConfig = chatScaledroneConfig();
 $transactionChatChannelId = $transactionChatConfig['channel_id'] ?? '';
 $transactionChatCsrfToken = generateCsrfToken();
 $transactionChatConversationType = $transactionChatConversationType ?? 'transaction';
+$transactionChatConversationClass = $transactionChatConversationClass ?? 'private';
 $transactionChatConversationDbId = $transactionChatConversationDbId ?? 0;
 $transactionChatDisplayName = $transactionChatDisplayName ?? (string) $transactionChatReference;
 $transactionChatHasContext = $transactionChatConversationType === 'transaction'
@@ -28,10 +29,17 @@ $transactionChatHasContext = $transactionChatConversationType === 'transaction'
 $transactionChatGuestSubmission = $transactionChatGuestSubmission ?? false;
 $transactionChatCallsEnabled = !$transactionChatGuestSubmission
     && in_array(
+        $transactionChatConversationClass,
+        ['transaction', 'claimed_submission', 'private'],
+        true
+    )
+    && in_array(
         $transactionChatConversationType,
         ['transaction', 'private'],
         true
     );
+$transactionChatGuestCallPromptEnabled = $transactionChatGuestSubmission
+    && $transactionChatActor['actor_type'] === 'guest';
 $transactionChatCallPeer = null;
 if ($transactionChatCallsEnabled && (int) $transactionChatConversationDbId > 0) {
     try {
@@ -46,9 +54,11 @@ if ($transactionChatCallsEnabled && (int) $transactionChatConversationDbId > 0) 
 $transactionChatIceServers = $transactionChatCallsEnabled
     ? chatWebRtcIceServers()
     : [];
-$transactionChatInputId = $transactionChatHasContext
-    ? 'transaction-' . (int) $transactionChatId
-    : 'conversation-' . (int) $transactionChatConversationDbId;
+$transactionChatInputId = $transactionChatGuestSubmission
+    ? 'conversation-' . (int) $transactionChatConversationDbId
+    : ($transactionChatHasContext
+        ? 'transaction-' . (int) $transactionChatId
+        : 'conversation-' . (int) $transactionChatConversationDbId);
 $transactionChatItems = $transactionChatSubmissionItems ?? [];
 $transactionChatPhotos = $transactionChatPhotosByItem ?? [];
 $transactionChatPhoto = null;
@@ -67,6 +77,7 @@ foreach ($transactionChatItems as $transactionChatItem) {
     class="transaction-chat"
     data-transaction-chat
     data-conversation-type="<?= htmlspecialchars($transactionChatConversationType, ENT_QUOTES, 'UTF-8') ?>"
+    data-conversation-class="<?= htmlspecialchars($transactionChatConversationClass, ENT_QUOTES, 'UTF-8') ?>"
     data-conversation-id="<?= (int) $transactionChatConversationDbId ?>"
     data-transaction-id="<?= (int) $transactionChatId ?>"
     data-actor-type="<?= htmlspecialchars(
@@ -131,12 +142,16 @@ foreach ($transactionChatItems as $transactionChatItem) {
         <div>
             <span class="transaction-chat-eyebrow">
                 <?= $transactionChatHasContext
-                    ? 'TRANSACTION MESSAGES'
+                    ? ($transactionChatGuestSubmission ? 'SUBMISSION MESSAGES' : 'TRANSACTION MESSAGES')
                     : htmlspecialchars(strtoupper($transactionChatConversationType) . ' CHAT', ENT_QUOTES, 'UTF-8')
                 ?>
             </span>
             <h2><?= htmlspecialchars(
-                $transactionChatHasContext ? 'Chat about this transaction' : $transactionChatDisplayName,
+                $transactionChatHasContext
+                    ? ($transactionChatGuestSubmission
+                        ? 'Chat about this submission'
+                        : 'Chat about this transaction')
+                    : $transactionChatDisplayName,
                 ENT_QUOTES,
                 'UTF-8'
             ) ?></h2>
@@ -158,11 +173,11 @@ foreach ($transactionChatItems as $transactionChatItem) {
                     aria-label="Revoke guest access to this conversation"
                 >Revoke guest access</button>
             <?php endif; ?>
-            <?php if ($transactionChatCallsEnabled): ?>
-                <button type="button" class="transaction-chat-call-button" data-chat-call-audio disabled>
+            <?php if ($transactionChatCallsEnabled || $transactionChatGuestCallPromptEnabled): ?>
+                <button type="button" class="transaction-chat-call-button" data-chat-call-audio<?= $transactionChatGuestCallPromptEnabled ? '' : ' disabled' ?>>
                     <span aria-hidden="true">☎</span> Audio call
                 </button>
-                <button type="button" class="transaction-chat-call-button" data-chat-call-video disabled>
+                <button type="button" class="transaction-chat-call-button" data-chat-call-video<?= $transactionChatGuestCallPromptEnabled ? '' : ' disabled' ?>>
                     <span aria-hidden="true">▣</span> Video call
                 </button>
             <?php endif; ?>
@@ -172,6 +187,42 @@ foreach ($transactionChatItems as $transactionChatItem) {
             </span>
         </div>
     </header>
+
+    <?php if ($transactionChatGuestCallPromptEnabled): ?>
+    <dialog
+        class="transaction-chat-guest-call-dialog"
+        data-guest-call-dialog
+        aria-modal="true"
+        aria-labelledby="transaction-chat-guest-call-title"
+        aria-describedby="transaction-chat-guest-call-description"
+    >
+        <div class="transaction-chat-guest-call-card">
+            <button
+                type="button"
+                class="transaction-chat-guest-call-close"
+                data-guest-call-close
+                aria-label="Close call registration information"
+            >×</button>
+            <span class="transaction-chat-eyebrow">SELLER ACCOUNT REQUIRED</span>
+            <h2 id="transaction-chat-guest-call-title">Voice and video calls</h2>
+            <p id="transaction-chat-guest-call-description">
+                To use calls, create a Seller account and securely claim this submission. Calling becomes available only after the claim succeeds and the conversation is eligible.
+            </p>
+            <p class="transaction-chat-guest-call-note">
+                Creating an account alone does not transfer this chat. A successful claim makes this existing conversation and its history available in your Seller account.
+            </p>
+            <div class="transaction-chat-guest-call-actions">
+                <a
+                    class="transaction-chat-guest-call-register"
+                    href="/VNZ-TECH/account/register.php"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                >Create Seller Account</a>
+                <button type="button" data-guest-call-close>Keep Chatting</button>
+            </div>
+        </div>
+    </dialog>
+    <?php endif; ?>
 
     <?php if ($transactionChatCallsEnabled): ?>
     <section

@@ -191,7 +191,7 @@ function chatGetAuthorizedScaledroneRoom(
         'transaction_id' => $conversation['transaction_id'] === null
             ? null
             : (int) $conversation['transaction_id'],
-        'guest_submission' => $conversation['submission_id'] !== null,
+        'guest_submission' => !empty($conversation['guest_submission']),
         'channel_id' => $config['channel_id'],
         'secret_key' => $config['secret_key'],
         'room' => $room

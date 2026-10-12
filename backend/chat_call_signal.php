@@ -127,7 +127,7 @@ try {
         $event
     );
     if ($callResult['duplicate']) {
-        if ($callResult['relay'] ?? false) {
+        if (chatCallSignalShouldPublishDuplicate($callResult)) {
             $delivery = chatPublishCallEvent($conversationId, $actor, $event);
             if ($delivery !== 'published') {
                 chatJsonResponse(

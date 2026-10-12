@@ -228,14 +228,14 @@ $initialAlertMessage =
 
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/seller_dashboard.css?v=20261006-seller-2fa-preference"
+        href="/VNZ-TECH/assets/css/seller_dashboard.css?v=<?= filemtime(__DIR__ . '/../assets/css/seller_dashboard.css') ?>"
     >
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261012-guest-presence"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261013-guest-calls"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261012-guest-presence"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261013-guest-calls"
         defer
     ></script>
     <script
@@ -1978,6 +1978,81 @@ $initialAlertMessage =
 
         }
     );
+
+    contentArea.addEventListener('submit', function (event) {
+        const form = event.target.closest('[data-guest-claim-form]');
+        if (!form) {
+            return;
+        }
+        event.preventDefault();
+
+        const selected = form.querySelectorAll(
+            'input[name="submission_ids[]"]:checked'
+        );
+        const feedback = form.querySelector('[data-guest-claim-feedback]');
+        if (!selected.length) {
+            feedback.textContent = 'Select at least one eligible submission.';
+            return;
+        }
+
+        feedback.textContent = '';
+        const dialog = form.querySelector('[data-guest-claim-dialog]');
+        if (dialog && typeof dialog.showModal === 'function') {
+            dialog.showModal();
+        } else {
+            feedback.textContent = 'Submission confirmation is not supported by this browser.';
+        }
+    });
+
+    contentArea.addEventListener('click', async function (event) {
+        const closeClaimButton = event.target.closest('[data-close-guest-claim]');
+        if (closeClaimButton) {
+            const dialog = closeClaimButton.closest('[data-guest-claim-dialog]');
+            if (dialog) dialog.close();
+            return;
+        }
+
+        const confirmClaimButton = event.target.closest('[data-confirm-guest-claim]');
+        if (!confirmClaimButton) {
+            return;
+        }
+
+        const dialog = confirmClaimButton.closest('[data-guest-claim-dialog]');
+        const form = dialog ? dialog.closest('[data-guest-claim-form]') : null;
+        const feedback = form
+            ? form.querySelector('[data-guest-claim-feedback]')
+            : null;
+        if (!form || !feedback) {
+            return;
+        }
+
+        confirmClaimButton.disabled = true;
+        feedback.textContent = 'Claiming selected submissions…';
+        try {
+            const data = new FormData(form);
+            const response = await fetch('/VNZ-TECH/backend/guest_submission_claim.php', {
+                method: 'POST',
+                body: data,
+                credentials: 'same-origin',
+                cache: 'no-store',
+                headers: {'Accept': 'application/json'}
+            });
+            const result = await response.json();
+            if (!response.ok || !result.success) {
+                throw new Error(result.message || 'Unable to claim the selected submissions.');
+            }
+
+            dialog.close();
+            feedback.textContent = result.message;
+            form.querySelector('fieldset').hidden = true;
+            const submitButton = form.querySelector('.guest-claim-submit');
+            if (submitButton) submitButton.hidden = true;
+        } catch (error) {
+            feedback.textContent = error.message || 'Unable to claim the selected submissions.';
+        } finally {
+            confirmClaimButton.disabled = false;
+        }
+    });
 
 
     window.loadSellerPage =
