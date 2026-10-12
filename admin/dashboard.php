@@ -41,11 +41,11 @@ $csrfToken = generateCsrfToken();
         href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261013-guest-calls"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261013-guest-calls"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261014-call-media-feedback"
         defer
     ></script>
     <script
-        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261012-guest-presence"
+        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261014-call-media-feedback"
         defer
     ></script>
 

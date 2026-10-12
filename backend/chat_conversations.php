@@ -269,7 +269,9 @@ try {
                 $conversationData['display_name'] =
                     $actor['actor_type'] === 'admin'
                         ? 'SELLER - '
-                            . (trim((string) ($context['seller_full_name'] ?? '')) ?: 'Seller')
+                            . guestSubmissionSellerDisplayName(
+                                $context['seller_full_name'] ?? null
+                            )
                         : 'ADMIN';
             } else {
                 $conversationData['display_name'] =

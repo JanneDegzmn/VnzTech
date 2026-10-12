@@ -732,7 +732,10 @@
             || conversationId <= 0
             || payload.to_actor_type !== root.dataset.actorType
             || Number(payload.to_actor_id) !== Number(root.dataset.actorId)
-            || payload.actor_type === root.dataset.actorType
+            || (
+                payload.actor_type === root.dataset.actorType
+                && Number(payload.actor_id) === Number(root.dataset.actorId)
+            )
             || !['audio', 'video'].includes(payload.mode)
             || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
                 .test(String(payload.call_id || ''))
@@ -1505,6 +1508,12 @@
             const mode = event.detail?.mode;
             requestCall(root, conversationId, mode)
                 .catch(error => showCallRequestError(root, error));
+        });
+        window.addEventListener('vnz:call-media-error', event => {
+            const message = event.detail?.message;
+            if (typeof message === 'string' && message.trim() !== '') {
+                showCallRequestError(root, new Error(message));
+            }
         });
         window.addEventListener('vnz:call-controller-released', event => {
             const conversationId = Number(event.detail?.conversationId);

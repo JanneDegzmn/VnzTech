@@ -6,10 +6,61 @@
     const landmarkImageUrl = '/VNZ-TECH/assets/images/location.jpg';
     const bookingMessagePrefix = 'LALAMOVE_BOOKING_V1';
     let activeVoiceChat = null;
+    let voiceMediaAcquisitionInFlight = 0;
     let activeCallChat = null;
     let activeCallSessionId = null;
     let guestPresenceHeartbeatTimer = null;
     let guestPresenceHeartbeatInFlight = false;
+
+    // Diagnostic-only registry of VNZ-owned media streams (voice-message recording
+    // and live call local streams). Used solely to report counts/states of active
+    // recorder/call tracks at the video-call media request, so a NotReadableError
+    // can be distinguished between a VNZ stream leak and an external device owner.
+    // Never stores device labels, ids, tokens, SDP, or credentials.
+    const vnzOwnedMediaStreams = new Set();
+
+    function registerVnzMediaStream(stream) {
+        if (stream && typeof stream.getTracks === 'function') {
+            vnzOwnedMediaStreams.add(stream);
+        }
+    }
+
+    function unregisterVnzMediaStream(stream) {
+        if (stream) {
+            vnzOwnedMediaStreams.delete(stream);
+        }
+    }
+
+    function vnzOwnedMediaTrackSummary() {
+        let audioLive = 0;
+        let videoLive = 0;
+        let audioEnded = 0;
+        let videoEnded = 0;
+        vnzOwnedMediaStreams.forEach(stream => {
+            stream.getTracks().forEach(track => {
+                if (track.kind === 'audio') {
+                    if (track.readyState === 'live') {
+                        audioLive += 1;
+                    } else {
+                        audioEnded += 1;
+                    }
+                } else if (track.kind === 'video') {
+                    if (track.readyState === 'live') {
+                        videoLive += 1;
+                    } else {
+                        videoEnded += 1;
+                    }
+                }
+            });
+        });
+        return {
+            streams: vnzOwnedMediaStreams.size,
+            audioLive,
+            videoLive,
+            audioEnded,
+            videoEnded
+        };
+    }
 
     function ensureCallOwnerHost() {
         let host = document.querySelector('[data-call-owner-host]');
@@ -220,7 +271,7 @@
         return payload.data || {};
     }
 
-    async function postForm(url, fields) {
+    async function postForm(url, fields, signal = null, onResponse = null) {
         const response = await fetch(url, {
             method: 'POST',
             credentials: 'same-origin',
@@ -228,8 +279,12 @@
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
             },
-            body: new URLSearchParams(fields)
+            body: new URLSearchParams(fields),
+            signal: signal || undefined
         });
+        if (typeof onResponse === 'function') {
+            onResponse(response.status);
+        }
 
         return readJsonResponse(response);
     }
@@ -1507,6 +1562,8 @@
         const localVideo = widget.querySelector('[data-chat-call-local-video]');
         const remoteAudio = widget.querySelector('[data-chat-call-remote-audio]');
         const callAcceptButton = widget.querySelector('[data-chat-call-accept]');
+        const callAcceptButtonLabel = Array.from(callAcceptButton?.childNodes || [])
+            .find(node => node.nodeType === 3) || null;
         const callDeclineButton = widget.querySelector('[data-chat-call-decline]');
         const callCancelButton = widget.querySelector('[data-chat-call-cancel]');
         const callSoundButton = widget.querySelector('[data-chat-call-sound]');
@@ -1753,6 +1810,7 @@
         let callToneContext = null;
         let callToneTimer = null;
         let callToneOscillators = [];
+        let callToneGeneration = 0;
         let requestedCallTone = '';
         let callToneBlocked = false;
         let callWindowBounds = null;
@@ -1956,9 +2014,34 @@
                 voiceRecordingTimer = null;
             }
             if (voiceMediaStream) {
+                unregisterVnzMediaStream(voiceMediaStream);
                 voiceMediaStream.getTracks().forEach(track => track.stop());
                 voiceMediaStream = null;
             }
+        }
+
+        function voiceRecorderBlocksCall() {
+            const recorderState = voiceMediaRecorder?.state;
+            const hasLiveMicrophoneTrack = voiceMediaStream
+                ?.getAudioTracks()
+                .some(track => track.readyState === 'live') === true;
+            return voiceMediaAcquisitionInFlight > 0
+                || activeVoiceChat !== null
+                || ['requesting', 'recording', 'processing'].includes(voiceState)
+                || recorderState === 'recording'
+                || recorderState === 'paused'
+                || hasLiveMicrophoneTrack;
+        }
+
+        function showVoiceRecorderCallBlock(call = null) {
+            const message = 'Finish or cancel the voice recording before starting or accepting a call.';
+            if (call && currentCall === call) {
+                call.statusText = message;
+                updateCallControls();
+            } else {
+                showCallOutcome('Call unavailable', message);
+            }
+            setStatus(message, 'warning');
         }
 
         function releaseVoicePreview() {
@@ -2061,6 +2144,13 @@
 
         async function startVoiceRecording() {
             if (
+                activeCallChat !== null
+                || ['incoming', 'outgoing', 'connecting', 'active'].includes(currentCall?.state)
+            ) {
+                setAttachmentError('Voice recording is unavailable during a call.');
+                return;
+            }
+            if (
                 voiceState !== 'idle'
                 || activeVoiceChat
                 || selectedAttachment
@@ -2103,6 +2193,7 @@
             setAttachmentError();
             updateVoiceControls();
 
+            voiceMediaAcquisitionInFlight++;
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({audio: true});
                 if (
@@ -2115,6 +2206,7 @@
                 }
 
                 voiceMediaStream = stream;
+                registerVnzMediaStream(stream);
                 voiceRecordingChunks = [];
                 voiceRecordingDiscarded = false;
                 voiceRecordingError = '';
@@ -2162,6 +2254,11 @@
                 setAttachmentError(denied
                     ? 'Microphone permission was denied. Allow microphone access in your browser settings and try again.'
                     : 'The microphone is unavailable. Check your device and browser permissions.');
+            } finally {
+                voiceMediaAcquisitionInFlight = Math.max(
+                    0,
+                    voiceMediaAcquisitionInFlight - 1
+                );
             }
         }
 
@@ -2239,6 +2336,7 @@
         }
 
         function stopCallTone() {
+            callToneGeneration++;
             requestedCallTone = '';
             callToneBlocked = false;
             if (callToneTimer !== null) {
@@ -2268,8 +2366,15 @@
             }
         }
 
-        function playCallToneBurst() {
-            if (!callToneContext || callToneContext.state !== 'running' || !requestedCallTone) {
+        function playCallToneBurst(generation) {
+            if (
+                generation !== callToneGeneration
+                || !callToneContext
+                || callToneContext.state !== 'running'
+                || !requestedCallTone
+                || callToneTimer !== null
+                || callToneOscillators.length > 0
+            ) {
                 return;
             }
             const incoming = requestedCallTone === 'incoming';
@@ -2297,12 +2402,18 @@
                 callToneOscillators.push(oscillator);
             });
             callToneTimer = setTimeout(() => {
+                if (generation !== callToneGeneration) {
+                    return;
+                }
                 callToneTimer = null;
-                playCallToneBurst();
+                playCallToneBurst(generation);
             }, incoming ? 2600 : 5200);
         }
 
-        async function resumeCallTone() {
+        async function resumeCallTone(generation) {
+            if (generation !== callToneGeneration || !requestedCallTone) {
+                return;
+            }
             try {
                 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
                 if (!AudioContextClass) {
@@ -2313,14 +2424,25 @@
                 if (!callToneContext || callToneContext.state === 'closed') {
                     callToneContext = new AudioContextClass();
                 }
-                await callToneContext.resume();
-                if (callToneContext.state !== 'running') {
+                const context = callToneContext;
+                await context.resume();
+                if (
+                    generation !== callToneGeneration
+                    || !requestedCallTone
+                    || callToneContext !== context
+                ) {
+                    return;
+                }
+                if (context.state !== 'running') {
                     throw new Error('Audio playback is blocked by browser policy.');
                 }
                 callToneBlocked = false;
                 callSoundButton.hidden = true;
-                playCallToneBurst();
+                playCallToneBurst(generation);
             } catch (error) {
+                if (generation !== callToneGeneration || !requestedCallTone) {
+                    return;
+                }
                 callToneBlocked = true;
                 callSoundButton.hidden = false;
             }
@@ -2329,7 +2451,10 @@
         function startCallTone(kind) {
             stopCallTone();
             requestedCallTone = kind;
-            resumeCallTone();
+            if (currentCall) {
+                logVideoCallDiagnostic(currentCall, 'call-tone-started', null, {kind});
+            }
+            resumeCallTone(callToneGeneration);
         }
 
         function clampCallWindowBounds(bounds) {
@@ -2518,7 +2643,8 @@
                 String(Boolean(call && call.state !== 'active'))
             );
             callIndicator.hidden = !call || call.minimized !== true;
-            callAcceptButton.hidden = call?.state !== 'incoming';
+            callAcceptButton.hidden = call?.state !== 'incoming'
+                && call?.mediaRetryAvailable !== true;
             callDeclineButton.hidden = call?.state !== 'incoming';
             callCancelButton.hidden = call?.state !== 'outgoing';
             callMuteButton.hidden = call?.state !== 'active';
@@ -2558,6 +2684,15 @@
             const displayName = call.state === 'incoming' ? call.fromName : call.peerName;
             callTitle.textContent = displayName || 'Participant';
             callKind.textContent = `${call.mode === 'video' ? 'Video' : 'Voice'} call`;
+            if (callAcceptButtonLabel) {
+                callAcceptButtonLabel.textContent = call.mediaRetryAvailable
+                    ? ' Retry'
+                    : ' Accept';
+            }
+            callAcceptButton?.setAttribute(
+                'aria-label',
+                call.mediaRetryAvailable ? 'Retry call setup' : 'Accept call'
+            );
             callAvatar.replaceChildren(createChatAvatar(
                 call.profilePicture,
                 displayName,
@@ -2605,6 +2740,14 @@
         }
 
         function closeCallMedia(call) {
+            if (!call || call.mediaClosed) {
+                return;
+            }
+            call.mediaClosed = true;
+            call.iceRequests?.forEach(controller => controller.abort());
+            call.iceRequests?.clear();
+            const localStream = call.localStream;
+            const remoteStream = call.remoteStream;
             if (call.connection) {
                 call.connection.onicecandidate = null;
                 call.connection.ontrack = null;
@@ -2613,27 +2756,31 @@
                 call.connection.close();
                 call.connection = null;
             }
-            call.localStream?.getTracks().forEach(track => {
+            unregisterVnzMediaStream(localStream);
+            localStream?.getTracks().forEach(track => {
                 track.onended = null;
                 track.stop();
             });
             call.localStream = null;
-            call.remoteStream?.getTracks().forEach(track => {
+            call.videoSender = null;
+            call.iceCandidates = [];
+            call.pendingOffer = null;
+            remoteStream?.getTracks().forEach(track => {
                 track.onmute = null;
                 track.onunmute = null;
                 track.onended = null;
                 track.stop();
             });
             call.remoteStream = null;
-            if (remoteVideo) {
+            if (remoteVideo?.srcObject === remoteStream) {
                 remoteVideo.pause();
                 remoteVideo.srcObject = null;
             }
-            if (remoteAudio) {
+            if (remoteAudio?.srcObject === remoteStream) {
                 remoteAudio.pause();
                 remoteAudio.srcObject = null;
             }
-            if (localVideo) {
+            if (localVideo?.srcObject === localStream) {
                 localVideo.pause();
                 localVideo.srcObject = null;
             }
@@ -2671,20 +2818,144 @@
             }, hideAfterMs);
         }
 
+        function logVideoCallDiagnostic(call, stage, error = null, details = {}) {
+            if (call?.mode !== 'video') {
+                return;
+            }
+            const connection = call.connection;
+            const monotonicMs = window.performance?.now?.() ?? Date.now();
+            const diagnostic = {
+                stage,
+                correlationId: call.id,
+                monotonicMs: Math.round(monotonicMs),
+                elapsedMs: Number.isFinite(call.startedAt)
+                    ? Math.round(monotonicMs - call.startedAt)
+                    : null,
+                mode: call.mode,
+                state: call.state,
+                mediaAcquisition: call.mediaAcquisition || 'not-started',
+                terminal: call.terminal === true,
+                acceptSent: call.acceptSent === true,
+                offerPending: Boolean(call.pendingOffer),
+                connectionState: connection?.connectionState || null,
+                iceConnectionState: connection?.iceConnectionState || null,
+                signalingState: connection?.signalingState || null,
+                vnzOwnedTracks: vnzOwnedMediaTrackSummary(),
+                ...details
+            };
+            if (error) {
+                diagnostic.errorName = typeof error.name === 'string'
+                    ? error.name.slice(0, 64)
+                    : 'Error';
+                diagnostic.errorMessage = typeof error.message === 'string'
+                    ? error.message.replace(/[\r\n\t]+/g, ' ').slice(0, 160)
+                    : 'Unknown error';
+                if (Number.isInteger(error.status)) {
+                    diagnostic.httpStatus = error.status;
+                    diagnostic.errorCode = `HTTP_${error.status}`;
+                }
+            }
+            console.warn(
+                '[chat-video-call-timing] ' + JSON.stringify(diagnostic)
+            );
+        }
+
+        function callTimingNow() {
+            return window.performance?.now?.() ?? Date.now();
+        }
+
         function sendCallSignal(call, event, fields = {}) {
+            if (
+                event === 'call.ice'
+                && (call.terminal === true || currentCall !== call)
+            ) {
+                logVideoCallDiagnostic(call, 'stale-ice-ignored', null, {event});
+                return Promise.resolve({stale: true});
+            }
             if (
                 !callSignalReady
                 && !['call.cancel', 'call.decline', 'call.end', 'call.failed', 'call.missed']
                     .includes(event)
             ) {
-                return Promise.reject(new Error('Call signaling is disconnected.'));
+                const error = new Error('Call signaling is disconnected.');
+                logVideoCallDiagnostic(call, 'signal-failed', error, {event});
+                return Promise.reject(error);
             }
+            const iceController = event === 'call.ice'
+                && typeof AbortController === 'function'
+                ? new AbortController()
+                : null;
+            if (iceController) {
+                if (!call.iceRequests) {
+                    call.iceRequests = new Set();
+                }
+                call.iceRequests.add(iceController);
+            }
+            const requestStartedAt = callTimingNow();
+            logVideoCallDiagnostic(call, 'signal-request-start', null, {event});
             return postForm('/VNZ-TECH/backend/chat_call_signal.php', {
                 conversation_id: String(actualConversationId),
                 call_id: call.id,
                 call_event: event,
                 csrf_token: csrfToken,
                 ...fields
+            }, iceController?.signal, httpStatus => {
+                logVideoCallDiagnostic(call, 'signal-request-response', null, {
+                    event,
+                    durationMs: Math.round(callTimingNow() - requestStartedAt),
+                    httpStatus
+                });
+            }).then(result => {
+                if (event !== 'call.ice') {
+                    logVideoCallDiagnostic(call, 'signal-sent', null, {event});
+                }
+                return result;
+            }).catch(error => {
+                logVideoCallDiagnostic(call, 'signal-request-error', null, {
+                    event,
+                    durationMs: Math.round(callTimingNow() - requestStartedAt),
+                    httpStatus: Number.isInteger(error.status) ? error.status : null,
+                    errorName: typeof error.name === 'string' ? error.name : 'Error'
+                });
+                if (iceController?.signal.aborted && error.name === 'AbortError') {
+                    logVideoCallDiagnostic(call, 'ice-request-aborted', null, {event});
+                    return {stale: true};
+                }
+                if (
+                    event === 'call.ice'
+                    && error.status === 409
+                ) {
+                    if (call.terminal === true) {
+                        // Already torn down locally; nothing left to clean up.
+                        logVideoCallDiagnostic(
+                            call,
+                            'stale-ice-rejected-after-terminal',
+                            error,
+                            {event}
+                        );
+                        return {stale: true};
+                    }
+                    // The backend reports the call session already ended (for
+                    // example the peer's terminal signal was processed before
+                    // this in-flight ICE request). Clean up locally without
+                    // sending a redundant call.failed signal.
+                    logVideoCallDiagnostic(
+                        call,
+                        'stale-ice-rejected-session-ended',
+                        error,
+                        {event}
+                    );
+                    if (currentCall === call) {
+                        finishCall('The other participant ended the call.', null, 'ice-session-ended');
+                    }
+                    return {stale: true};
+                }
+                logVideoCallDiagnostic(call, 'signal-failed', error, {event});
+                throw error;
+            }).finally(() => {
+                if (iceController) {
+                    call.iceRequests?.delete(iceController);
+                }
             });
         }
 
@@ -2701,8 +2972,36 @@
             }
         }
 
-        function finishCall(outcome, signalEvent = null) {
+        function finishCall(outcome, signalEvent = null, terminationSource = 'unspecified') {
             const call = currentCall;
+            if (call?.terminal) {
+                logVideoCallDiagnostic(call, 'duplicate-termination-ignored', null, {
+                    terminationSource,
+                    reason: typeof outcome === 'string' ? outcome.slice(0, 120) : null
+                });
+                return;
+            }
+            if (call) {
+                call.finishStartedAt = callTimingNow();
+            }
+            logVideoCallDiagnostic(call, 'terminal-cleanup-start', null, {
+                signalEvent,
+                terminationSource
+            });
+            stopCallTone();
+            logVideoCallDiagnostic(call, 'local-tone-stopped', null, {
+                durationMs: call
+                    ? Math.round(callTimingNow() - call.finishStartedAt)
+                    : null
+            });
+            if (call) {
+                call.terminal = true;
+            }
+            logVideoCallDiagnostic(call, 'finish', null, {
+                reason: typeof outcome === 'string' ? outcome.slice(0, 120) : null,
+                signalEvent,
+                cleanupStage: call?.diagnosticStage || 'unspecified'
+            });
             let terminalSignal = Promise.resolve();
             if (call && signalEvent && !disposed) {
                 terminalSignal = sendCallSignal(call, signalEvent).catch(() => {
@@ -2711,11 +3010,11 @@
                     }
                 });
             }
-            stopCallTone();
             if (call) {
                 restoreOriginatingConversation(call);
                 closeCallMedia(call);
             }
+            logVideoCallDiagnostic(call, 'local-media-cleanup-complete');
             callWindowPointerOperation = null;
             callWindowBounds = null;
             callPanel.classList.remove(
@@ -2743,6 +3042,7 @@
                     : '');
             }
             updateCallControls();
+            logVideoCallDiagnostic(call, 'terminal-local-cleanup-complete');
             if (call) {
                 terminalSignal.finally(async () => {
                     if (!disposed && !widget.hasAttribute('data-call-controller-only')) {
@@ -2784,13 +3084,15 @@
             if (currentCall !== call) {
                 return;
             }
+            logVideoCallDiagnostic(call, call.diagnosticStage || 'signaling', error);
             finishCall(
                 `Call failed: ${error.message || 'signaling unavailable'}.`,
                 call.state === 'outgoing'
                     ? (call.inviteAttempted ? 'call.failed' : null)
                     : call.state === 'incoming'
                         ? 'call.decline'
-                        : 'call.failed'
+                        : 'call.failed',
+                'signaling-failure'
             );
         }
 
@@ -2798,22 +3100,56 @@
             if (typeof window.RTCPeerConnection !== 'function') {
                 throw new Error('WebRTC calling is not supported by this browser.');
             }
+            registerVnzMediaStream(call.localStream);
+            call.peerSetupStartedAt = callTimingNow();
             const connection = new window.RTCPeerConnection({iceServers});
             call.connection = connection;
             call.iceCandidates = [];
+            call.iceCandidateCounts = {host: 0, srflx: 0, prflx: 0, relay: 0, other: 0};
+            call.iceGatheringStartedAt = callTimingNow();
             call.remoteStream = new MediaStream();
+            const iceServerTypes = iceServers.flatMap(server => {
+                const urls = Array.isArray(server?.urls) ? server.urls : [server?.urls];
+                return urls.map(url => {
+                    const scheme = typeof url === 'string' ? url.match(/^(stuns?|turns?):/i) : null;
+                    return scheme ? scheme[1].toLowerCase().replace(/s$/, '') : 'other';
+                });
+            });
+            logVideoCallDiagnostic(call, 'peer-connection-created', null, {
+                peerSetupDurationMs: Math.round(callTimingNow() - call.peerSetupStartedAt),
+                iceServerTypes: [...new Set(iceServerTypes)],
+                iceTransportPolicy: 'all'
+            });
             connection.onicecandidate = event => {
-                if (!event.candidate || currentCall !== call) {
+                if (event.candidate && currentCall === call && !call.terminal) {
+                    const candidateType = ['host', 'srflx', 'prflx', 'relay']
+                        .includes(event.candidate.type)
+                        ? event.candidate.type
+                        : 'other';
+                    call.iceCandidateCounts[candidateType]++;
+                    logVideoCallDiagnostic(call, 'ice-candidate-gathered', null, {
+                        candidateType
+                    });
+                    sendCallSignal(call, 'call.ice', {
+                        candidate: JSON.stringify(event.candidate.toJSON())
+                    }).catch(error => signalFailure(call, error));
                     return;
                 }
-                sendCallSignal(call, 'call.ice', {
-                    candidate: JSON.stringify(event.candidate.toJSON())
-                }).catch(error => signalFailure(call, error));
+                if (!event.candidate && currentCall === call && !call.terminal) {
+                    logVideoCallDiagnostic(call, 'ice-gathering-complete', null, {
+                        durationMs: Math.round(callTimingNow() - call.iceGatheringStartedAt),
+                        candidateCounts: {...call.iceCandidateCounts}
+                    });
+                }
             };
             connection.ontrack = event => {
                 if (currentCall !== call) {
                     return;
                 }
+                logVideoCallDiagnostic(call, 'remote-track', null, {
+                    trackKind: event.track.kind,
+                    trackState: event.track.readyState
+                });
                 const stream = event.streams?.[0];
                 if (stream) {
                     call.remoteStream = stream;
@@ -2851,7 +3187,13 @@
                     return;
                 }
                 const state = connection.connectionState;
+                logVideoCallDiagnostic(call, 'connection-state-change', null, {state});
                 if (state === 'connected') {
+                    const toneStopStartedAt = callTimingNow();
+                    stopCallTone();
+                    logVideoCallDiagnostic(call, 'connected-tone-stopped', null, {
+                        durationMs: Math.round(callTimingNow() - toneStopStartedAt)
+                    });
                     if (callDisconnectTimer !== null) {
                         clearTimeout(callDisconnectTimer);
                         callDisconnectTimer = null;
@@ -2871,6 +3213,7 @@
                         Date.now() - callDurationStartedAt
                     )}`;
                     updateCallDuration(call);
+                    logVideoCallDiagnostic(call, 'connected-ui-updated');
                     confirmCallConnected(call);
                     updateCallControls();
                 } else if (state === 'disconnected') {
@@ -2881,7 +3224,8 @@
                             if (currentCall === call && connection.connectionState !== 'connected') {
                                 finishCall(
                                     'Call ended because the connection was lost.',
-                                    'call.failed'
+                                    'call.failed',
+                                    'peer-disconnected-timeout'
                                 );
                             }
                         }, 15000);
@@ -2889,12 +3233,19 @@
                 } else if (state === 'failed' || state === 'closed') {
                     finishCall(
                         'Call failed because a media connection could not be established.',
-                        'call.failed'
+                        'call.failed',
+                        `peer-${state}`
                     );
                 }
             };
             connection.onconnectionstatechange = updateConnectionState;
-            connection.oniceconnectionstatechange = updateConnectionState;
+            connection.oniceconnectionstatechange = () => {
+                logVideoCallDiagnostic(call, 'ice-connection-state-change', null, {
+                    state: connection.iceConnectionState,
+                    gatheringState: connection.iceGatheringState
+                });
+                updateConnectionState();
+            };
             call.localStream.getTracks().forEach(track => {
                 const sender = connection.addTrack(track, call.localStream);
                 if (track.kind === 'video') {
@@ -2905,9 +3256,16 @@
                 localVideo.srcObject = call.localStream;
                 callVideoPlaceholder.hidden = false;
             }
+            logVideoCallDiagnostic(call, 'peer-configuration-complete', null, {
+                durationMs: Math.round(callTimingNow() - call.peerSetupStartedAt)
+            });
         }
 
         async function startCall(mode) {
+            if (voiceRecorderBlocksCall()) {
+                showVoiceRecorderCallBlock();
+                return;
+            }
             if (currentCall || activeCallChat || !callSignalReady) {
                 if (activeCallChat && activeCallChat !== widget) {
                     showCallOutcome('Call unavailable', 'Finish the call in the other chat first.');
@@ -2929,6 +3287,7 @@
 
             const call = {
                 id: createCallId(),
+                startedAt: callTimingNow(),
                 mode,
                 state: 'outgoing',
                 peerName: conversationPeerName,
@@ -2956,24 +3315,53 @@
             }
             callPanel.hidden = false;
             updateCallControls();
+            logVideoCallDiagnostic(call, 'caller-start');
             try {
-                call.localStream = await navigator.mediaDevices.getUserMedia({
+                call.diagnosticStage = 'get-user-media';
+                call.mediaAcquisition = 'pending';
+                const mediaStartedAt = callTimingNow();
+                logVideoCallDiagnostic(call, 'caller-get-user-media-start');
+                const localStream = await navigator.mediaDevices.getUserMedia({
                     audio: true,
                     video: mode === 'video'
                 });
-                if (currentCall !== call || disposed) {
-                    closeCallMedia(call);
+                logVideoCallDiagnostic(call, 'caller-get-user-media-complete', null, {
+                    durationMs: Math.round(callTimingNow() - mediaStartedAt)
+                });
+                if (currentCall !== call || call.terminal || disposed) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    call.mediaAcquisition = 'resolved-after-call-ended';
+                    logVideoCallDiagnostic(call, 'late-media-stopped');
                     return;
                 }
+                call.localStream = localStream;
+                call.mediaAcquisition = 'resolved';
+                logVideoCallDiagnostic(call, 'local-media-ready', null, {
+                    tracks: call.localStream.getTracks().map(track => ({
+                        kind: track.kind,
+                        state: track.readyState,
+                        enabled: track.enabled
+                    }))
+                });
+                call.diagnosticStage = 'peer-setup';
                 await configureCallPeer(call);
+                logVideoCallDiagnostic(call, 'peer-configured', null, {
+                    tracks: call.localStream.getTracks().map(track => ({
+                        kind: track.kind,
+                        state: track.readyState,
+                        enabled: track.enabled
+                    }))
+                });
                 call.statusText = `Calling ${call.peerName}…`;
                 updateCallControls();
                 callUnansweredTimer = setTimeout(() => {
                     if (currentCall === call && call.state === 'outgoing') {
-                        finishCall('No answer. The call was missed.', 'call.missed');
+                        call.diagnosticStage = 'outgoing-no-answer-timeout';
+                        finishCall('No answer. The call was missed.', 'call.missed', 'caller-no-answer-timeout');
                     }
                 }, 35000);
                 call.inviteAttempted = true;
+                call.diagnosticStage = 'send-invite';
                 await sendCallSignal(call, 'call.invite', {mode});
                 if (currentCall === call && call.state === 'outgoing') {
                     call.statusText = 'Ringing…';
@@ -2981,53 +3369,186 @@
                     updateCallControls();
                 }
             } catch (error) {
+                if (call.diagnosticStage === 'get-user-media') {
+                    call.mediaAcquisition = 'rejected';
+                }
+                if (currentCall !== call || call.terminal || disposed) {
+                    logVideoCallDiagnostic(call, 'late-call-setup-failure', error);
+                    return;
+                }
+                logVideoCallDiagnostic(call, call.diagnosticStage || 'call-setup', error);
                 const detail = callMediaErrorMessage(error) || error.message || 'Call setup failed.';
                 finishCall(
                     `Call failed: ${detail}`,
                     call.state === 'outgoing'
                         ? (call.inviteAttempted ? 'call.failed' : null)
-                        : 'call.failed'
+                        : 'call.failed',
+                    'caller-setup-failure'
                 );
             }
         }
 
         async function acceptCall() {
             const call = currentCall;
-            if (!call || call.state !== 'incoming') {
+            if (
+                !call
+                || (call.state !== 'incoming' && call.mediaRetryAvailable !== true)
+                || call.mediaSetupInProgress === true
+            ) {
                 return;
             }
+            const isMediaRetry = call.mediaRetryAvailable === true;
+            call.mediaRetryAvailable = false;
+            call.mediaSetupInProgress = true;
+            logVideoCallDiagnostic(call, 'receiver-accept-click');
+            if (voiceRecorderBlocksCall()) {
+                call.mediaSetupInProgress = false;
+                call.mediaRetryAvailable = isMediaRetry;
+                showVoiceRecorderCallBlock(call);
+                return;
+            }
+            call.mediaAcquisitionAttempts = (call.mediaAcquisitionAttempts || 0) + 1;
+            const toneStopStartedAt = callTimingNow();
             stopCallTone();
+            logVideoCallDiagnostic(call, 'accept-tone-stopped', null, {
+                durationMs: Math.round(callTimingNow() - toneStopStartedAt)
+            });
+            if (call.state === 'incoming' && callUnansweredTimer !== null) {
+                clearTimeout(callUnansweredTimer);
+                callUnansweredTimer = null;
+            }
             if (
                 !navigator.mediaDevices?.getUserMedia
                 || typeof window.RTCPeerConnection !== 'function'
             ) {
-                finishCall('This browser does not support live calls.', 'call.decline');
+                finishCall('This browser does not support live calls.', 'call.decline', 'receiver-browser-unsupported');
                 return;
             }
             call.state = 'connecting';
             call.statusText = 'Connecting…';
             updateCallControls();
             try {
-                call.localStream = await navigator.mediaDevices.getUserMedia({
+                const startConnectTimeout = () => {
+                    if (callUnansweredTimer !== null) {
+                        return;
+                    }
+                    callUnansweredTimer = setTimeout(() => {
+                        if (currentCall === call && call.state !== 'active') {
+                            call.diagnosticStage = 'callee-connect-timeout';
+                            finishCall('The call could not connect.', 'call.failed', 'receiver-connect-timeout');
+                        }
+                    }, 30000);
+                };
+                if (call.mode === 'video' && !call.acceptSent) {
+                    call.diagnosticStage = 'send-accept';
+                    await sendCallSignal(call, 'call.accept');
+                    call.acceptSent = true;
+                }
+                startConnectTimeout();
+                call.diagnosticStage = 'get-user-media';
+                call.mediaAcquisition = 'pending';
+                const mediaStartedAt = callTimingNow();
+                logVideoCallDiagnostic(call, 'receiver-get-user-media-start', null, {
+                    attempt: call.mediaAcquisitionAttempts
+                });
+                const localStream = await navigator.mediaDevices.getUserMedia({
                     audio: true,
                     video: call.mode === 'video'
                 });
-                if (currentCall !== call || disposed) {
-                    closeCallMedia(call);
+                logVideoCallDiagnostic(call, 'receiver-get-user-media-complete', null, {
+                    durationMs: Math.round(callTimingNow() - mediaStartedAt)
+                });
+                if (currentCall !== call || call.terminal || disposed) {
+                    localStream.getTracks().forEach(track => track.stop());
+                    call.mediaAcquisition = 'resolved-after-call-ended';
+                    logVideoCallDiagnostic(call, 'late-media-stopped');
                     return;
                 }
+                call.localStream = localStream;
+                call.mediaAcquisition = 'resolved';
+                logVideoCallDiagnostic(call, 'local-media-ready', null, {
+                    tracks: call.localStream.getTracks().map(track => ({
+                        kind: track.kind,
+                        state: track.readyState,
+                        enabled: track.enabled
+                    }))
+                });
+                call.diagnosticStage = 'peer-setup';
                 await configureCallPeer(call);
-                await sendCallSignal(call, 'call.accept');
-                callUnansweredTimer = setTimeout(() => {
-                    if (currentCall === call && call.state !== 'active') {
-                        finishCall('The call could not connect.', 'call.failed');
-                    }
-                }, 30000);
-                call.statusText = 'Connecting…';
+                logVideoCallDiagnostic(call, 'peer-configured', null, {
+                    tracks: call.localStream.getTracks().map(track => ({
+                        kind: track.kind,
+                        state: track.readyState,
+                        enabled: track.enabled
+                    }))
+                });
+                if (!call.acceptSent) {
+                    call.diagnosticStage = 'send-accept';
+                    await sendCallSignal(call, 'call.accept');
+                    call.acceptSent = true;
+                }
+                if (call.pendingOffer) {
+                    const pendingOffer = call.pendingOffer;
+                    call.pendingOffer = null;
+                    await handleCallEvent(pendingOffer);
+                }
+                if (currentCall !== call || call.terminal || disposed) {
+                    return;
+                }
+                call.mediaSetupInProgress = false;
+                if (call.state !== 'active') {
+                    call.statusText = 'Connecting…';
+                }
                 updateCallControls();
             } catch (error) {
+                if (currentCall !== call || call.terminal || disposed) {
+                    if (call.diagnosticStage === 'get-user-media') {
+                        call.mediaAcquisition = 'rejected';
+                    }
+                    logVideoCallDiagnostic(call, 'late-call-setup-failure', error);
+                    return;
+                }
+                if (call.diagnosticStage === 'get-user-media') {
+                    call.mediaAcquisition = 'rejected';
+                }
+                logVideoCallDiagnostic(call, call.diagnosticStage || 'call-setup', error);
                 const detail = callMediaErrorMessage(error) || error.message || 'Call setup failed.';
-                finishCall(`Call failed: ${detail}`, 'call.decline');
+                if (
+                    call.diagnosticStage === 'get-user-media'
+                    && call.mediaAcquisitionAttempts < 2
+                    && !call.connection
+                    && !call.localStream
+                    && call.state === 'connecting'
+                ) {
+                    call.mediaSetupInProgress = false;
+                    call.mediaRetryAvailable = true;
+                    call.statusText = `Could not start the ${call.mode} call. ${detail} Select Retry to try once more; the call will end if setup does not complete within the current connection window.`;
+                    logVideoCallDiagnostic(call, 'media-retry-offered', error, {
+                        attempts: call.mediaAcquisitionAttempts,
+                        retriesRemaining: 1
+                    });
+                    updateCallControls();
+                    return;
+                }
+                if (
+                    call.diagnosticStage === 'get-user-media'
+                    && call.widget?.hasAttribute('data-call-controller-only')
+                ) {
+                    const callKind = call.mode === 'video' ? 'video' : 'voice';
+                    if (call.mediaAcquisitionAttempts >= 2) {
+                        window.dispatchEvent(new CustomEvent('vnz:call-media-error', {
+                            detail: {
+                                message: `Could not start the ${callKind} call. ${detail}`
+                            }
+                        }));
+                    }
+                }
+                call.mediaSetupInProgress = false;
+                finishCall(
+                    `Call failed: ${detail}`,
+                    call.acceptSent ? 'call.failed' : 'call.decline',
+                    'receiver-setup-failure'
+                );
             }
         }
 
@@ -3086,6 +3607,7 @@
                 }
                 const call = {
                     id: payload.call_id,
+                    startedAt: callTimingNow(),
                     mode: payload.mode,
                     state: 'incoming',
                     fromName: payload.actor_display_name || 'Participant',
@@ -3107,6 +3629,7 @@
                 currentCall = call;
                 activeCallChat = widget;
                 activeCallSessionId = call.id;
+                logVideoCallDiagnostic(call, 'receiver-invite-received');
                 widget.dataset.activeCallOwner = call.id;
                 callVideoPlaceholder.hidden = false;
                 if (callHideTimer !== null) {
@@ -3116,7 +3639,8 @@
                 startCallTone('incoming');
                 callUnansweredTimer = setTimeout(() => {
                     if (currentCall === call && call.state === 'incoming') {
-                        finishCall('Missed call.', 'call.missed');
+                        call.diagnosticStage = 'incoming-no-answer-timeout';
+                        finishCall('Missed call.', 'call.missed', 'receiver-no-answer-timeout');
                     }
                 }, 35000);
                 updateCallControls();
@@ -3127,8 +3651,15 @@
             if (!call || call.id !== payload.call_id) {
                 return;
             }
+            if (['call.accept', 'call.offer', 'call.answer', 'call.ice'].includes(payload.event)) {
+                logVideoCallDiagnostic(call, 'signal-received', null, {event: payload.event});
+            }
             if (payload.event === 'call.accept' && call.state === 'outgoing') {
+                const toneStopStartedAt = callTimingNow();
                 stopCallTone();
+                logVideoCallDiagnostic(call, 'call-accept-tone-stopped', null, {
+                    durationMs: Math.round(callTimingNow() - toneStopStartedAt)
+                });
                 try {
                     call.state = 'connecting';
                     call.statusText = 'Connecting…';
@@ -3139,12 +3670,24 @@
                     call.statusText = 'Connecting…';
                     callUnansweredTimer = setTimeout(() => {
                         if (currentCall === call && call.state !== 'active') {
-                            finishCall('The call could not connect.', 'call.failed');
+                            call.diagnosticStage = 'outgoing-connect-timeout';
+                            finishCall('The call could not connect.', 'call.failed', 'caller-connect-timeout');
                         }
                     }, 30000);
                     updateCallControls();
+                    call.diagnosticStage = 'create-offer';
+                    const offerStartedAt = callTimingNow();
                     const offer = await call.connection.createOffer();
+                    logVideoCallDiagnostic(call, 'offer-created', null, {
+                        durationMs: Math.round(callTimingNow() - offerStartedAt)
+                    });
+                    call.diagnosticStage = 'set-local-offer';
+                    const localOfferStartedAt = callTimingNow();
                     await call.connection.setLocalDescription(offer);
+                    logVideoCallDiagnostic(call, 'local-offer-set', null, {
+                        durationMs: Math.round(callTimingNow() - localOfferStartedAt)
+                    });
+                    call.diagnosticStage = 'send-offer';
                     await sendCallSignal(call, 'call.offer', {
                         description: JSON.stringify(call.connection.localDescription)
                     });
@@ -3152,11 +3695,39 @@
                     signalFailure(call, error);
                 }
             } else if (payload.event === 'call.offer' && call.state === 'connecting') {
+                if (!call.connection) {
+                    call.pendingOffer = payload;
+                    logVideoCallDiagnostic(call, 'offer-deferred-until-peer-ready', null, {
+                        event: payload.event
+                    });
+                    return;
+                }
                 try {
+                    call.diagnosticStage = 'set-remote-offer';
+                    const remoteOfferStartedAt = callTimingNow();
                     await call.connection.setRemoteDescription(payload.description);
+                    logVideoCallDiagnostic(call, 'remote-offer-set', null, {
+                        durationMs: Math.round(callTimingNow() - remoteOfferStartedAt)
+                    });
+                    call.diagnosticStage = 'flush-ice-after-offer';
+                    const flushOfferIceStartedAt = callTimingNow();
                     await flushCallIceCandidates(call);
+                    logVideoCallDiagnostic(call, 'offer-ice-flush-complete', null, {
+                        durationMs: Math.round(callTimingNow() - flushOfferIceStartedAt)
+                    });
+                    call.diagnosticStage = 'create-answer';
+                    const answerStartedAt = callTimingNow();
                     const answer = await call.connection.createAnswer();
+                    logVideoCallDiagnostic(call, 'answer-created', null, {
+                        durationMs: Math.round(callTimingNow() - answerStartedAt)
+                    });
+                    call.diagnosticStage = 'set-local-answer';
+                    const localAnswerStartedAt = callTimingNow();
                     await call.connection.setLocalDescription(answer);
+                    logVideoCallDiagnostic(call, 'local-answer-set', null, {
+                        durationMs: Math.round(callTimingNow() - localAnswerStartedAt)
+                    });
+                    call.diagnosticStage = 'send-answer';
                     await sendCallSignal(call, 'call.answer', {
                         description: JSON.stringify(call.connection.localDescription)
                     });
@@ -3165,13 +3736,24 @@
                 }
             } else if (payload.event === 'call.answer' && call.state === 'connecting') {
                 try {
+                    call.diagnosticStage = 'set-remote-answer';
+                    const remoteAnswerStartedAt = callTimingNow();
                     await call.connection.setRemoteDescription(payload.description);
+                    logVideoCallDiagnostic(call, 'remote-answer-set', null, {
+                        durationMs: Math.round(callTimingNow() - remoteAnswerStartedAt)
+                    });
+                    call.diagnosticStage = 'flush-ice-after-answer';
+                    const flushAnswerIceStartedAt = callTimingNow();
                     await flushCallIceCandidates(call);
+                    logVideoCallDiagnostic(call, 'answer-ice-flush-complete', null, {
+                        durationMs: Math.round(callTimingNow() - flushAnswerIceStartedAt)
+                    });
                 } catch (error) {
                     signalFailure(call, error);
                 }
             } else if (payload.event === 'call.ice') {
                 try {
+                    call.diagnosticStage = 'process-ice';
                     const candidate = new RTCIceCandidate(payload.candidate);
                     if (call.connection?.remoteDescription) {
                         await call.connection.addIceCandidate(candidate);
@@ -3182,17 +3764,18 @@
                     signalFailure(call, error);
                 }
             } else if (payload.event === 'call.decline') {
-                finishCall('Call declined.');
+                finishCall('Call declined.', null, 'remote-call-decline');
             } else if (payload.event === 'call.busy') {
-                finishCall('The other participant is busy.');
+                finishCall('The other participant is busy.', null, 'remote-call-busy');
             } else if (payload.event === 'call.cancel') {
-                finishCall('Call cancelled.');
+                finishCall('Call cancelled.', null, 'remote-call-cancel');
             } else if (payload.event === 'call.missed') {
-                finishCall('No answer. The call was missed.');
+                call.diagnosticStage = 'remote-call-missed-event';
+                finishCall('No answer. The call was missed.', null, 'remote-call-missed');
             } else if (payload.event === 'call.end') {
-                finishCall('The other participant ended the call.');
+                finishCall('The other participant ended the call.', null, 'remote-call-end');
             } else if (payload.event === 'call.failed') {
-                finishCall('The other participant reported a call failure.');
+                finishCall('The other participant reported a call failure.', null, 'remote-call-failed');
             }
         }
 
@@ -3200,12 +3783,13 @@
             if (!currentCall) {
                 return;
             }
+            logVideoCallDiagnostic(currentCall, 'end-call-click');
             const event = currentCall.state === 'outgoing'
                 ? 'call.cancel'
                 : currentCall.state === 'incoming'
                     ? 'call.decline'
                     : 'call.end';
-            finishCall('Call ended.', event);
+            finishCall('Call ended.', event, 'end-call-button');
         }
 
         function minimizeCall() {
@@ -3586,17 +4170,17 @@
         });
         callDeclineButton?.addEventListener('click', () => {
             if (currentCall?.state === 'incoming') {
-                finishCall('Call declined.', 'call.decline');
+                finishCall('Call declined.', 'call.decline', 'decline-button');
             }
         }, {signal: widgetEventController.signal});
         callCancelButton?.addEventListener('click', () => {
             if (currentCall?.state === 'outgoing') {
-                finishCall('Call cancelled.', 'call.cancel');
+                finishCall('Call cancelled.', 'call.cancel', 'cancel-button');
             }
         }, {signal: widgetEventController.signal});
         callSoundButton?.addEventListener('click', () => {
             if (requestedCallTone) {
-                resumeCallTone();
+                resumeCallTone(callToneGeneration);
             }
         }, {signal: widgetEventController.signal});
         callMinimizeButton?.addEventListener('click', minimizeCall, {
@@ -4035,7 +4619,8 @@
                                         ? (currentCall.inviteAttempted ? 'call.failed' : null)
                                         : currentCall.state === 'incoming'
                                             ? 'call.decline'
-                                            : 'call.failed'
+                                            : 'call.failed',
+                                    'realtime-signaling-disconnected'
                                 );
                             }
                             updateCallControls();
@@ -4622,6 +5207,10 @@
             stopCallTone();
             if (currentCall) {
                 const call = currentCall;
+                logVideoCallDiagnostic(call, 'widget-cleanup-start', null, {
+                    terminationSource: 'widget-cleanup'
+                });
+                call.terminal = true;
                 const signalEvent = call.state === 'incoming'
                     ? 'call.decline'
                     : call.state === 'outgoing'

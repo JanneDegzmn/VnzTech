@@ -4,6 +4,7 @@ require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/guest_submission_link.php';
 
 class ChatHttpException extends RuntimeException
 {
@@ -1556,7 +1557,10 @@ function chatRequireConversationMembership(
                     WHERE submission_id = ?
                       AND seller_id = ?
                       AND guest_identity_id = ?
-                      AND proof_method = 'guest_chat_capability'
+                      AND proof_method IN (
+                          'guest_chat_capability',
+                          'verified_email'
+                      )
                     LIMIT 1
                 ");
                 $auditStmt->execute([
@@ -1707,6 +1711,58 @@ function chatGetOneToOneConversationPeer(
     ");
     $stmt->execute([$conversationId]);
     $participants = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    if (
+        $conversation['conversation_type'] === 'private'
+        && $conversation['transaction_id'] === null
+        && $conversation['submission_id'] === null
+        && ($conversation['conversation_class'] ?? null) === 'private'
+        && empty($conversation['claimed_submission'])
+        && empty($conversation['guest_submission'])
+        && $actor['actor_type'] === 'seller'
+        && count($participants) === 2
+        && count(array_unique(array_column($participants, 'actor_type'))) === 1
+        && $participants[0]['actor_type'] === 'seller'
+        && $participants[1]['actor_type'] === 'seller'
+        && count(array_unique(array_column($participants, 'actor_id'))) === 2
+    ) {
+        $sellerIdentities = [];
+        foreach ($participants as $participant) {
+            $identity = chatValidateActorIdentity(
+                'seller',
+                (int) $participant['actor_id']
+            );
+            $sellerIdentities[(int) $identity['actor_id']] = $identity;
+        }
+
+        $actorId = (int) $actor['actor_id'];
+        if (!isset($sellerIdentities[$actorId])) {
+            throw new ChatHttpException('Unauthorized.', 403);
+        }
+
+        foreach ($sellerIdentities as $sellerId => $identity) {
+            if ($sellerId === $actorId) {
+                continue;
+            }
+
+            return [
+                'conversation' => $conversation,
+                'peer' => [
+                    'actor_type' => 'seller',
+                    'actor_id' => (int) $identity['actor_id'],
+                    'display_name' => chatParticipantDisplayNameForViewer(
+                        $actor,
+                        'seller',
+                        $identity['display_name']
+                    ),
+                    'profile_picture' => $identity['profile_picture'] ?? ''
+                ]
+            ];
+        }
+
+        throw new ChatHttpException('Unauthorized.', 403);
+    }
+
     if (
         count($participants) !== 2
         || count(array_unique(array_column($participants, 'actor_type'))) !== 2

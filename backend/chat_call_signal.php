@@ -1,21 +1,59 @@
 <?php
 
+$callSignalRequestStartedAt = hrtime(true);
+$callSignalTiming = [
+    'event' => null,
+    'correlationId' => null
+];
+register_shutdown_function(static function () use (
+    &$callSignalTiming,
+    $callSignalRequestStartedAt
+): void {
+    $callSignalTiming['totalMs'] = round(
+        (hrtime(true) - $callSignalRequestStartedAt) / 1_000_000,
+        2
+    );
+    $callSignalTiming['httpStatus'] = http_response_code();
+    error_log(
+        '[call-signal-timing] '
+        . json_encode($callSignalTiming, JSON_UNESCAPED_SLASHES)
+    );
+});
+
 ob_start();
 ini_set('display_errors', '0');
 header('Cache-Control: private, no-store');
 
 require_once __DIR__ . '/chat_scaledrone.php';
 require_once __DIR__ . '/chat_call_sessions.php';
+$callSignalTiming['bootstrapMs'] = round(
+    (hrtime(true) - $callSignalRequestStartedAt) / 1_000_000,
+    2
+);
 
 try {
+    $stageStartedAt = hrtime(true);
     chatRequireMethod('POST');
     chatRequireCsrf();
     $actor = chatGetCurrentActor();
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+    $callSignalTiming['authenticationMs'] = round(
+        (hrtime(true) - $stageStartedAt) / 1_000_000,
+        2
+    );
+
+    $stageStartedAt = hrtime(true);
     $conversationId = chatPositiveInteger(
         $_POST['conversation_id'] ?? null,
         'conversation ID'
     );
     $peer = chatGetOneToOneConversationPeer($conversationId, $actor)['peer'];
+    $callSignalTiming['peerAuthorizationMs'] = round(
+        (hrtime(true) - $stageStartedAt) / 1_000_000,
+        2
+    );
     $callId = $_POST['call_id'] ?? null;
     if (
         !is_string($callId)
@@ -35,7 +73,10 @@ try {
         'event' => strtolower(trim($callEvent)),
         'call_id' => strtolower($callId)
     ];
+    $callSignalTiming['event'] = $event['event'];
+    $callSignalTiming['correlationId'] = $event['call_id'];
 
+    $stageStartedAt = hrtime(true);
     if ($event['event'] === 'call.invite') {
         $mode = $_POST['mode'] ?? null;
         if (!is_string($mode) || !in_array($mode, ['audio', 'video'], true)) {
@@ -117,18 +158,32 @@ try {
     } else {
         throw new ChatHttpException('Unsupported call event.', 422);
     }
+    $callSignalTiming['validationMs'] = round(
+        (hrtime(true) - $stageStartedAt) / 1_000_000,
+        2
+    );
 
     $event['to_actor_type'] = $peer['actor_type'];
     $event['to_actor_id'] = $peer['actor_id'];
+    $stageStartedAt = hrtime(true);
     $callResult = chatPersistCallEvent(
         $conversationId,
         $actor,
         $peer,
         $event
     );
+    $callSignalTiming['persistMs'] = round(
+        (hrtime(true) - $stageStartedAt) / 1_000_000,
+        2
+    );
     if ($callResult['duplicate']) {
         if (chatCallSignalShouldPublishDuplicate($callResult)) {
+            $stageStartedAt = hrtime(true);
             $delivery = chatPublishCallEvent($conversationId, $actor, $event);
+            $callSignalTiming['publishMs'] = round(
+                (hrtime(true) - $stageStartedAt) / 1_000_000,
+                2
+            );
             if ($delivery !== 'published') {
                 chatJsonResponse(
                     false,
@@ -143,7 +198,12 @@ try {
         ]);
     }
 
+    $stageStartedAt = hrtime(true);
     $delivery = chatPublishCallEvent($conversationId, $actor, $event);
+    $callSignalTiming['publishMs'] = round(
+        (hrtime(true) - $stageStartedAt) / 1_000_000,
+        2
+    );
     $summaryDelivery = null;
     if ($callResult['summary_message'] !== null) {
         $summaryDelivery = chatPublishConversationEvent(

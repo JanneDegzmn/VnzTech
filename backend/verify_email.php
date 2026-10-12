@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
+require_once __DIR__ . '/guest_submission_link.php';
 
 $token = $_GET['token'] ?? '';
 
@@ -39,6 +40,11 @@ try {
         WHERE id = ?
     ");
     $updateStmt->execute([(int) $verification['user_id']]);
+
+    linkVerifiedGuestSubmissions(
+        $pdo,
+        (int) $verification['user_id']
+    );
 
     $deleteStmt = $pdo->prepare("
         DELETE FROM email_verification_tokens

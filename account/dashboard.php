@@ -235,11 +235,11 @@ $initialAlertMessage =
         href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261013-guest-calls"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261013-guest-calls"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261014-call-media-feedback"
         defer
     ></script>
     <script
-        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261012-guest-presence"
+        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261014-call-media-feedback"
         defer
     ></script>
 
@@ -364,7 +364,7 @@ $initialAlertMessage =
          SIDEBAR
     ====================================================== -->
 
-    <aside class="dashboard-sidebar">
+    <aside class="dashboard-sidebar" id="sellerDashboardSidebar">
 
         <div class="sidebar-brand">
 
@@ -519,6 +519,23 @@ $initialAlertMessage =
         </div>
 
     </aside>
+
+    <button
+        type="button"
+        class="seller-mobile-menu-button"
+        id="sellerMobileMenuButton"
+        aria-label="Open navigation menu"
+        aria-controls="sellerDashboardSidebar"
+        aria-expanded="false"
+    >
+        <span aria-hidden="true">☰</span>
+    </button>
+
+    <div
+        class="seller-sidebar-overlay"
+        id="sellerSidebarOverlay"
+        aria-hidden="true"
+    ></div>
 
 
     <!-- =====================================================
@@ -1172,6 +1189,45 @@ $initialAlertMessage =
             'contentArea'
         );
 
+    const sellerSidebar =
+        document.getElementById('sellerDashboardSidebar');
+    const sellerMobileMenuButton =
+        document.getElementById('sellerMobileMenuButton');
+    const sellerSidebarOverlay =
+        document.getElementById('sellerSidebarOverlay');
+
+    function closeSellerMobileMenu() {
+        sellerSidebar.classList.remove('mobile-open');
+        sellerSidebarOverlay.classList.remove('active');
+        sellerSidebarOverlay.setAttribute('aria-hidden', 'true');
+        sellerMobileMenuButton.setAttribute('aria-expanded', 'false');
+        sellerMobileMenuButton.setAttribute('aria-label', 'Open navigation menu');
+        document.body.classList.remove('seller-mobile-menu-open');
+    }
+
+    sellerMobileMenuButton.addEventListener('click', function () {
+        const isOpen = sellerSidebar.classList.toggle('mobile-open');
+        sellerSidebarOverlay.classList.toggle('active', isOpen);
+        sellerSidebarOverlay.setAttribute('aria-hidden', String(!isOpen));
+        sellerMobileMenuButton.setAttribute('aria-expanded', String(isOpen));
+        sellerMobileMenuButton.setAttribute(
+            'aria-label',
+            isOpen ? 'Close navigation menu' : 'Open navigation menu'
+        );
+        document.body.classList.toggle('seller-mobile-menu-open', isOpen);
+    });
+
+    sellerSidebarOverlay.addEventListener('click', closeSellerMobileMenu);
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape') {
+            closeSellerMobileMenu();
+        }
+    });
+    window.addEventListener('resize', function () {
+        if (window.innerWidth > 760) {
+            closeSellerMobileMenu();
+        }
+    });
 
     const navItems =
         document.querySelectorAll(
@@ -1877,6 +1933,7 @@ $initialAlertMessage =
                     const page =
                         this.dataset.page;
 
+                    closeSellerMobileMenu();
 
                     loadPage(
                         page
@@ -1978,82 +2035,6 @@ $initialAlertMessage =
 
         }
     );
-
-    contentArea.addEventListener('submit', function (event) {
-        const form = event.target.closest('[data-guest-claim-form]');
-        if (!form) {
-            return;
-        }
-        event.preventDefault();
-
-        const selected = form.querySelectorAll(
-            'input[name="submission_ids[]"]:checked'
-        );
-        const feedback = form.querySelector('[data-guest-claim-feedback]');
-        if (!selected.length) {
-            feedback.textContent = 'Select at least one eligible submission.';
-            return;
-        }
-
-        feedback.textContent = '';
-        const dialog = form.querySelector('[data-guest-claim-dialog]');
-        if (dialog && typeof dialog.showModal === 'function') {
-            dialog.showModal();
-        } else {
-            feedback.textContent = 'Submission confirmation is not supported by this browser.';
-        }
-    });
-
-    contentArea.addEventListener('click', async function (event) {
-        const closeClaimButton = event.target.closest('[data-close-guest-claim]');
-        if (closeClaimButton) {
-            const dialog = closeClaimButton.closest('[data-guest-claim-dialog]');
-            if (dialog) dialog.close();
-            return;
-        }
-
-        const confirmClaimButton = event.target.closest('[data-confirm-guest-claim]');
-        if (!confirmClaimButton) {
-            return;
-        }
-
-        const dialog = confirmClaimButton.closest('[data-guest-claim-dialog]');
-        const form = dialog ? dialog.closest('[data-guest-claim-form]') : null;
-        const feedback = form
-            ? form.querySelector('[data-guest-claim-feedback]')
-            : null;
-        if (!form || !feedback) {
-            return;
-        }
-
-        confirmClaimButton.disabled = true;
-        feedback.textContent = 'Claiming selected submissions…';
-        try {
-            const data = new FormData(form);
-            const response = await fetch('/VNZ-TECH/backend/guest_submission_claim.php', {
-                method: 'POST',
-                body: data,
-                credentials: 'same-origin',
-                cache: 'no-store',
-                headers: {'Accept': 'application/json'}
-            });
-            const result = await response.json();
-            if (!response.ok || !result.success) {
-                throw new Error(result.message || 'Unable to claim the selected submissions.');
-            }
-
-            dialog.close();
-            feedback.textContent = result.message;
-            form.querySelector('fieldset').hidden = true;
-            const submitButton = form.querySelector('.guest-claim-submit');
-            if (submitButton) submitButton.hidden = true;
-        } catch (error) {
-            feedback.textContent = error.message || 'Unable to claim the selected submissions.';
-        } finally {
-            confirmClaimButton.disabled = false;
-        }
-    });
-
 
     window.loadSellerPage =
         loadPage;

@@ -219,6 +219,22 @@ function chatGetAuthorizedScaledroneCallRoom(
     ];
 }
 
+function chatIsOptionalCallRoomIneligibility(
+    ChatHttpException $exception
+): bool {
+    return $exception->httpStatus === 403
+        && in_array(
+            $exception->getMessage(),
+            [
+                'Calls are only available in one-to-one conversations.',
+                'Calls are unavailable for guest-submission conversations.',
+                'Calls are only available between one Admin and one Seller.',
+                'Calls are unavailable because this transaction conversation does not match its current seller and responsible Admin.'
+            ],
+            true
+        );
+}
+
 function chatCreateScaledroneClientToken(
     array $roomContexts,
     string $clientId,
@@ -360,6 +376,7 @@ function chatPublishCallEvent(
     array $actor,
     array $event
 ): string {
+    $authorizationStartedAt = hrtime(true);
     try {
         $roomContext = chatGetAuthorizedScaledroneCallRoom(
             $conversationId,
@@ -375,6 +392,18 @@ function chatPublishCallEvent(
         error_log('Call signaling authorization failed.');
         return 'failed';
     }
+    error_log(
+        '[call-signal-timing] '
+        . json_encode([
+            'stage' => 'publish-authorization',
+            'event' => $event['event'] ?? null,
+            'correlationId' => $event['call_id'] ?? null,
+            'durationMs' => round(
+                (hrtime(true) - $authorizationStartedAt) / 1_000_000,
+                2
+            )
+        ], JSON_UNESCAPED_SLASHES)
+    );
 
     $payload = array_merge([
         'conversation_id' => $conversationId,
@@ -455,10 +484,34 @@ function chatScaledronePublishToRoom(array $roomContext, array $payload): string
             CURLOPT_SSL_VERIFYHOST => 2
         ]);
 
+        $publishStartedAt = hrtime(true);
         $responseBody = curl_exec($curl);
         $curlErrorNumber = curl_errno($curl);
         $httpStatus = (int) curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        $publishDurationMs = round(
+            (hrtime(true) - $publishStartedAt) / 1_000_000,
+            2
+        );
         curl_close($curl);
+
+        if (
+            isset($payload['event'], $payload['call_id'])
+            && is_string($payload['event'])
+            && str_starts_with($payload['event'], 'call.')
+            && is_string($payload['call_id'])
+        ) {
+            error_log(
+                '[call-signal-timing] '
+                . json_encode([
+                    'stage' => 'scaledrone-publish',
+                    'event' => $payload['event'],
+                    'correlationId' => $payload['call_id'],
+                    'durationMs' => $publishDurationMs,
+                    'httpStatus' => $httpStatus,
+                    'transportError' => $curlErrorNumber !== 0
+                ], JSON_UNESCAPED_SLASHES)
+            );
+        }
 
         if ($responseBody === false || $curlErrorNumber !== 0) {
             error_log(

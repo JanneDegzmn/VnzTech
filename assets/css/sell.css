@@ -495,10 +495,18 @@ img {
     }
 
     .section-dot-nav {
-        right: 10px;
+        top: auto;
+        right: auto;
+        bottom: calc(14px + env(safe-area-inset-bottom));
+        left: 50%;
+        flex-direction: row;
+        gap: 10px;
+        padding: 9px 11px;
+        transform: translateX(-50%);
+    }
 
-        padding: 10px 8px;
-        gap: 8px;
+    .dot-link::after {
+        display: none;
     }
 
     .dot-link {
@@ -3558,29 +3566,115 @@ select {
 .tracking-modal-card.has-guest-chat .track-modal-result:not([hidden]) {
     display: flex;
     min-height: 0;
-    flex: 1 1 0;
     flex-direction: column;
-    overflow: hidden;
+    flex: 1 1 auto;
+    overflow: visible;
 }
 
 .tracking-modal-card.has-guest-chat .track-guest-chat {
     display: flex;
     min-height: 0;
-    flex: 1 1 0;
-    align-items: center;
-    justify-content: center;
+    flex: 0 0 auto;
+    align-items: stretch;
+    justify-content: flex-start;
     flex-direction: column;
-    text-align: center;
+    text-align: left;
 }
 
 .tracking-modal-card.has-guest-chat .track-guest-chat > div:first-child {
-    max-width: 34rem;
-    text-align: center;
+    max-width: none;
 }
 
 .tracking-modal-card.has-guest-chat .track-guest-chat > button {
-    min-width: min(220px, 100%);
-    align-self: center;
+    width: 100%;
+    min-width: 0;
+    align-self: stretch;
+}
+
+@media (min-width: 1041px) {
+    .tracking-modal-card.has-guest-chat .tracking-modal-details {
+        padding: 24px 24px 20px;
+    }
+
+    .tracking-modal-card.has-guest-chat .tracking-modal-header {
+        margin-bottom: 16px;
+    }
+
+    .tracking-modal-card.has-guest-chat .tracking-modal-form {
+        gap: 14px;
+    }
+
+    .tracking-modal-card.has-guest-chat .tracking-modal-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+    }
+
+    .tracking-modal-card.has-guest-chat .tracking-modal-field input {
+        min-height: 50px;
+        padding: 13px 14px;
+    }
+
+    .tracking-modal-card.has-guest-chat .track-modal-submit {
+        min-height: 50px;
+        padding: 0 16px;
+        letter-spacing: 0.12em;
+    }
+
+    .tracking-modal-card.has-guest-chat .track-modal-message {
+        margin-top: 14px;
+        padding: 12px 14px;
+    }
+
+    .tracking-modal-card.has-guest-chat .track-modal-result {
+        margin-top: 16px;
+        padding: 16px;
+    }
+
+    .tracking-modal-card.has-guest-chat .track-modal-result h3 {
+        margin-bottom: 12px;
+        font-size: 24px;
+    }
+
+    .tracking-modal-card.has-guest-chat .track-result-row {
+        padding: 7px 0;
+    }
+
+    .tracking-modal-card.has-guest-chat .track-guest-chat {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(136px, auto);
+        align-items: center;
+        gap: 12px;
+        margin-top: auto;
+        padding: 14px;
+    }
+
+    .tracking-modal-card.has-guest-chat .track-guest-chat > div:first-child {
+        text-align: left;
+    }
+
+    .tracking-modal-card.has-guest-chat .track-guest-chat > div:first-child strong {
+        font-size: 14px;
+    }
+
+    .tracking-modal-card.has-guest-chat .track-guest-account-links {
+        display: flex;
+        flex-wrap: wrap;
+        column-gap: 14px;
+        row-gap: 6px;
+        margin-top: 10px;
+    }
+
+    .tracking-modal-card.has-guest-chat .track-guest-chat > button {
+        width: auto;
+        min-width: 136px;
+        max-width: 150px;
+        min-height: 48px;
+        height: 48px;
+        align-self: center;
+        justify-self: center;
+        padding: 0 12px;
+        white-space: nowrap;
+    }
 }
 
 @keyframes sellerModalFadeIn {
@@ -3801,37 +3895,13 @@ select {
     cursor: wait;
 }
 
-.track-guest-chat > .track-guest-claim-button {
-    border-color: rgba(95, 200, 255, 0.48);
-    background: rgba(8, 18, 27, 0.78);
-    color: #d7f3ff;
-}
-
-.track-guest-chat > .track-guest-claim-button:hover,
-.track-guest-chat > .track-guest-claim-button:focus-visible {
-    background: rgba(14, 165, 233, 0.18);
-}
-
-.track-guest-chat .track-guest-claim-status {
-    margin-top: 10px;
-    color: #b9eaff;
-}
-
-.track-guest-chat .track-guest-claim-status.is-error {
-    color: #fecdd3;
-}
-
-.track-guest-claim-next {
+.track-guest-account-links {
     display: grid;
     gap: 8px;
     margin-top: 10px;
 }
 
-.track-guest-claim-next[hidden] {
-    display: none;
-}
-
-.track-guest-claim-next a {
+.track-guest-account-links a {
     width: fit-content;
     color: #8de7ff;
     font-size: 12px;
@@ -3891,6 +3961,29 @@ select {
 .track-guest-chat-panel-header > div {
     display: grid;
     gap: 3px;
+}
+
+.track-guest-chat-back {
+    display: none;
+    min-height: 38px;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.07);
+    color: #dce8ef;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.track-guest-chat-back:hover,
+.track-guest-chat-back:focus-visible {
+    border-color: rgba(91, 207, 237, 0.5);
+    background: rgba(34, 184, 238, 0.15);
+    color: #fff;
 }
 
 .track-guest-chat-panel-header span {
@@ -4019,12 +4112,205 @@ select {
         padding-right: max(14px, env(safe-area-inset-right));
         padding-left: max(14px, env(safe-area-inset-left));
     }
+
+    .track-guest-chat-back {
+        display: inline-flex;
+    }
+
+    .track-guest-chat-panel-header > div {
+        margin-right: auto;
+    }
+
+    .tracking-modal-card.is-mobile-chat {
+        width: min(720px, calc(100vw - 24px));
+        height: min(900px, calc(100dvh - 32px));
+        max-height: calc(100dvh - 32px);
+        overflow: hidden;
+    }
+
+    .tracking-modal-card.is-mobile-chat .tracking-modal-layout {
+        position: relative;
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .tracking-modal-card.is-mobile-chat .tracking-modal-details {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        overflow-y: auto;
+        opacity: 1;
+        visibility: visible;
+        transition: opacity 0.2s ease, visibility 0.2s ease;
+    }
+
+    .tracking-modal-card.is-mobile-chat .track-guest-chat-column {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        min-height: 0;
+        border: 0;
+        opacity: 0;
+        transform: translateX(18px);
+        transition: opacity 0.2s ease, transform 0.24s ease;
+    }
+
+    .tracking-modal-card.is-mobile-chat .track-guest-chat-column.is-open {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .tracking-modal-card.is-mobile-chat .tracking-modal-details[aria-hidden="true"] {
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .tracking-modal-card.is-mobile-chat .track-guest-chat-panel-content > .transaction-chat {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+        width: 100%;
+        min-height: 0;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-header {
+        width: 100%;
+        min-width: 0;
+        flex-direction: row;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        padding: 12px;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-header > div:first-child {
+        min-width: 0;
+        flex: 1 1 100%;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-header-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-info {
+        width: auto;
+        min-width: 0;
+        max-height: min(220px, 28dvh);
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        margin: 8px 8px 0;
+        padding: 8px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-info::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-info-heading {
+        margin-bottom: 6px;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-info-body {
+        grid-template-columns: 56px minmax(0, 1fr);
+        gap: 9px;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-info-body > img {
+        width: 56px;
+        height: 56px;
+        object-fit: cover;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-info-details {
+        min-width: 0;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-info-items {
+        margin-bottom: 4px;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-info-meta {
+        gap: 4px 10px;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-info-meta dt {
+        font-size: 8px;
+        letter-spacing: 0.55px;
+        line-height: 1.3;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-info-meta dd {
+        font-size: 10px;
+        line-height: 1.35;
+        overflow-wrap: anywhere;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-status {
+        width: 100%;
+        min-width: 0;
+        min-height: 36px;
+        padding: 8px 12px;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-message-area {
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-messages {
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        height: 100%;
+        padding: 12px;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-empty {
+        min-height: 0;
+        width: 100%;
+        flex: 0 0 auto;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-empty-icon {
+        display: none;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-composer {
+        width: 100%;
+        min-width: 0;
+        min-height: 0;
+        padding: 10px;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-composer-input-row {
+        min-width: 0;
+    }
+
+    .tracking-modal-card.is-mobile-chat .transaction-chat-composer textarea {
+        min-height: 40px;
+        max-height: 96px;
+    }
 }
 
 @media (prefers-reduced-motion: reduce) {
     .tracking-modal-card,
     .tracking-modal-layout,
-    .track-guest-chat-column {
+    .track-guest-chat-column,
+    .tracking-modal-details {
         transition-duration: 0.01ms;
     }
 }
@@ -5710,12 +5996,12 @@ select {
     }
 
     .trade-carousel {
-        min-height: 580px;
-        padding: 0 34px 42px;
+        min-height: 520px;
+        padding: 0 34px 54px;
     }
 
     .trade-carousel-stage {
-        height: 520px;
+        height: 470px;
     }
 
     .trade-feature-card {
@@ -5836,27 +6122,32 @@ select {
     }
 
     .trade-carousel {
-        padding-right: 28px;
-        padding-left: 28px;
+        padding-right: 24px;
+        padding-left: 24px;
     }
 
     .trade-feature-image {
-        height: 220px;
-        padding: 18px;
+        height: 210px;
+        padding: 14px;
     }
 
     .trade-feature-content {
-        gap: 12px;
-        padding: 18px;
+        gap: 10px;
+        padding: 15px;
     }
 
     .trade-feature-name {
-        font-size: 1.5rem;
+        font-size: 1.4rem;
+    }
+
+    .trade-feature-requirement {
+        gap: 8px;
+        padding: 10px 11px;
     }
 
     .trade-carousel-arrow {
-        width: 34px;
+        width: 30px;
         height: 38px;
-        font-size: 32px;
+        font-size: 30px;
     }
 }

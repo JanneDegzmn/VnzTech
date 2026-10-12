@@ -52,10 +52,16 @@ try {
             )
             && empty($roomContext['guest_submission'])
         ) {
-            $roomContext['call_room'] = chatGetAuthorizedScaledroneCallRoom(
-                $conversationId,
-                $actor
-            );
+            try {
+                $roomContext['call_room'] = chatGetAuthorizedScaledroneCallRoom(
+                    $conversationId,
+                    $actor
+                );
+            } catch (ChatHttpException $e) {
+                if (!chatIsOptionalCallRoomIneligibility($e)) {
+                    throw $e;
+                }
+            }
         }
         $roomContexts[] = $roomContext;
     }

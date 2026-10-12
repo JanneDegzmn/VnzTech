@@ -206,10 +206,10 @@ foreach ($transactionChatItems as $transactionChatItem) {
             <span class="transaction-chat-eyebrow">SELLER ACCOUNT REQUIRED</span>
             <h2 id="transaction-chat-guest-call-title">Voice and video calls</h2>
             <p id="transaction-chat-guest-call-description">
-                To use calls, create a Seller account and securely claim this submission. Calling becomes available only after the claim succeeds and the conversation is eligible.
+                To use calls, create a Seller account and verify your email. Eligible existing conversations are linked to your account automatically after verification. Calls are available only in eligible Admin–Seller conversations.
             </p>
             <p class="transaction-chat-guest-call-note">
-                Creating an account alone does not transfer this chat. A successful claim makes this existing conversation and its history available in your Seller account.
+                Your existing conversation and message history stay intact when linked. After verification, sign in to your Seller account to continue chatting and use eligible calls.
             </p>
             <div class="transaction-chat-guest-call-actions">
                 <a

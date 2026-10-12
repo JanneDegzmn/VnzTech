@@ -84,7 +84,7 @@ $openFormRequested =
         href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261013-guest-calls"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261013-guest-calls"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261014-call-media-feedback"
         defer
     ></script>
 
@@ -1337,6 +1337,11 @@ $openFormRequested =
                     hidden
                 >
                     <header class="track-guest-chat-panel-header">
+                        <button
+                            type="button"
+                            class="track-guest-chat-back"
+                            data-guest-chat-back
+                        >← <span>Back</span></button>
                         <div>
                             <span>PRIVATE CHAT</span>
                             <strong>Admin</strong>
@@ -2266,11 +2271,17 @@ $openFormRequested =
 
         const guestChatColumn = trackModal.querySelector('[data-guest-chat-column]');
         const guestChatContent = guestChatColumn?.querySelector('[data-guest-chat-content]');
+        const guestChatBackButton = guestChatColumn?.querySelector('[data-guest-chat-back]');
+        const trackDetails = trackModal.querySelector('[data-track-details]');
+        const mobileGuestChat = window.matchMedia('(max-width: 1040px)');
         let guestChatCloseTimer = null;
         let guestChatOpener = null;
 
         guestChatColumn?.addEventListener('click', event => {
-            if (event.target.closest('[data-guest-chat-close]')) {
+            if (
+                event.target.closest('[data-guest-chat-close]')
+                || event.target.closest('[data-guest-chat-back]')
+            ) {
                 closeGuestChatDrawer();
             }
         });
@@ -2288,9 +2299,13 @@ $openFormRequested =
             guestChatColumn.classList.remove('is-open');
             guestChatColumn.inert = true;
             guestChatColumn.setAttribute('aria-hidden', 'true');
+            if (trackDetails) {
+                trackDetails.inert = false;
+                trackDetails.setAttribute('aria-hidden', 'false');
+            }
             guestChatCloseTimer = window.setTimeout(() => {
                 guestChatColumn.hidden = true;
-                card?.classList.remove('is-closing-guest-chat');
+                card?.classList.remove('is-closing-guest-chat', 'is-mobile-chat');
                 guestChatCloseTimer = null;
             }, 280);
             if (restoreFocus && guestChatOpener?.isConnected) {
@@ -2316,10 +2331,17 @@ $openFormRequested =
             const card = trackModal.querySelector('.tracking-modal-card');
             card?.classList.remove('is-closing-guest-chat');
             card?.classList.add('has-guest-chat');
+            if (mobileGuestChat.matches) {
+                trackDetails.inert = true;
+                trackDetails.setAttribute('aria-hidden', 'true');
+                card?.classList.add('is-mobile-chat');
+            }
             requestAnimationFrame(() => guestChatColumn.classList.add('is-open'));
             guestChatOpener = button;
-            const closeButton = guestChatColumn.querySelector('[data-guest-chat-close]');
-            closeButton.focus();
+            const initialFocusTarget = mobileGuestChat.matches
+                ? guestChatBackButton
+                : guestChatColumn.querySelector('[data-guest-chat-close]');
+            initialFocusTarget?.focus();
 
             if (Number(guestChatColumn.dataset.conversationId) === conversationId
                 && guestChatColumn.dataset.chatLoaded === 'true') {
@@ -2376,8 +2398,13 @@ $openFormRequested =
             }
             trackModal.querySelector('.tracking-modal-card')?.classList.remove(
                 'has-guest-chat',
-                'is-closing-guest-chat'
+                'is-closing-guest-chat',
+                'is-mobile-chat'
             );
+            if (trackDetails) {
+                trackDetails.inert = false;
+                trackDetails.setAttribute('aria-hidden', 'false');
+            }
             syncBodyScrollLock();
         }
 
@@ -2485,9 +2512,8 @@ $openFormRequested =
                         <div>
                             <strong>Offer accepted</strong>
                             <p>Acceptance is confirmed; it does not mean payment has been made.</p>
-                            <p class="track-guest-claim-status" data-guest-claim-status role="status" aria-live="polite" hidden></p>
-                            <div class="track-guest-claim-next" data-guest-claim-next hidden>
-                                <p>Proof is staged in this browser. Continue here after email verification.</p>
+                            <div class="track-guest-account-links">
+                                <p>Create or sign in to a Seller account with the email used for this submission, then verify that email. Eligible submissions and Admin chat history will link automatically.</p>
                                 <a href="/VNZ-TECH/account/register.php">Create Seller Account</a>
                                 <a href="/VNZ-TECH/account/login.php">Sign in to an existing account</a>
                             </div>
@@ -2497,12 +2523,6 @@ $openFormRequested =
                             data-open-guest-chat
                             data-conversation-id="${guestChatConversationId}"
                         >Chat with Admin</button>
-                        <button
-                            type="button"
-                            class="track-guest-claim-button"
-                            data-stage-guest-claim
-                            data-submission-id="${Number(submission.id)}"
-                        >Claim with Seller account</button>
                     </section>
                 `
                 : '';
@@ -2625,53 +2645,6 @@ $openFormRequested =
         }
 
         trackSubmissionResult.addEventListener('click', function (event) {
-            const stageClaimButton = event.target.closest('[data-stage-guest-claim]');
-            if (stageClaimButton) {
-                const claimSection = stageClaimButton.closest('.track-guest-chat');
-                const claimStatus = claimSection
-                    ? claimSection.querySelector('[data-guest-claim-status]')
-                    : null;
-                const nextStep = claimSection
-                    ? claimSection.querySelector('[data-guest-claim-next]')
-                    : null;
-                stageClaimButton.disabled = true;
-                if (claimStatus) {
-                    claimStatus.hidden = false;
-                    claimStatus.textContent = 'Verifying this browser’s guest access…';
-                    claimStatus.classList.remove('is-error');
-                }
-
-                const data = new FormData();
-                data.set('action', 'stage');
-                data.set('submission_id', stageClaimButton.dataset.submissionId || '');
-                data.set('csrf_token', <?= json_encode($tradeCsrfToken, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
-                fetch('/VNZ-TECH/backend/guest_submission_claim.php', {
-                    method: 'POST',
-                    body: data,
-                    credentials: 'same-origin',
-                    cache: 'no-store',
-                    headers: {'Accept': 'application/json'}
-                }).then(async response => {
-                    const result = await response.json();
-                    if (!response.ok || !result.success) {
-                        throw new Error(result.message || 'Unable to stage this submission.');
-                    }
-                    if (claimStatus) {
-                        claimStatus.textContent = result.message;
-                    }
-                    if (nextStep) {
-                        nextStep.hidden = false;
-                    }
-                }).catch(error => {
-                    if (claimStatus) {
-                        claimStatus.textContent = error.message || 'Unable to stage this submission.';
-                        claimStatus.classList.add('is-error');
-                    }
-                    stageClaimButton.disabled = false;
-                });
-                return;
-            }
-
             const guestChatButton = event.target.closest('[data-open-guest-chat]');
             if (guestChatButton) {
                 guestChatButton.disabled = true;
