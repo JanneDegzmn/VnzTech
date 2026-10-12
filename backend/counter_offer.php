@@ -1,6 +1,8 @@
 <?php
 
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/session.php';
+require_once __DIR__ . '/csrf.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -10,6 +12,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
         'message' => 'Method not allowed.'
+    ]);
+
+    exit;
+}
+
+if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
+    http_response_code(419);
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Your session has expired. Please refresh the page and try again.'
     ]);
 
     exit;
@@ -187,8 +200,7 @@ if ($reference === '' || $mobile === '') {
 
 if (
     $counterAmountRaw === ''
-    ||
-    !is_numeric($counterAmountRaw)
+    || !preg_match('/^\d+(?:\.\d{1,2})?$/D', $counterAmountRaw)
 ) {
 
     http_response_code(422);
@@ -241,152 +253,26 @@ $feedback = $feedback !== ''
 
 /*
 |--------------------------------------------------------------------------
-| Get Current Offer
+| Resolve Submission
 |--------------------------------------------------------------------------
 */
 
-$stmt = $pdo->prepare("
-    SELECT
-        o.id AS offer_id,
-        o.submission_id,
-        o.offer_amount,
-        o.status AS offer_status,
-        o.sender_type,
-
-        s.reference_number,
-        s.seller_mobile,
-        s.status AS submission_status
-
-    FROM offers o
-
-    INNER JOIN submissions s
-        ON s.id = o.submission_id
-
-    WHERE o.id = ?
-
+$offerSubmissionStmt = $pdo->prepare("
+    SELECT submission_id
+    FROM offers
+    WHERE id = ?
     LIMIT 1
 ");
+$offerSubmissionStmt->execute([$offerId]);
+$submissionId = $offerSubmissionStmt->fetchColumn();
 
-$stmt->execute([
-    $offerId
-]);
-
-$currentOffer = $stmt->fetch();
-
-
-if (!$currentOffer) {
+if (!$submissionId) {
 
     http_response_code(404);
 
     echo json_encode([
         'success' => false,
         'message' => 'Offer not found.'
-    ]);
-
-    exit;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Verify Reference
-|--------------------------------------------------------------------------
-*/
-
-if (
-    strtoupper(
-        trim($currentOffer['reference_number'])
-    )
-    !==
-    $reference
-) {
-
-    http_response_code(403);
-
-    echo json_encode([
-        'success' => false,
-        'message' =>
-            'Reference number does not match.'
-    ]);
-
-    exit;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Verify Mobile
-|--------------------------------------------------------------------------
-*/
-
-if (
-    normalizeMobile(
-        $currentOffer['seller_mobile']
-    )
-    !==
-    $mobile
-) {
-
-    http_response_code(403);
-
-    echo json_encode([
-        'success' => false,
-        'message' =>
-            'Mobile number does not match.'
-    ]);
-
-    exit;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Seller Can Only Counter an Admin Offer
-|--------------------------------------------------------------------------
-*/
-
-if (
-    strtolower(
-        (string) $currentOffer['sender_type']
-    ) !== 'admin'
-) {
-
-    http_response_code(409);
-
-    echo json_encode([
-        'success' => false,
-        'message' =>
-            'Only a VNZ TECH offer can be countered.'
-    ]);
-
-    exit;
-}
-
-
-/*
-|--------------------------------------------------------------------------
-| Submission Must Be in Negotiation
-|--------------------------------------------------------------------------
-*/
-
-if (
-    !in_array(
-        $currentOffer['submission_status'],
-        [
-            'offer_sent',
-            'offer_pending',
-            'under_review'
-        ],
-        true
-    )
-) {
-
-    http_response_code(409);
-
-    echo json_encode([
-        'success' => false,
-        'message' =>
-            'This submission is no longer available for negotiation.'
     ]);
 
     exit;
@@ -403,6 +289,54 @@ try {
 
     $pdo->beginTransaction();
 
+    $submissionStmt = $pdo->prepare("
+        SELECT
+            id,
+            reference_number,
+            seller_mobile,
+            user_id,
+            status
+        FROM submissions
+        WHERE id = ?
+        LIMIT 1
+        FOR UPDATE
+    ");
+    $submissionStmt->execute([(int) $submissionId]);
+    $submission = $submissionStmt->fetch(PDO::FETCH_ASSOC);
+
+    if (!$submission) {
+        throw new RuntimeException('Submission not found.', 404);
+    }
+
+    if (
+        strtoupper((string) $submission['reference_number']) !== $reference
+        || normalizeMobile($submission['seller_mobile']) !== $mobile
+    ) {
+        throw new RuntimeException(
+            'The reference number and mobile number do not match.',
+            403
+        );
+    }
+
+    $sellerId = (int) ($_SESSION['user_id'] ?? 0);
+    if (
+        !empty($_SESSION['user_logged_in'])
+        && $sellerId > 0
+        && $submission['user_id'] !== null
+        && (int) $submission['user_id'] !== $sellerId
+    ) {
+        throw new RuntimeException(
+            'You are not authorized to counter this submission.',
+            403
+        );
+    }
+
+    if ($submission['status'] !== 'offer_sent') {
+        throw new RuntimeException(
+            'This submission is no longer available for negotiation.',
+            409
+        );
+    }
 
     /*
     |--------------------------------------------------------------------------
@@ -413,6 +347,8 @@ try {
     $latestStmt = $pdo->prepare("
         SELECT
             id,
+            submission_id,
+            offer_amount,
             sender_type,
             status
 
@@ -428,7 +364,7 @@ try {
     ");
 
     $latestStmt->execute([
-        $currentOffer['submission_id']
+        (int) $submissionId
     ]);
 
     $latestOffer = $latestStmt->fetch();
@@ -437,7 +373,8 @@ try {
     if (!$latestOffer) {
 
         throw new RuntimeException(
-            'No active offer was found.'
+            'No active offer was found.',
+            409
         );
 
     }
@@ -456,23 +393,30 @@ try {
     ) {
 
         throw new RuntimeException(
-            'This offer is no longer the active negotiation.'
+            'This offer is no longer the active negotiation.',
+            409
         );
 
     }
 
 
     if (
-        strtolower(
-            (string) $latestOffer['sender_type']
-        ) !== 'admin'
+        strtolower((string) $latestOffer['sender_type']) !== 'admin'
+        || !in_array(
+            strtolower((string) $latestOffer['status']),
+            ['sent', 'offer_sent', 'pending', 'active'],
+            true
+        )
     ) {
 
         throw new RuntimeException(
-            'The latest offer was not sent by VNZ TECH.'
+            'The latest offer is no longer available for a counter-offer.',
+            409
         );
 
     }
+
+    $currentOffer = $latestOffer;
 
 
     /*
@@ -594,11 +538,19 @@ try {
             updated_at = NOW()
 
         WHERE id = ?
+          AND status = 'offer_sent'
     ");
 
     $updateSubmission->execute([
-        $currentOffer['submission_id']
+        (int) $submissionId
     ]);
+
+    if ($updateSubmission->rowCount() !== 1) {
+        throw new RuntimeException(
+            'This submission is no longer available for negotiation.',
+            409
+        );
+    }
 
 
     /*
@@ -635,13 +587,7 @@ try {
     $message = $e->getMessage();
 
 
-    if (
-        str_contains(
-            strtolower($message),
-            'database configuration error'
-        )
-    ) {
-
+    if (str_contains(strtolower($message), 'database configuration error')) {
         http_response_code(500);
 
         echo json_encode([
@@ -652,15 +598,20 @@ try {
         exit;
     }
 
+    $httpStatus = $e instanceof RuntimeException
+        ? (int) $e->getCode()
+        : 500;
+    if (!in_array($httpStatus, [403, 404, 409], true)) {
+        $httpStatus = 500;
+    }
 
-    http_response_code(500);
+    http_response_code($httpStatus);
 
     echo json_encode([
         'success' => false,
-        'message' =>
-            $message !== ''
-                ? $message
-                : 'Unable to send counter-offer.'
+        'message' => $httpStatus === 500 && $message === ''
+            ? 'Unable to send counter-offer.'
+            : $message
     ]);
 
     exit;

@@ -1,5 +1,10 @@
 <?php
 
+require_once __DIR__ . '/../backend/session.php';
+require_once __DIR__ . '/../backend/csrf.php';
+
+$csrfToken = generateCsrfToken();
+
 $reference = trim(
     $_GET['ref'] ?? ''
 );
@@ -30,6 +35,14 @@ $mobile = trim(
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/seller_tracking.css"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/vnz_dialog.css?v=<?= filemtime(__DIR__ . '/../assets/css/vnz_dialog.css') ?>"
+    >
+    <script
+        src="/VNZ-TECH/assets/js/vnz-dialog.js"
+        defer
+    ></script>
 
 </head>
 
@@ -867,11 +880,11 @@ function renderAdminOffer(
 
 
     const canRespond =
-        submission.status === 'offer_sent'
+        String(submission.status || '').toLowerCase() === 'offer_sent'
         &&
-        offerStatus !== 'accepted'
+        String(offer.sender_type || '').toLowerCase() === 'admin'
         &&
-        offerStatus !== 'declined';
+        ['sent', 'offer_sent', 'pending', 'active'].includes(offerStatus);
 
 
     return `
@@ -953,6 +966,7 @@ function renderAdminOffer(
                             class="decline-offer-btn"
                             data-response="decline"
                             data-offer-id="${offer.id}"
+                            data-offer-amount="${Number(offer.offer_amount)}"
                         >
                             DECLINE
                         </button>
@@ -973,6 +987,7 @@ function renderAdminOffer(
                             class="accept-offer-btn"
                             data-response="accept"
                             data-offer-id="${offer.id}"
+                            data-offer-amount="${Number(offer.offer_amount)}"
                         >
                             ACCEPT
                             ${money(
@@ -1523,7 +1538,8 @@ function renderResult(data) {
 
                         respondToOffer(
                             this.dataset.response,
-                            this.dataset.offerId
+                            this.dataset.offerId,
+                            this
                         );
 
                     }
@@ -1779,10 +1795,18 @@ trackingForm.addEventListener(
 |--------------------------------------------------------------------------
 */
 
+let sellerOfferResponsePending = false;
+let sellerCounterOfferPending = false;
+
 async function respondToOffer(
     responseType,
-    offerId
+    offerId,
+    triggerButton
 ) {
+    if (sellerOfferResponsePending) {
+        return;
+    }
+    sellerOfferResponsePending = true;
 
     const referenceInput =
         document.getElementById(
@@ -1808,19 +1832,22 @@ async function respondToOffer(
             : '';
 
 
-    const actionText =
-        responseType === 'accept'
-            ? 'accept this offer'
-            : 'decline this offer';
-
-
-    const confirmed =
-        window.confirm(
-            `Are you sure you want to ${actionText}?`
-        );
+    const offerAmount = Number(triggerButton?.dataset.offerAmount);
+    const formattedOffer = Number.isFinite(offerAmount)
+        ? money(offerAmount)
+        : 'this offer';
+    const confirmed = await window.VNZDialog.confirm({
+        title: responseType === 'accept' ? 'Accept Offer?' : 'Decline Offer?',
+        message: responseType === 'accept'
+            ? `Are you sure you want to accept the offer of ${formattedOffer} for submission ${reference}?`
+            : `Are you sure you want to decline the offer of ${formattedOffer} for submission ${reference}?`,
+        confirmLabel: responseType === 'accept' ? 'Accept Offer' : 'Decline Offer',
+        danger: responseType !== 'accept'
+    });
 
 
     if (!confirmed) {
+        sellerOfferResponsePending = false;
         return;
     }
 
@@ -1868,7 +1895,13 @@ async function respondToOffer(
         mobile
     );
 
+    body.append(
+        'csrf_token',
+        <?= json_encode($csrfToken) ?>
+    );
 
+
+    let responseSaved = false;
     try {
 
         const httpResponse =
@@ -1899,6 +1932,7 @@ async function respondToOffer(
 
         }
 
+        responseSaved = true;
 
         showMessage(
             data.message,
@@ -1907,24 +1941,25 @@ async function respondToOffer(
 
 
         await refreshSubmission();
-
+        sellerOfferResponsePending = false;
 
     } catch (error) {
 
         showMessage(
-            error.message,
+            responseSaved
+                ? `Your response was saved, but the submission could not be refreshed: ${error.message}`
+                : error.message,
             'error'
         );
 
-
-        buttons.forEach(
-            function(button) {
-
-                button.disabled =
-                    false;
-
-            }
-        );
+        if (!responseSaved) {
+            buttons.forEach(
+                function(button) {
+                    button.disabled = false;
+                }
+            );
+            sellerOfferResponsePending = false;
+        }
 
     }
 
@@ -1940,6 +1975,9 @@ async function respondToOffer(
 async function sendCounterOffer(
     offerId
 ) {
+    if (sellerCounterOfferPending) {
+        return;
+    }
 
     const counterForm =
         resultArea.querySelector(
@@ -2041,15 +2079,16 @@ async function sendCounterOffer(
     }
 
 
-    const confirmed =
-        window.confirm(
-            `Send counter-offer of ${money(
-                numericAmount
-            )}?`
-        );
+    sellerCounterOfferPending = true;
+    const confirmed = await window.VNZDialog.confirm({
+        title: 'Send Counter-Offer?',
+        message: `Send your counter-offer of ${money(numericAmount)} for submission ${document.getElementById('reference')?.value.trim() || ''}?`,
+        confirmLabel: 'Send Counter-Offer'
+    });
 
 
     if (!confirmed) {
+        sellerCounterOfferPending = false;
         return;
     }
 
@@ -2123,7 +2162,13 @@ async function sendCounterOffer(
         feedback
     );
 
+    body.append(
+        'csrf_token',
+        <?= json_encode($csrfToken) ?>
+    );
 
+
+    let counterOfferSaved = false;
     try {
 
         const response =
@@ -2154,6 +2199,7 @@ async function sendCounterOffer(
 
         }
 
+        counterOfferSaved = true;
 
         showMessage(
             data.message,
@@ -2162,17 +2208,19 @@ async function sendCounterOffer(
 
 
         await refreshSubmission();
-
+        sellerCounterOfferPending = false;
 
     } catch (error) {
 
         showMessage(
-            error.message,
+            counterOfferSaved
+                ? `Your counter-offer was sent, but the submission could not be refreshed: ${error.message}`
+                : error.message,
             'error'
         );
 
 
-        if (button) {
+        if (button && !counterOfferSaved) {
 
             button.disabled =
                 false;
@@ -2184,11 +2232,14 @@ async function sendCounterOffer(
         }
 
 
-        if (cancelButton) {
+        if (cancelButton && !counterOfferSaved) {
 
             cancelButton.disabled =
                 false;
 
+        }
+        if (!counterOfferSaved) {
+            sellerCounterOfferPending = false;
         }
 
     }

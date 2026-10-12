@@ -1115,6 +1115,25 @@
     scroll-margin-top: 20px;
 }
 
+.admin-offer-panel[hidden] {
+    display: none;
+}
+
+.admin-offer-panel.offer-panel-revealed {
+    animation: adminOfferPanelReveal .24s ease-out both;
+}
+
+@keyframes adminOfferPanelReveal {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .seller-response-state {
     color: #d6bd7d;
 

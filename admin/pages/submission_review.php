@@ -357,6 +357,26 @@ $latestIsAdmin =
 $submissionInNegotiation =
     $submission['status'] === 'offer_sent';
 
+$isNegotiationFinished = in_array(
+    $submission['status'],
+    [
+        'accepted',
+        'declined',
+        'cancelled',
+        'completed'
+    ],
+    true
+);
+
+$showOfferForm =
+    !$isNegotiationFinished
+    &&
+    (
+        !$latestOffer
+        ||
+        $latestIsSeller
+    );
+
 $canDirectRespond =
     $canSendOffer
     && in_array(
@@ -402,7 +422,7 @@ foreach ($items as $item) {
 
 <link
     rel="stylesheet"
-    href="/VNZ-TECH/assets/css/admin_submission_review.css"
+    href="/VNZ-TECH/assets/css/admin_submission_review.css?v=<?= filemtime(__DIR__ . '/../../assets/css/admin_submission_review.css') ?>"
 >
 
 
@@ -1477,8 +1497,8 @@ foreach ($items as $item) {
             </strong>
 
             <span>
-                ACCEPT will use the seller's total asking price exactly.
-                MAKE OFFER remains available below.
+                ACCEPT uses the seller's total asking price exactly.
+                COUNTER OFFER opens the VNZ TECH offer form.
             </span>
 
         </div>
@@ -1504,6 +1524,18 @@ foreach ($items as $item) {
                 <?= peso($totalAskingPrice) ?>
                 →
             </button>
+
+            <?php if ($canSendOffer && $showOfferForm): ?>
+                <button
+                    type="button"
+                    class="negotiation-counter-button"
+                    id="openAdminCounter"
+                    aria-controls="adminOfferPanel"
+                    aria-expanded="false"
+                >
+                    COUNTER OFFER
+                </button>
+            <?php endif; ?>
 
         </div>
 
@@ -1712,19 +1744,9 @@ foreach ($items as $item) {
                         "
                         data-admin-response="decline"
                         data-offer-id="<?= (int) $latestOffer['id'] ?>"
+                        data-offer-amount="<?= htmlspecialchars((string) $latestOffer['offer_amount'], ENT_QUOTES, 'UTF-8') ?>"
                     >
                         DECLINE
-                    </button>
-
-
-                    <button
-                        type="button"
-                        class="
-                            negotiation-counter-button
-                        "
-                        id="openAdminCounter"
-                    >
-                        COUNTER OFFER
                     </button>
 
 
@@ -1735,17 +1757,28 @@ foreach ($items as $item) {
                         "
                         data-admin-response="accept"
                         data-offer-id="<?= (int) $latestOffer['id'] ?>"
+                        data-offer-amount="<?= htmlspecialchars((string) $latestOffer['offer_amount'], ENT_QUOTES, 'UTF-8') ?>"
                     >
-
                         ACCEPT
                         <?= peso(
                             $latestOffer[
                                 'offer_amount'
                             ]
                         ) ?>
-
                         →
+                    </button>
 
+
+                    <button
+                        type="button"
+                        class="
+                            negotiation-counter-button
+                        "
+                        id="openAdminCounter"
+                        aria-controls="adminOfferPanel"
+                        aria-expanded="false"
+                    >
+                        COUNTER OFFER
                     </button>
 
                 </div>
@@ -2034,31 +2067,6 @@ foreach ($items as $item) {
 
     <?php if ($canSendOffer): ?>
 
-        <?php
-
-            $isNegotiationFinished = in_array(
-                $submission['status'],
-                [
-                    'accepted',
-                    'declined',
-                    'cancelled',
-                    'completed'
-                ],
-                true
-            );
-
-            $showOfferForm =
-                !$isNegotiationFinished
-                &&
-                (
-                    !$latestOffer
-                    ||
-                    $latestIsSeller
-                );
-
-        ?>
-
-
         <?php if ($showOfferForm): ?>
 
             <section
@@ -2068,6 +2076,7 @@ foreach ($items as $item) {
                     admin-offer-panel
                 "
                 id="adminOfferPanel"
+                hidden
             >
 
                 <div class="section-header">
@@ -2250,7 +2259,7 @@ foreach ($items as $item) {
                         <button
                             type="button"
                             class="secondary-button"
-                            onclick="document.getElementById('adminSubmissionModal')?.classList.contains('is-open') ? window.closeAdminSubmissionModal() : window.loadAdminPage('submissions')"
+                            data-close-admin-offer
                         >
                             Cancel
                         </button>
@@ -2453,6 +2462,9 @@ foreach ($items as $item) {
     const approvalChatButton =
         approvalModal?.querySelector('[data-approval-chat]');
     let approvedTransactionId = 0;
+    let submissionResponsePending = false;
+    let adminCounterResponsePending = false;
+    let sendOfferPending = false;
 
     function closeApprovalModal(refresh = true) {
         if (!approvalModal) {
@@ -2535,24 +2547,35 @@ reviewPage
         button.addEventListener(
             'click',
             async function () {
+                if (submissionResponsePending) {
+                    return;
+                }
+                submissionResponsePending = true;
 
                 const responseType =
                     this.dataset.submissionResponse;
 
                 const submissionId =
                     this.dataset.submissionId;
-
-                const actionText =
-                    responseType === 'accept'
-                        ? 'accept this submission at the seller asking price'
-                        : 'decline this submission';
-
-                const confirmed =
-                    window.confirm(
-                        `Are you sure you want to ${actionText}?`
-                    );
+                const askingPrice = new Intl.NumberFormat('en-PH', {
+                    style: 'currency',
+                    currency: 'PHP'
+                }).format(<?= json_encode((float) $totalAskingPrice) ?>);
+                const confirmed = await window.VNZDialog.confirm({
+                    title: responseType === 'accept'
+                        ? 'Accept Submission?'
+                        : 'Decline Submission?',
+                    message: responseType === 'accept'
+                        ? `Are you sure you want to accept this submission at the seller's asking price? Submission <?= json_encode((string) $submission['reference_number'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?> has a total asking price of ${askingPrice}.`
+                        : 'Are you sure you want to decline submission <?= json_encode((string) $submission['reference_number'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>?',
+                    confirmLabel: responseType === 'accept'
+                        ? 'Accept Submission'
+                        : 'Decline Submission',
+                    danger: responseType !== 'accept'
+                });
 
                 if (!confirmed) {
+                    submissionResponsePending = false;
                     return;
                 }
 
@@ -2583,6 +2606,7 @@ reviewPage
                     <?= json_encode($csrfToken) ?>
                 );
 
+                let responseSaved = false;
                 try {
 
                     const response =
@@ -2609,6 +2633,7 @@ reviewPage
                         );
                     }
 
+                    responseSaved = true;
                     if (responseType === 'accept') {
                         showApprovalModal({
                             transaction_id: data.transaction_id,
@@ -2616,17 +2641,32 @@ reviewPage
                             final_amount: data.final_amount
                         });
                     } else {
-                        alert(data.message);
+                        await window.VNZDialog.alert({
+                            title: 'Submission Declined',
+                            message: data.message,
+                            confirmLabel: 'Close'
+                        });
                         refreshReviewAfterAction();
                     }
 
                 } catch (error) {
 
-                    alert(error.message);
-
-                    buttons.forEach(function (item) {
-                        item.disabled = false;
+                    await window.VNZDialog.alert({
+                        title: responseSaved
+                            ? 'Submission Updated'
+                            : 'Unable to Update Submission',
+                        message: responseSaved
+                            ? `The submission was updated, but the result could not be displayed: ${error.message}`
+                            : error.message,
+                        confirmLabel: 'Close'
                     });
+
+                    if (!responseSaved) {
+                        buttons.forEach(function (item) {
+                            item.disabled = false;
+                        });
+                        submissionResponsePending = false;
+                    }
 
                 }
 
@@ -2651,27 +2691,39 @@ reviewPage
                 button.addEventListener(
                     'click',
                     async function () {
+                        if (adminCounterResponsePending) {
+                            return;
+                        }
+                        adminCounterResponsePending = true;
 
                         const responseType =
                             this.dataset.adminResponse;
 
                         const offerId =
                             this.dataset.offerId;
-
-
-                        const actionText =
-                            responseType === 'accept'
-                                ? 'accept this seller counter-offer'
-                                : 'decline this seller counter-offer';
-
-
-                        const confirmed =
-                            window.confirm(
-                                `Are you sure you want to ${actionText}?`
-                            );
+                        const offerAmount = Number(this.dataset.offerAmount);
+                        const formattedAmount = Number.isFinite(offerAmount)
+                            ? new Intl.NumberFormat('en-PH', {
+                                style: 'currency',
+                                currency: 'PHP'
+                            }).format(offerAmount)
+                            : 'the seller counter-offer';
+                        const confirmed = await window.VNZDialog.confirm({
+                            title: responseType === 'accept'
+                                ? 'Accept Counter-Offer?'
+                                : 'Decline Counter-Offer?',
+                            message: responseType === 'accept'
+                                ? `Accept the seller's counter-offer of ${formattedAmount} for submission <?= json_encode((string) $submission['reference_number'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>?`
+                                : `Decline the seller's counter-offer of ${formattedAmount} for submission <?= json_encode((string) $submission['reference_number'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>?`,
+                            confirmLabel: responseType === 'accept'
+                                ? 'Accept Counter-Offer'
+                                : 'Decline Counter-Offer',
+                            danger: responseType !== 'accept'
+                        });
 
 
                         if (!confirmed) {
+                            adminCounterResponsePending = false;
                             return;
                         }
 
@@ -2713,7 +2765,7 @@ reviewPage
                             <?= json_encode($csrfToken) ?>
                         );
 
-
+                        let responseSaved = false;
                         try {
 
                             const response =
@@ -2744,6 +2796,7 @@ reviewPage
 
                             }
 
+                            responseSaved = true;
 
                             if (responseType === 'accept') {
                                 showApprovalModal({
@@ -2752,25 +2805,34 @@ reviewPage
                                     offer_amount: data.offer_amount
                                 });
                             } else {
-                                alert(data.message);
+                                await window.VNZDialog.alert({
+                                    title: 'Counter-Offer Declined',
+                                    message: data.message,
+                                    confirmLabel: 'Close'
+                                });
                                 refreshReviewAfterAction();
                             }
 
                         } catch (error) {
 
-                            alert(
-                                error.message
-                            );
+                            await window.VNZDialog.alert({
+                                title: responseSaved
+                                    ? 'Counter-Offer Updated'
+                                    : 'Unable to Update Counter-Offer',
+                                message: responseSaved
+                                    ? `The counter-offer was updated, but the result could not be displayed: ${error.message}`
+                                    : error.message,
+                                confirmLabel: 'Close'
+                            });
 
-
-                            buttons.forEach(
-                                function (item) {
-
-                                    item.disabled =
-                                        false;
-
-                                }
-                            );
+                            if (!responseSaved) {
+                                buttons.forEach(
+                                    function (item) {
+                                        item.disabled = false;
+                                    }
+                                );
+                                adminCounterResponsePending = false;
+                            }
 
                         }
 
@@ -2808,6 +2870,11 @@ reviewPage
         openAdminCounter.addEventListener(
             'click',
             function () {
+                adminOfferPanel.hidden = false;
+                adminOfferPanel.classList.remove('offer-panel-revealed');
+                void adminOfferPanel.offsetWidth;
+                adminOfferPanel.classList.add('offer-panel-revealed');
+                openAdminCounter.setAttribute('aria-expanded', 'true');
 
                 adminOfferPanel.scrollIntoView({
                     behavior: 'smooth',
@@ -2837,6 +2904,18 @@ reviewPage
             }
         );
 
+        const closeAdminOffer =
+            adminOfferPanel.querySelector('[data-close-admin-offer]');
+
+        if (closeAdminOffer) {
+            closeAdminOffer.addEventListener('click', function () {
+                adminOfferPanel.hidden = true;
+                adminOfferPanel.classList.remove('offer-panel-revealed');
+                openAdminCounter.setAttribute('aria-expanded', 'false');
+                openAdminCounter.focus();
+            });
+        }
+
     }
 
 
@@ -2853,12 +2932,16 @@ reviewPage
 
 
     if (sendOfferForm) {
+        const sendingCounterOffer = <?= $latestIsSeller ? 'true' : 'false' ?>;
 
         sendOfferForm.addEventListener(
             'submit',
             async function (event) {
 
                 event.preventDefault();
+                if (sendOfferPending) {
+                    return;
+                }
 
 
                 const submitButton =
@@ -2889,9 +2972,11 @@ reviewPage
                     Number(amount) <= 0
                 ) {
 
-                    alert(
-                        'Please enter a valid offer amount.'
-                    );
+                    await window.VNZDialog.alert({
+                        title: 'Invalid Offer Amount',
+                        message: 'Please enter a valid offer amount.',
+                        confirmLabel: 'Close'
+                    });
 
 
                     if (amountInput) {
@@ -2902,19 +2987,20 @@ reviewPage
                 }
 
 
-                const confirmed =
-                    window.confirm(
-                        `Send VNZ TECH offer of ₱${Number(amount).toLocaleString(
-                            'en-PH',
-                            {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                            }
-                        )}?`
-                    );
+                sendOfferPending = true;
+                const formattedAmount = new Intl.NumberFormat('en-PH', {
+                    style: 'currency',
+                    currency: 'PHP'
+                }).format(Number(amount));
+                const confirmed = await window.VNZDialog.confirm({
+                    title: sendingCounterOffer ? 'Send Counter-Offer?' : 'Send Offer?',
+                    message: `Send VNZ TECH ${sendingCounterOffer ? 'counter-offer' : 'offer'} of ${formattedAmount} for submission <?= json_encode((string) $submission['reference_number'], JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>?`,
+                    confirmLabel: sendingCounterOffer ? 'Send Counter-Offer' : 'Send Offer'
+                });
 
 
                 if (!confirmed) {
+                    sendOfferPending = false;
                     return;
                 }
 
@@ -2963,15 +3049,17 @@ reviewPage
 
                     }
 
-
                     refreshReviewAfterAction();
 
                 } catch (error) {
 
-                    alert(
-                        error.message
-                    );
+                    await window.VNZDialog.alert({
+                        title: 'Unable to Send Offer',
+                        message: error.message,
+                        confirmLabel: 'Close'
+                    });
 
+                    sendOfferPending = false;
 
                     if (submitButton) {
 

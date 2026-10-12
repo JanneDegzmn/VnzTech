@@ -2,6 +2,9 @@
 
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
+require_once __DIR__ . '/../../backend/csrf.php';
+
+$csrfToken = generateCsrfToken();
 
 
 /*
@@ -312,6 +315,8 @@ $initialMobile =
             JSON_UNESCAPED_SLASHES
         ) ?>;
 
+    let offerResponsePending = false;
+    let counterOfferPending = false;
 
     const resultArea =
         document.getElementById(
@@ -1149,6 +1154,7 @@ $initialMobile =
                                 class="decline-offer-btn"
                                 data-response="decline"
                                 data-offer-id="${offer.id}"
+                                data-offer-amount="${Number(offer.offer_amount)}"
                             >
                                 DECLINE
                             </button>
@@ -1169,6 +1175,7 @@ $initialMobile =
                                 class="accept-offer-btn"
                                 data-response="accept"
                                 data-offer-id="${offer.id}"
+                                data-offer-amount="${Number(offer.offer_amount)}"
                             >
                                 ACCEPT
                                 ${money(
@@ -1715,7 +1722,8 @@ $initialMobile =
 
                             respondToOffer(
                                 this.dataset.response,
-                                this.dataset.offerId
+                                this.dataset.offerId,
+                                this
                             );
 
                         }
@@ -1851,24 +1859,31 @@ $initialMobile =
 
     async function respondToOffer(
         responseType,
-        offerId
+        offerId,
+        triggerButton
     ) {
-
-        const actionText =
-            responseType === 'accept'
-                ? 'accept this offer'
-                : 'decline this offer';
-
-
-        const confirmed =
-            window.confirm(
-                `Are you sure you want to ${actionText}?`
-            );
+        if (offerResponsePending) {
+            return;
+        }
+        offerResponsePending = true;
+        const offerAmount = Number(triggerButton?.dataset.offerAmount);
+        const formattedOffer = Number.isFinite(offerAmount)
+            ? money(offerAmount)
+            : 'this offer';
+        const confirmed = await window.VNZDialog.confirm({
+            title: responseType === 'accept' ? 'Accept Offer?' : 'Decline Offer?',
+            message: responseType === 'accept'
+                ? `Are you sure you want to accept the offer of ${formattedOffer} for submission ${reference}?`
+                : `Are you sure you want to decline the offer of ${formattedOffer} for submission ${reference}?`,
+            confirmLabel: responseType === 'accept' ? 'Accept Offer' : 'Decline Offer',
+            danger: responseType !== 'accept'
+        });
 
 
         if (
             !confirmed
         ) {
+            offerResponsePending = false;
             return;
         }
 
@@ -1916,7 +1931,12 @@ $initialMobile =
             mobile
         );
 
+        body.append(
+            'csrf_token',
+            <?= json_encode($csrfToken) ?>
+        );
 
+        let responseSaved = false;
         try {
 
             const response =
@@ -1945,6 +1965,7 @@ $initialMobile =
 
             }
 
+            responseSaved = true;
 
             if (
                 responseType === 'accept'
@@ -1966,6 +1987,7 @@ $initialMobile =
 
 
             await refreshSubmission();
+            offerResponsePending = false;
 
 
         } catch (
@@ -1973,19 +1995,21 @@ $initialMobile =
         ) {
 
             showMessage(
-                error.message,
+                responseSaved
+                    ? `Your response was saved, but the submission could not be refreshed: ${error.message}`
+                    : error.message,
                 'error'
             );
 
 
-            buttons.forEach(
-                function(button) {
-
-                    button.disabled =
-                        false;
-
-                }
-            );
+            if (!responseSaved) {
+                buttons.forEach(
+                    function(button) {
+                        button.disabled = false;
+                    }
+                );
+                offerResponsePending = false;
+            }
 
         }
 
@@ -2001,6 +2025,9 @@ $initialMobile =
     async function sendCounterOffer(
         offerId
     ) {
+        if (counterOfferPending) {
+            return;
+        }
 
         const counterForm =
             resultArea.querySelector(
@@ -2119,17 +2146,18 @@ $initialMobile =
         }
 
 
-        const confirmed =
-            window.confirm(
-                `Send counter-offer of ${money(
-                    numericAmount
-                )}?`
-            );
+        counterOfferPending = true;
+        const confirmed = await window.VNZDialog.confirm({
+            title: 'Send Counter-Offer?',
+            message: `Send your counter-offer of ${money(numericAmount)} for submission ${reference}?`,
+            confirmLabel: 'Send Counter-Offer'
+        });
 
 
         if (
             !confirmed
         ) {
+            counterOfferPending = false;
             return;
         }
 
@@ -2203,7 +2231,12 @@ $initialMobile =
             feedback
         );
 
+        body.append(
+            'csrf_token',
+            <?= json_encode($csrfToken) ?>
+        );
 
+        let counterOfferSaved = false;
         try {
 
             const response =
@@ -2232,6 +2265,7 @@ $initialMobile =
 
             }
 
+            counterOfferSaved = true;
 
             showMessage(
                 data.message,
@@ -2240,6 +2274,7 @@ $initialMobile =
 
 
             await refreshSubmission();
+            counterOfferPending = false;
 
 
         } catch (
@@ -2247,12 +2282,16 @@ $initialMobile =
         ) {
 
             showMessage(
-                error.message,
+                counterOfferSaved
+                    ? `Your counter-offer was sent, but the submission could not be refreshed: ${error.message}`
+                    : error.message,
                 'error'
             );
 
 
             if (
+                !counterOfferSaved
+                &&
                 button
             ) {
 
@@ -2267,12 +2306,17 @@ $initialMobile =
 
 
             if (
+                !counterOfferSaved
+                &&
                 cancelButton
             ) {
 
                 cancelButton.disabled =
                     false;
 
+            }
+            if (!counterOfferSaved) {
+                counterOfferPending = false;
             }
 
         }

@@ -137,6 +137,10 @@ function chatScaledroneCallInboxRoomName(
 
 function chatGetAuthorizedCallInbox(array $actor): array
 {
+    if ($actor['actor_type'] === 'guest') {
+        throw new ChatHttpException('Calls are unavailable for guest conversations.', 403);
+    }
+
     $config = chatScaledroneConfig();
     if ($config === null) {
         throw new ChatHttpException('Realtime messaging is not configured.', 503);
@@ -187,6 +191,7 @@ function chatGetAuthorizedScaledroneRoom(
         'transaction_id' => $conversation['transaction_id'] === null
             ? null
             : (int) $conversation['transaction_id'],
+        'guest_submission' => $conversation['submission_id'] !== null,
         'channel_id' => $config['channel_id'],
         'secret_key' => $config['secret_key'],
         'room' => $room

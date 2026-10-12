@@ -29,7 +29,9 @@
             ? 'Global Chat'
             : category === 'private'
                 ? 'Private Chat'
-                : (root.dataset.actorType === 'seller' ? 'Admin' : 'Sellers');
+                : category === 'guest-sellers'
+                    ? 'Guest Sellers'
+                    : (root.dataset.actorType === 'seller' ? 'Admin' : 'Sellers');
         const label = unreadLabel(count);
         badge.textContent = label;
         badge.hidden = count === 0;
@@ -48,7 +50,8 @@
         const totals = {
             global: 0,
             private: 0,
-            contacts: 0
+            contacts: 0,
+            'guest-sellers': 0
         };
         let total = 0;
 
@@ -58,7 +61,11 @@
             if (conversation.conversation_type === 'global') {
                 totals.global += unread;
             } else if (conversation.conversation_type === 'private') {
-                totals.private += unread;
+                const category = conversation.guest_submission === true
+                    && root.dataset.actorType === 'admin'
+                    ? 'guest-sellers'
+                    : 'private';
+                totals[category] += unread;
             } else if (conversation.conversation_type === 'transaction') {
                 totals.contacts += unread;
             }
@@ -231,7 +238,9 @@
                             ? 'Global Chat'
                             : category === 'private'
                                 ? 'Private Chat'
-                                : (root.dataset.actorType === 'seller' ? 'Admin' : 'Sellers')
+                                : category === 'guest-sellers'
+                                    ? 'Guest Sellers'
+                                    : (root.dataset.actorType === 'seller' ? 'Admin' : 'Sellers')
                     );
                 });
                 const panel = root.querySelector('[data-floating-messages-panel]');
@@ -316,6 +325,55 @@
                 row.append(button);
                 appendCallActions(row, conversation);
                 list.append(row);
+            });
+        }
+
+        const guestConversations = (
+            category === 'guest-sellers'
+            || (category === 'private' && root.dataset.actorType !== 'admin')
+        )
+            ? conversations.filter(conversation => (
+                conversation.guest_submission === true
+                && conversation.conversation_type === 'private'
+            ))
+            : [];
+        if (
+            category === 'guest-sellers'
+            || (category === 'private' && root.dataset.actorType !== 'admin')
+        ) {
+            if (category === 'guest-sellers' && guestConversations.length === 0) {
+                const empty = document.createElement('p');
+                empty.className = 'floating-messages-list-state';
+                empty.textContent = 'No guest seller conversations are available.';
+                list.append(empty);
+            } else if (guestConversations.length > 0) {
+                addHeading('GUEST SELLER CHATS');
+            }
+            guestConversations.forEach(conversation => {
+                const button = document.createElement('button');
+                const avatar = document.createElement('span');
+                const name = document.createElement('strong');
+                const reference = document.createElement('span');
+                const preview = document.createElement('small');
+                button.type = 'button';
+                button.className = 'floating-messages-conversation is-guest-seller';
+                button.dataset.existingPrivateConversation = '';
+                button.dataset.conversationId = String(conversation.conversation_id);
+                button.dataset.conversationTitle = String(
+                    conversation.guest_seller_name || 'Guest Seller'
+                );
+                avatar.className = 'floating-messages-contact-avatar';
+                avatar.setAttribute('aria-hidden', 'true');
+                avatar.textContent = initialsFor(conversation.guest_seller_name || 'Guest Seller');
+                name.textContent = String(conversation.guest_seller_name || 'Guest Seller');
+                reference.textContent = `Submission ${String(
+                    conversation.submission_reference || ''
+                )} · ${presenceLabel(conversation.presence)}`;
+                preview.textContent = String(conversation.last_message || '').trim()
+                    || 'No messages yet';
+                button.append(avatar, name, reference, preview);
+                addUnread(button, conversation.unread_count);
+                list.append(button);
             });
         }
 
@@ -444,7 +502,10 @@
                 );
                 contacts = contactData.contacts || [];
             }
-            if (category === 'contacts' || !Array.isArray(availableConversations)) {
+            if (
+                category === 'contacts'
+                || !Array.isArray(availableConversations)
+            ) {
                 try {
                     const conversationData = await getJson(
                         '/VNZ-TECH/backend/chat_conversations.php?action=list'
@@ -452,7 +513,7 @@
                     availableConversations = conversationData.conversations || [];
                 } catch (error) {
                     console.error('Unable to load transaction conversation list:', error);
-                    if (category === 'contacts') {
+                    if (category === 'contacts' || category === 'guest-sellers') {
                         throw error;
                     }
                     availableConversations = [];
@@ -1167,6 +1228,12 @@
         const errorPanel = root.querySelector('[data-floating-messages-error]');
         const actorType = root.dataset.actorType;
 
+        root.querySelectorAll('[data-message-category]').forEach(button => {
+            button.classList.toggle(
+                'is-active',
+                button.dataset.messageCategory === category
+            );
+        });
         setCategoryMenuOpen(root, false);
         setPanelOpen(root, false);
         root.dataset.activeCategory = '';
@@ -1188,7 +1255,9 @@
 
         title.textContent = category === 'private'
             ? 'Private Chat'
-            : (actorType === 'seller' ? 'Admin conversations' : 'Seller conversations');
+            : category === 'guest-sellers'
+                ? 'Guest Sellers'
+                : (actorType === 'seller' ? 'Admin conversations' : 'Seller conversations');
         root.dataset.activeCategory = category;
         list.hidden = false;
         list.replaceChildren();
@@ -1255,6 +1324,20 @@
                     Number(callRequest.dataset.conversationId),
                     callRequest.dataset.callMode
                 ).catch(error => showCallRequestError(root, error));
+                return;
+            }
+            const guestConversation = event.target.closest('[data-existing-private-conversation]');
+            if (guestConversation) {
+                openFloatingWindow(root, {
+                    conversationType: 'private',
+                    conversationId: Number(guestConversation.dataset.conversationId),
+                    transactionId: 0,
+                    displayName: guestConversation.dataset.conversationTitle || 'Guest Seller'
+                }).catch(error => {
+                    const errorPanel = root.querySelector('[data-floating-messages-error]');
+                    errorPanel.textContent = error.message || 'Unable to open this guest conversation.';
+                    errorPanel.hidden = false;
+                });
                 return;
             }
             const transaction = event.target.closest('[data-transaction-id]');

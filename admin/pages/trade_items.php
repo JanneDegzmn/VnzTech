@@ -458,7 +458,11 @@ function tradeRequirementTypeLabel(string $type): string
 
             window.location.reload();
         } catch (error) {
-            window.alert(error.message || 'Unable to save trade item.');
+            await window.VNZDialog.alert({
+                title: 'Unable to Save Trade Item',
+                message: error.message || 'Unable to save trade item.',
+                confirmLabel: 'Close'
+            });
         } finally {
             submitButton.disabled = false;
             submitButton.textContent = 'Save Trade Item';
@@ -506,10 +510,26 @@ function tradeRequirementTypeLabel(string $type): string
             }
 
             if (action === 'delete') {
-                const confirmed = window.confirm('Delete this trade item and all its requirements?');
-                if (!confirmed) {
+                if (button.disabled) {
                     return;
                 }
+                button.disabled = true;
+                const itemName = button.closest('.trade-item-card')?.querySelector('h4')?.textContent?.trim()
+                    || 'this trade item';
+                const confirmed = await window.VNZDialog.confirm({
+                    title: 'Delete Trade Item?',
+                    message: `Delete ${itemName} and all its requirements?`,
+                    confirmLabel: 'Delete Trade Item',
+                    danger: true
+                });
+                if (!confirmed) {
+                    button.disabled = false;
+                    return;
+                }
+            } else if (button.disabled) {
+                return;
+            } else {
+                button.disabled = true;
             }
 
             const formData = new FormData();
@@ -534,7 +554,12 @@ function tradeRequirementTypeLabel(string $type): string
 
                 window.location.reload();
             } catch (error) {
-                window.alert(error.message || 'Unable to complete that action.');
+                await window.VNZDialog.alert({
+                    title: 'Unable to Update Trade Item',
+                    message: error.message || 'Unable to complete that action.',
+                    confirmLabel: 'Close'
+                });
+                button.disabled = false;
             }
         });
     });

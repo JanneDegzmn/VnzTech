@@ -1149,6 +1149,14 @@ endif;
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/seller_submissions.css"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/vnz_dialog.css?v=<?= filemtime(__DIR__ . '/../assets/css/vnz_dialog.css') ?>"
+    >
+    <script
+        src="/VNZ-TECH/assets/js/vnz-dialog.js"
+        defer
+    ></script>
 
 </head>
 
@@ -1255,11 +1263,10 @@ endif;
             <a
                 href="/VNZ-TECH/account/logout.php"
                 class="logout-link"
-                onclick="
-                    return confirm(
-                        'Are you sure you want to log out?'
-                    );
-                "
+                data-vnz-confirm="Are you sure you want to log out?"
+                data-vnz-confirm-title="Log Out?"
+                data-vnz-confirm-label="Log Out"
+                data-vnz-confirm-danger="true"
             >
 
                 <span class="nav-icon">

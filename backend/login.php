@@ -27,6 +27,19 @@ function sendJsonResponse(array $payload, int $statusCode = 200): void
     exit;
 }
 
+function sendLoginFailure(string $message, int $statusCode): void
+{
+    if (isAjaxRequest()) {
+        sendJsonResponse([
+            'success' => false,
+            'message' => $message,
+        ], $statusCode);
+    }
+
+    header('Location: /VNZ-TECH/account/login.php?error=' . urlencode($message));
+    exit;
+}
+
 function redirectToDashboard(): void
 {
     $reminder = !empty($_SESSION['seller_2fa_reminder'])
@@ -54,20 +67,20 @@ if (isset($_SESSION['user_logged_in']) && $_SESSION['user_logged_in'] === true) 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
-        sendJsonResponse([
-            'success' => false,
-            'message' => 'Your session token expired. Refresh the page and try again.'
-        ], 419);
+        sendLoginFailure(
+            'Your session token expired. Refresh the page and try again.',
+            419
+        );
     }
 
     $login = strtolower(trim((string) ($_POST['login'] ?? $_POST['email'] ?? '')));
     $password = (string) ($_POST['password'] ?? '');
 
     if ($login === '' || $password === '') {
-        sendJsonResponse([
-            'success' => false,
-            'message' => 'Please enter your email or registered mobile number and password.'
-        ], 400);
+        sendLoginFailure(
+            'Please enter your email or registered mobile number and password.',
+            400
+        );
     }
 
     try {
@@ -92,10 +105,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $mobile = preg_replace('/\D+/', '', $login);
             if (strlen($mobile) < 8 || strlen($mobile) > 15) {
-                sendJsonResponse([
-                    'success' => false,
-                    'message' => 'Enter a valid email address or registered mobile number.'
-                ], 422);
+                sendLoginFailure(
+                    'Enter a valid email address or registered mobile number.',
+                    422
+                );
             }
             $stmt = $pdo->prepare($selectedFields . "
                 WHERE REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(mobile, ' ', ''), '-', ''), '(', ''), ')', ''), '+', '') = ?
@@ -107,24 +120,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$user) {
-            sendJsonResponse([
-                'success' => false,
-                'message' => 'Invalid email or password.'
-            ], 401);
+            sendLoginFailure('Invalid email or password.', 401);
         }
 
         if ((int) $user['is_active'] !== 1) {
-            sendJsonResponse([
-                'success' => false,
-                'message' => 'Your account is currently inactive.'
-            ], 403);
+            sendLoginFailure('Your account is currently inactive.', 403);
         }
 
         if (!password_verify($password, (string) $user['password_hash'])) {
-            sendJsonResponse([
-                'success' => false,
-                'message' => 'Invalid email or password.'
-            ], 401);
+            sendLoginFailure('Invalid email or password.', 401);
         }
 
         if (

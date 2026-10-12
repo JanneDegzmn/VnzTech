@@ -8,6 +8,8 @@
     let activeVoiceChat = null;
     let activeCallChat = null;
     let activeCallSessionId = null;
+    let guestPresenceHeartbeatTimer = null;
+    let guestPresenceHeartbeatInFlight = false;
 
     function ensureCallOwnerHost() {
         let host = document.querySelector('[data-call-owner-host]');
@@ -1321,7 +1323,11 @@
         if (!ownMessage) {
             const senderName = String(
                 message.sender_display_name
-                || (message.sender_type === 'seller' ? 'Seller' : 'Admin')
+                || (
+                    message.sender_type === 'seller'
+                        ? 'Seller'
+                        : (message.sender_type === 'guest' ? 'Guest Seller' : 'Admin')
+                )
             );
             const avatar = createChatAvatar(
                 message.sender_profile_picture,
@@ -1372,14 +1378,101 @@
         }
         const currentActorType = widget.dataset.actorType || '';
         const currentActorId = Number(widget.dataset.actorId) || 0;
+        if (currentActorType === 'guest' && guestPresenceHeartbeatTimer === null) {
+            const sendGuestPresenceHeartbeat = async () => {
+                if (guestPresenceHeartbeatInFlight) {
+                    return;
+                }
+                guestPresenceHeartbeatInFlight = true;
+                try {
+                    const response = await fetch('/VNZ-TECH/backend/chat_presence.php', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        cache: 'no-store',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                        },
+                        body: new URLSearchParams({
+                            csrf_token: widget.dataset.csrfToken || ''
+                        })
+                    });
+                    const payload = await response.json();
+                    if (!response.ok || payload.success !== true) {
+                        if (response.status >= 400 && response.status < 500) {
+                            window.clearInterval(guestPresenceHeartbeatTimer);
+                            guestPresenceHeartbeatTimer = null;
+                        }
+                        throw new Error(payload.message || 'Presence heartbeat failed.');
+                    }
+                } catch (error) {
+                    console.warn('Guest chat presence heartbeat failed:', error.message);
+                } finally {
+                    guestPresenceHeartbeatInFlight = false;
+                }
+            };
+            sendGuestPresenceHeartbeat();
+            guestPresenceHeartbeatTimer = window.setInterval(
+                sendGuestPresenceHeartbeat,
+                20000
+            );
+        }
         const currentActorDisplayName = widget.dataset.actorDisplayName
-            || (currentActorType === 'admin' ? 'Admin' : 'Seller');
+            || (
+                currentActorType === 'admin'
+                    ? 'Admin'
+                    : (currentActorType === 'guest' ? 'Guest Seller' : 'Seller')
+            );
         const currentActorProfilePicture = widget.dataset.actorProfilePicture || '';
         const conversationPeerName = widget.dataset.conversationPeerName
             || widget.dataset.conversationTitle
             || 'Participant';
         const conversationPeerPicture = widget.dataset.conversationPeerPicture || '';
         const status = widget.querySelector('[data-chat-status]');
+        const revokeGuestButton = widget.querySelector('[data-chat-revoke-guest]');
+        if (revokeGuestButton) {
+            revokeGuestButton.addEventListener('click', async () => {
+                const confirmed = await window.VNZDialog.confirm({
+                    title: 'Revoke guest chat access?',
+                    message: 'The guest will no longer be able to open or send messages in this conversation.',
+                    confirmLabel: 'Revoke access',
+                    danger: true
+                });
+                if (!confirmed) {
+                    return;
+                }
+
+                revokeGuestButton.disabled = true;
+                try {
+                    const response = await fetch('/VNZ-TECH/backend/chat_conversations.php', {
+                        method: 'POST',
+                        credentials: 'same-origin',
+                        cache: 'no-store',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                        },
+                        body: new URLSearchParams({
+                            action: 'revoke_guest_access',
+                            conversation_id: widget.dataset.conversationId || '',
+                            csrf_token: widget.dataset.csrfToken || ''
+                        })
+                    });
+                    const payload = await response.json();
+                    if (!response.ok || payload.success !== true) {
+                        throw new Error(payload.message || 'Unable to revoke guest chat access.');
+                    }
+                    revokeGuestButton.textContent = 'Guest access revoked';
+                    revokeGuestButton.disabled = true;
+                    if (status) {
+                        status.textContent = payload.message;
+                    }
+                } catch (error) {
+                    revokeGuestButton.disabled = false;
+                    if (status) {
+                        status.textContent = error.message || 'Unable to revoke guest chat access.';
+                    }
+                }
+            });
+        }
         const connection = widget.querySelector('[data-chat-connection]');
         const connectionLabel = widget.querySelector('[data-chat-connection-label]');
         const messageList = widget.querySelector('[data-chat-messages]');
@@ -1431,6 +1524,8 @@
         const uploadProgressBar = widget.querySelector('[data-chat-upload-progress-bar]');
         const uploadError = widget.querySelector('[data-chat-upload-error]');
         const loadOlderButton = widget.querySelector('[data-chat-load-older]');
+        const historyControls = widget.querySelector('.transaction-chat-history-controls');
+        const scrollLatestButton = widget.querySelector('[data-chat-scroll-latest]');
         const widgetEventController = new AbortController();
         const typingIndicator = document.createElement('div');
         typingIndicator.className = 'transaction-chat-typing-indicator';
@@ -1560,6 +1655,7 @@
         }, {signal: widgetEventController.signal});
 
         const messageMap = new Map();
+        const pendingMessageDeletes = new Set();
         const landmarkDialog = document.createElement('dialog');
         landmarkDialog.className = 'transaction-chat-landmark-dialog';
         const dialogTitleId = `transaction-chat-landmark-title-${++landmarkDialogSequence}`;
@@ -1614,6 +1710,8 @@
         let realtimeLease = null;
         let oldestMessageCursor = null;
         let hasMoreMessages = false;
+        let olderHistoryExhausted = false;
+        let awayFromBottom = false;
         let loadingHistory = false;
         let historyRefreshQueued = false;
         let sendingMessage = false;
@@ -1622,6 +1720,8 @@
         let readRequestInProgress = false;
         let queuedReadMessageId = 0;
         let disposed = false;
+        let presenceRefreshInFlight = false;
+        let presenceRefreshTimer = null;
         let editingMessageId = null;
         let replyToMessageId = null;
         let selectedAttachment = null;
@@ -1678,6 +1778,56 @@
             connectionLabel.textContent = message;
             connection.classList.toggle('is-connected', kind === 'connected');
             connection.classList.toggle('is-error', kind === 'error');
+        }
+
+        function setPresence(isOnline) {
+            const presenceLabel = widget.querySelector('[data-chat-presence]');
+            if (presenceLabel) {
+                presenceLabel.textContent = isOnline ? 'Online' : 'Offline';
+            }
+        }
+
+        async function refreshConversationPresence() {
+            if (!actualConversationId || presenceRefreshInFlight || disposed) {
+                return;
+            }
+            presenceRefreshInFlight = true;
+            try {
+                const response = await fetch(
+                    '/VNZ-TECH/backend/chat_conversations.php?action=list',
+                    {credentials: 'same-origin', cache: 'no-store'}
+                );
+                const payload = await response.json();
+                if (!response.ok || payload.success !== true) {
+                    throw new Error(payload.message || 'Presence is unavailable.');
+                }
+                const conversations = Array.isArray(payload.data?.conversations)
+                    ? payload.data.conversations
+                    : [];
+                const conversation = conversations.find(item =>
+                    Number(item.conversation_id) === actualConversationId
+                );
+                const participant = conversation?.presence?.participants?.[0];
+                if (!participant || typeof participant.is_online !== 'boolean') {
+                    throw new Error('Presence is unavailable for this conversation.');
+                }
+                setPresence(participant.is_online);
+            } catch {
+                const presenceLabel = widget.querySelector('[data-chat-presence]');
+                if (presenceLabel) {
+                    presenceLabel.textContent = 'Presence unavailable';
+                }
+            } finally {
+                presenceRefreshInFlight = false;
+            }
+        }
+
+        if (currentActorType === 'guest' && actualConversationId > 0) {
+            refreshConversationPresence();
+            presenceRefreshTimer = window.setInterval(
+                refreshConversationPresence,
+                15000
+            );
         }
 
         function clearComposerState() {
@@ -3320,7 +3470,9 @@
             const actorKey = `${payload.actor_type}:${payload.actor_id}`;
             const fallbackName = payload.actor_type === 'admin'
                 ? 'Admin'
-                : payload.display_name || 'Participant';
+                : (payload.actor_type === 'guest'
+                    ? 'Guest Seller'
+                    : payload.display_name || 'Participant');
             if (payload.event === 'typing.started') {
                 const current = typingUsers.get(actorKey);
                 if (current) {
@@ -3515,6 +3667,7 @@
         }
 
         function markVisibleConversationRead() {
+            updateScrollToLatestButton();
             if (!isConversationViewed() || messageMap.size === 0) {
                 return;
             }
@@ -3550,10 +3703,21 @@
             }));
         }
 
-        function shouldAutoScroll() {
+        function isNearBottom() {
             return messageList.scrollHeight
                 - messageList.scrollTop
-                - messageList.clientHeight < 100;
+                - messageList.clientHeight <= 100;
+        }
+
+        function shouldAutoScroll() {
+            return isNearBottom();
+        }
+
+        function updateScrollToLatestButton() {
+            awayFromBottom = !isNearBottom();
+            scrollLatestButton.hidden = !messageList.isConnected
+                || !isConversationViewed()
+                || !awayFromBottom;
         }
 
         function renderMessages(autoScroll = false, preserveScroll = false) {
@@ -3582,15 +3746,21 @@
             });
 
             messageList.querySelectorAll('audio').forEach(audio => audio.pause());
-            messageList.replaceChildren(fragment, emptyState, typingIndicator);
+            messageList.replaceChildren(
+                historyControls,
+                fragment,
+                emptyState,
+                typingIndicator
+            );
             emptyState.hidden = sorted.length > 0;
-            loadOlderButton.hidden = !hasMoreMessages;
+            loadOlderButton.hidden = !hasMoreMessages || oldestMessageCursor === null;
 
             if (preserveScroll) {
                 messageList.scrollTop = oldTop + (messageList.scrollHeight - oldHeight);
             } else if (autoScroll) {
                 messageList.scrollTop = messageList.scrollHeight;
             }
+            updateScrollToLatestButton();
 
             if (sorted.length && isConversationViewed()) {
                 const newestId = Number(sorted[sorted.length - 1].id);
@@ -3679,8 +3849,22 @@
                 }
 
                 const data = await getJson(`/VNZ-TECH/backend/chat_messages.php?${params.toString()}`);
-                hasMoreMessages = data.has_more === true;
-                oldestMessageCursor = data.next_cursor || oldestMessageCursor;
+                const nextCursor = Number(data.next_cursor);
+                const canAdvanceCursor = data.has_more === true
+                    && Number.isSafeInteger(nextCursor)
+                    && nextCursor > 0
+                    && (beforeMessageId === null || nextCursor !== Number(beforeMessageId));
+                if (beforeMessageId !== null) {
+                    hasMoreMessages = canAdvanceCursor;
+                    oldestMessageCursor = hasMoreMessages ? nextCursor : null;
+                    olderHistoryExhausted = !hasMoreMessages;
+                } else if (!oldestMessageCursor && !olderHistoryExhausted) {
+                    hasMoreMessages = canAdvanceCursor;
+                    oldestMessageCursor = hasMoreMessages ? nextCursor : null;
+                } else if (data.has_more !== true) {
+                    hasMoreMessages = false;
+                    oldestMessageCursor = null;
+                }
                 upsertMessages(data.messages || [], {
                     forceScroll: options.forceScroll === true,
                     preserveScroll: options.preserveScroll === true
@@ -3707,7 +3891,7 @@
                 if (!data.messages?.length && messageMap.size === 0) {
                     emptyState.hidden = false;
                 }
-                loadOlderButton.hidden = !hasMoreMessages;
+                loadOlderButton.hidden = !hasMoreMessages || oldestMessageCursor === null;
             } catch (error) {
                 setStatus(`Unable to load message history: ${error.message}`, 'error');
             } finally {
@@ -3726,6 +3910,12 @@
             }
 
             if (payload.event === 'presence.updated') {
+                if (
+                    payload.actor_type !== currentActorType
+                    && ['online', 'offline'].includes(payload.presence)
+                ) {
+                    setPresence(payload.presence === 'online');
+                }
                 window.dispatchEvent(new CustomEvent('vnz:chat-presence-changed', {
                     detail: {
                         conversationId: actualConversationId,
@@ -4092,6 +4282,10 @@
                 positionMessageMenu(menu);
             }
         };
+        messageList.addEventListener('scroll', updateScrollToLatestButton, {
+            passive: true,
+            signal: widgetEventController.signal
+        });
         messageList.addEventListener('scroll', repositionOpenMessageMenu, {
             passive: true,
             signal: widgetEventController.signal
@@ -4185,9 +4379,25 @@
                 row.querySelector('[data-chat-actions-toggle]')
                     ?.setAttribute('aria-expanded', 'false');
                 const messageId = Number(deleteButton.dataset.messageId);
-                if (!window.confirm('Delete this message?')) {
+                if (!Number.isSafeInteger(messageId) || messageId <= 0) {
+                    setStatus('This message could not be identified for deletion.', 'error');
                     return;
                 }
+                if (pendingMessageDeletes.has(messageId)) {
+                    return;
+                }
+                pendingMessageDeletes.add(messageId);
+                const confirmed = await window.VNZDialog.confirm({
+                    title: 'Delete Message?',
+                    message: 'Delete this message? This action cannot be undone.',
+                    confirmLabel: 'Delete Message',
+                    danger: true
+                });
+                if (!confirmed) {
+                    pendingMessageDeletes.delete(messageId);
+                    return;
+                }
+                deleteButton.disabled = true;
                 try {
                     const data = await postForm('/VNZ-TECH/backend/chat_messages.php', {
                         action: 'delete',
@@ -4205,7 +4415,10 @@
                     renderMessages(shouldAutoScroll());
                     setStatus('Message deleted.');
                 } catch (error) {
+                    deleteButton.disabled = false;
                     setStatus(`Could not delete this message: ${error.message}`, 'error');
+                } finally {
+                    pendingMessageDeletes.delete(messageId);
                 }
                 return;
             }
@@ -4297,10 +4510,23 @@
         });
 
         loadOlderButton.addEventListener('click', () => {
-            if (oldestMessageCursor !== null) {
+            if (
+                hasMoreMessages
+                && oldestMessageCursor !== null
+                && !loadingHistory
+            ) {
                 loadHistory(oldestMessageCursor, {preserveScroll: true});
             }
         });
+        scrollLatestButton.addEventListener('click', () => {
+            if (!messageList.isConnected || !isConversationViewed()) {
+                return;
+            }
+            messageList.scrollTo({
+                top: messageList.scrollHeight,
+                behavior: 'smooth'
+            });
+        }, {signal: widgetEventController.signal});
 
         async function start() {
             if (!csrfToken || !currentActorType) {
@@ -4371,6 +4597,10 @@
         activeChats.set(widget, () => {
             if (disposed) {
                 return;
+            }
+            if (presenceRefreshTimer !== null) {
+                window.clearInterval(presenceRefreshTimer);
+                presenceRefreshTimer = null;
             }
             stopTyping();
             stopCallTone();

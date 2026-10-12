@@ -38,14 +38,14 @@ $csrfToken = generateCsrfToken();
     >
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261010-call-window"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261012-guest-presence"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261010-messaging-regression-fix"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261012-guest-presence"
         defer
     ></script>
     <script
-        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261010-messaging-regression-fix"
+        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261012-guest-presence"
         defer
     ></script>
 
@@ -111,7 +111,11 @@ $csrfToken = generateCsrfToken();
                     reminder.remove();
                 } catch (error) {
                     button.disabled = false;
-                    window.alert(error.message || 'Unable to save the sign-in preference.');
+                    await window.VNZDialog.alert({
+                        title: 'Unable to Save Sign-In Preference',
+                        message: error.message || 'Unable to save the sign-in preference.',
+                        confirmLabel: 'Close'
+                    });
                 }
             });
         });

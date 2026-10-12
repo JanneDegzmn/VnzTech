@@ -53,6 +53,7 @@ try {
             full_name,
             mobile,
             email,
+            email_verified_at,
             address,
             profile_picture,
             language,
@@ -231,14 +232,14 @@ $initialAlertMessage =
     >
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261010-call-window"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261012-guest-presence"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261010-messaging-regression-fix"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261012-guest-presence"
         defer
     ></script>
     <script
-        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261010-messaging-regression-fix"
+        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261012-guest-presence"
         defer
     ></script>
 
@@ -316,7 +317,11 @@ $initialAlertMessage =
                 }
             } catch (error) {
                 if (button) button.disabled = false;
-                window.alert(error.message || 'Unable to save your reminder preference.');
+                await window.VNZDialog.alert({
+                    title: 'Unable to Save Reminder Preference',
+                    message: error.message || 'Unable to save your reminder preference.',
+                    confirmLabel: 'Close'
+                });
             }
         }
 
@@ -664,6 +669,16 @@ $initialAlertMessage =
                                     ) ?>
 
                                 </strong>
+
+                                <small>
+
+                                    <?php if (!empty($sellerAccount['email_verified_at'])): ?>
+                                        Verified email. Submission receipts can be sent to this address.
+                                    <?php else: ?>
+                                        This email is not verified. Submission receipts will not be sent until it is verified.
+                                    <?php endif; ?>
+
+                                </small>
 
                             </div>
 
@@ -3319,6 +3334,10 @@ $initialAlertMessage =
 
     let sellerAlertQueue =
         [];
+    const sellerResultAlertIds =
+        new Set();
+    let checkingSellerResults =
+        false;
 
 
     function showSellerAlertModal(
@@ -3611,7 +3630,11 @@ $initialAlertMessage =
     */
 
     async function checkUnseenResults() {
+        if (checkingSellerResults) {
+            return;
+        }
 
+        checkingSellerResults = true;
         try {
 
             const response =
@@ -3637,6 +3660,15 @@ $initialAlertMessage =
 
             data.results.forEach(
                 function (result) {
+                    const resultId = Number(result.id);
+                    if (
+                        !Number.isSafeInteger(resultId)
+                        || resultId <= 0
+                        || sellerResultAlertIds.has(resultId)
+                    ) {
+                        return;
+                    }
+                    sellerResultAlertIds.add(resultId);
 
                     const isAccepted =
                         result.status ===
@@ -3660,9 +3692,12 @@ $initialAlertMessage =
 
                     if (isAccepted && Number(result.transaction_id) > 0) {
                         window.showSellerTransactionApproval(
-                            result,
+                            {
+                                ...result,
+                                submission_reference: result.reference_number
+                            },
                             function () {
-                                markResultSeen(result.id);
+                                markResultSeen(resultId);
                             }
                         );
                         return;
@@ -3722,7 +3757,7 @@ $initialAlertMessage =
                                 function () {
 
                                     markResultSeen(
-                                        result.id
+                                        resultId
                                     );
 
                                 }
@@ -3746,6 +3781,8 @@ $initialAlertMessage =
                 error
             );
 
+        } finally {
+            checkingSellerResults = false;
         }
 
     }

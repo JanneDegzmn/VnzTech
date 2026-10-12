@@ -244,5 +244,25 @@ $csrfToken = generateCsrfToken();
 
 </div>
 
+<?php if ($error !== ''): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const errorMessage = document.querySelector('.message.error');
+            if (errorMessage) {
+                errorMessage.hidden = true;
+            }
+
+            if (window.VNZDialog) {
+                window.VNZDialog.alert({
+                    title: 'Login Failed',
+                    message: <?= json_encode($error, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+                    confirmLabel: 'Try Again',
+                    danger: true
+                });
+            }
+        });
+    </script>
+<?php endif; ?>
+
 </body>
 </html>

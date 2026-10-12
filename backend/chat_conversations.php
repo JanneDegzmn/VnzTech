@@ -9,6 +9,45 @@ try {
     $action = chatRequestAction();
     $actor = chatGetCurrentActor();
 
+    if ($action === 'revoke_guest_access') {
+        chatRequireMethod('POST');
+        chatRequireCsrf();
+        if (
+            $actor['actor_type'] !== 'admin'
+            || !hasPermission('manage_offers')
+        ) {
+            throw new ChatHttpException('Unauthorized.', 403);
+        }
+
+        $conversationId = chatPositiveInteger(
+            $_POST['conversation_id'] ?? null,
+            'conversation ID'
+        );
+        $conversation = chatRequireConversationMembership(
+            $conversationId,
+            $actor
+        );
+        if (
+            $conversation['conversation_type'] !== 'private'
+            || $conversation['submission_id'] === null
+        ) {
+            throw new ChatHttpException('This is not a guest submission conversation.', 422);
+        }
+
+        global $pdo;
+        $revokeStmt = $pdo->prepare("
+            UPDATE guest_chat_identities
+            SET revoked_at = COALESCE(revoked_at, NOW())
+            WHERE submission_id = ?
+        ");
+        $revokeStmt->execute([(int) $conversation['submission_id']]);
+        if ($revokeStmt->rowCount() < 1) {
+            throw new ChatHttpException('Guest chat access is already unavailable.', 409);
+        }
+
+        chatJsonResponse(true, 'Guest chat access was revoked.', 200);
+    }
+
     if ($action === 'open') {
         chatRequireMethod('POST');
         chatRequireCsrf();
@@ -18,6 +57,12 @@ try {
             throw new ChatHttpException('Invalid conversation type.', 422);
         }
         $conversationType = strtolower(trim($conversationType));
+        if (
+            $actor['actor_type'] === 'guest'
+            && $conversationType !== 'transaction'
+        ) {
+            throw new ChatHttpException('Unauthorized.', 403);
+        }
 
         if ($conversationType === 'transaction') {
             $transactionId = chatPositiveInteger(
@@ -55,6 +100,9 @@ try {
 
     if ($action === 'contacts') {
         chatRequireMethod('GET');
+        if ($actor['actor_type'] === 'guest') {
+            throw new ChatHttpException('Unauthorized.', 403);
+        }
         $category = $_GET['category'] ?? null;
         if (!is_string($category)) {
             throw new ChatHttpException('Invalid contact category.', 422);
@@ -77,12 +125,28 @@ try {
 
         global $pdo;
 
+        $submissionIdExpression = chatGuestSubmissionSchemaAvailable()
+            ? 'c.submission_id'
+            : 'NULL';
         $sql = "
             SELECT
                 c.id AS conversation_id,
                 c.type AS conversation_type,
                 c.transaction_id,
+                $submissionIdExpression AS submission_id,
                 t.transaction_reference,
+                s.reference_number AS submission_reference,
+                s.seller_name AS submission_seller_name,
+                (
+                    SELECT CASE
+                        WHEN m.deleted_at IS NOT NULL THEN 'Message deleted'
+                        ELSE LEFT(m.content, 120)
+                    END
+                    FROM messages m
+                    WHERE m.conversation_id = c.id
+                    ORDER BY m.created_at DESC, m.id DESC
+                    LIMIT 1
+                ) AS last_message,
                 c.updated_at
             FROM conversations c
             INNER JOIN conversation_participants current_participant
@@ -92,7 +156,7 @@ try {
             LEFT JOIN transactions t
                 ON t.id = c.transaction_id
             LEFT JOIN submissions s
-                ON s.id = t.submission_id
+                ON s.id = COALESCE(t.submission_id, $submissionIdExpression)
             LEFT JOIN offers o
                 ON o.id = t.offer_id
             WHERE c.type IN ('transaction', 'private', 'global')
@@ -154,9 +218,20 @@ try {
                 'transaction_id' => $conversation['transaction_id'] === null
                     ? null
                     : (int) $conversation['transaction_id'],
+                'guest_submission' => $conversation['submission_id'] !== null,
                 'unread_count' => $unreadCount,
                 'updated_at' => $conversation['updated_at']
             ];
+            if (isset($context['submission_reference'])) {
+                $conversationData['submission_reference'] =
+                    $context['submission_reference'];
+                $conversationData['guest_seller_name'] =
+                    $context['submission_seller_name'] !== ''
+                        ? $context['submission_seller_name']
+                        : 'Guest Seller';
+                $conversationData['last_message'] =
+                    (string) ($conversation['last_message'] ?? '');
+            }
             $conversationData['call_eligible'] = false;
             if (in_array($conversation['conversation_type'], ['transaction', 'private'], true)) {
                 try {

@@ -63,6 +63,7 @@ if (isAdminLoggedIn()) {
 
 
 $error = '';
+$invalidCredentials = false;
 $csrfToken = generateCsrfToken();
 $pendingAdminId = (int) ($_SESSION['admin_2fa_pending_id'] ?? 0);
 $twoFactorChallenge = $pendingAdminId > 0;
@@ -374,6 +375,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'Invalid admin credentials.'
                 );
                 $error = 'Invalid username/email or password.';
+                $invalidCredentials = true;
             } elseif ((int) $admin['is_active'] !== 1) {
                 logAdminActivity((int) $admin['id'], 'auth.login_failed', 'Inactive admin attempted to sign in.');
                 $error = 'This admin account is currently inactive.';
@@ -469,7 +471,7 @@ if ($successMessage) {
 </head>
 
 
-<body>
+<body class="admin-login">
 
 <?php include __DIR__ . '/../includes/loader-body.php'; ?>
 
@@ -737,6 +739,26 @@ if ($successMessage) {
 
 
 </div>
+
+<?php if ($invalidCredentials): ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const errorMessage = document.querySelector('.login-error');
+            if (errorMessage) {
+                errorMessage.hidden = true;
+            }
+
+            if (window.VNZDialog) {
+                window.VNZDialog.alert({
+                    title: 'Login Failed',
+                    message: <?= json_encode($error, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>,
+                    confirmLabel: 'Try Again',
+                    danger: true
+                });
+            }
+        });
+    </script>
+<?php endif; ?>
 
 
 </body>

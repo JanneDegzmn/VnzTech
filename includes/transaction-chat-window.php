@@ -13,6 +13,7 @@ $transactionChatConversationId = filter_input(
     FILTER_VALIDATE_INT
 );
 $transactionChatResolvedConversationId = 0;
+$transactionChatGuestSubmission = false;
 
 try {
     $transactionChatActor = chatGetCurrentActor();
@@ -36,6 +37,7 @@ try {
             $transactionChatConversationType = $conversation['conversation_type'];
             $transactionChatConversationDbId = (int) $conversation['conversation_id'];
             $transactionChatDisplayName = (string) $conversation['display_name'];
+            $transactionChatGuestSubmission = $conversation['submission_id'] !== null;
             $transactionChatId = 0;
             $transactionChatReference = '';
             $transactionChatStatus = null;
@@ -68,10 +70,20 @@ try {
         return;
     }
 
-    chatGetTransactionContext(
+    $transactionChatContext = chatGetTransactionContext(
         (int) $transactionChatWindowId,
         $transactionChatActor
     );
+    if (!empty($transactionChatContext['guest_submission'])) {
+        $transactionChatResolvedConversationId =
+            (int) $transactionChatContext['guest_chat_conversation_id'];
+        $transactionChatConversationType = 'private';
+        $transactionChatDisplayName = $transactionChatActor['actor_type'] === 'admin'
+            ? 'Guest Seller · ' . $transactionChatContext['submission_reference']
+            : 'Admin';
+        $transactionChatGuestSubmission = true;
+        $transactionChatShowTransactionContext = true;
+    }
 } catch (ChatHttpException $e) {
     http_response_code($e->httpStatus);
     ?>
@@ -178,9 +190,13 @@ if ($transactionChatSubmissionItems) {
 }
 
 $transactionChatId = (int) $transactionChatData['id'];
-$transactionChatConversationType = 'transaction';
+$transactionChatConversationType = $transactionChatGuestSubmission
+    ? 'private'
+    : 'transaction';
 $transactionChatConversationDbId = $transactionChatResolvedConversationId;
-$transactionChatDisplayName = (string) $transactionChatData['transaction_reference'];
+if (!$transactionChatGuestSubmission) {
+    $transactionChatDisplayName = (string) $transactionChatData['transaction_reference'];
+}
 $transactionChatReference = $transactionChatData['transaction_reference'];
 $transactionChatStatus = $transactionChatData['transaction_status'];
 $transactionChatPaymentStatus = $transactionChatData['payment_status'];

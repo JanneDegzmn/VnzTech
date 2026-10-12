@@ -11,5 +11,6 @@ return [
     'smtp_username' => 'your-gmail-address@gmail.com',
     'smtp_password' => 'your-16-character-google-app-password',
     'from_email' => 'your-gmail-address@gmail.com',
-    'from_name' => 'VNZ TECH'
+    'from_name' => 'VNZ TECH',
+    'admin_notification_email' => 'replace-with-admin-recipient@example.com'
 ];

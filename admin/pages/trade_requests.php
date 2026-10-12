@@ -205,7 +205,11 @@ function tradeRequestFormatDate(?string $date): string
                 }
                 window.location.reload();
             } catch (error) {
-                alert(error.message || 'Unable to update this request.');
+                await window.VNZDialog.alert({
+                    title: 'Unable to Update Trade Request',
+                    message: error.message || 'Unable to update this request.',
+                    confirmLabel: 'Close'
+                });
                 button.disabled = false;
                 button.textContent = previousText;
             }

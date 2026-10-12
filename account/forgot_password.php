@@ -226,42 +226,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             '/account/reset_password.php?token=' .
                             rawurlencode($token);
 
-                        $mailer = new PHPMailer\PHPMailer\PHPMailer(true);
-                        $mailer->isSMTP();
-                        $mailer->Host = (string) $config['smtp_host'];
-                        $mailer->SMTPAuth = true;
-                        $mailer->Username = (string) $config['smtp_username'];
-                        $mailer->Password = preg_replace(
-                            '/\s+/',
-                            '',
-                            (string) $config['smtp_password']
-                        );
-                        $mailer->SMTPSecure =
-                            PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-                        $mailer->Port = (int) $config['smtp_port'];
-                        $mailer->CharSet =
-                            PHPMailer\PHPMailer\PHPMailer::CHARSET_UTF8;
-                        $mailer->setFrom(
-                            (string) $config['from_email'],
-                            (string) $config['from_name']
-                        );
-                        $mailer->addAddress((string) $user['email']);
-                        $mailer->isHTML(true);
-                        $mailer->Subject = 'Reset your VNZ TECH seller password';
                         $safeResetUrl = htmlspecialchars(
                             $resetUrl,
                             ENT_QUOTES,
                             'UTF-8'
                         );
-                        $mailer->Body =
+                        $resetHtml =
                             '<p>We received a request to reset your VNZ TECH seller account password.</p>' .
                             '<p><a href="' . $safeResetUrl . '">Create a new password</a></p>' .
                             '<p>This one-time link expires in 30 minutes. If you did not request this, you can ignore this email.</p>';
-                        $mailer->AltBody =
+                        $resetText =
                             "Create a new password using this one-time link:\n\n" .
                             $resetUrl .
                             "\n\nThis link expires in 30 minutes. If you did not request this, you can ignore this email.";
-                        $mailer->send();
+
+                        sendVnzEmail(
+                            (string) $user['email'],
+                            'Reset your VNZ TECH seller password',
+                            $resetHtml,
+                            $resetText,
+                            $config
+                        );
                     } catch (Throwable $e) {
                         $invalidateStmt = $pdo->prepare("
                             UPDATE seller_password_reset_attempts

@@ -77,8 +77,16 @@ $openFormRequested =
 
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/sell.css"
+        href="/VNZ-TECH/assets/css/sell.css?v=<?= filemtime(__DIR__ . '/assets/css/sell.css') ?>"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261012-guest-presence"
+    >
+    <script
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261012-guest-chat-drawer"
+        defer
+    ></script>
 
 
 
@@ -944,6 +952,25 @@ $openFormRequested =
                     </div>
 
 
+                    <div class="form-group">
+
+                        <label for="seller_email">
+                            Email Address <b>*</b>
+                        </label>
+
+                        <input
+                            type="email"
+                            id="seller_email"
+                            name="seller_email"
+                            maxlength="254"
+                            autocomplete="email"
+                            placeholder="name@example.com"
+                            required
+                        >
+
+                    </div>
+
+
                     <div class="form-group full-width">
 
                         <label for="seller_address">
@@ -1217,82 +1244,113 @@ $openFormRequested =
         hidden
     >
         <div class="seller-modal-card tracking-modal-card">
+            <div class="tracking-modal-layout" data-tracking-modal-layout>
+                <div class="tracking-modal-details" data-track-details>
 
-            <div class="tracking-modal-header">
+                    <div class="tracking-modal-header">
 
-                <div>
-                    <span class="seller-modal-kicker">
-                        TRACK STATUS
-                    </span>
+                        <div>
+                            <span class="seller-modal-kicker">
+                                TRACK STATUS
+                            </span>
 
-                    <h2 id="trackSubmissionModalTitle">
-                        Check your item status
-                    </h2>
+                            <h2 id="trackSubmissionModalTitle">
+                                Check your item status
+                            </h2>
+                        </div>
+
+                        <button
+                            type="button"
+                            class="rates-modal-close"
+                            id="closeTrackSubmissionModalBtn"
+                            aria-label="Close track submission modal"
+                        >
+                            ×
+                        </button>
+
+                    </div>
+
+                    <form id="trackSubmissionForm" class="tracking-modal-form">
+                        <input
+                            type="hidden"
+                            name="csrf_token"
+                            value="<?= htmlspecialchars($tradeCsrfToken, ENT_QUOTES, 'UTF-8') ?>"
+                        >
+
+                        <div class="tracking-modal-grid">
+
+                            <div class="tracking-modal-field">
+                                <label for="trackReferenceNumber">
+                                    Reference Number
+                                </label>
+                                <input
+                                    type="text"
+                                    id="trackReferenceNumber"
+                                    name="reference"
+                                    placeholder="#SP-260911-XXXX"
+                                    autocomplete="off"
+                                    required
+                                >
+                            </div>
+
+                            <div class="tracking-modal-field">
+                                <label for="trackMobileNumber">
+                                    Mobile Number
+                                </label>
+                                <input
+                                    type="tel"
+                                    id="trackMobileNumber"
+                                    name="mobile"
+                                    placeholder="09XXXXXXXXX"
+                                    autocomplete="tel"
+                                    required
+                                >
+                            </div>
+
+                        </div>
+
+                        <button type="submit" class="track-modal-submit">
+                            Track Submission
+                        </button>
+
+                    </form>
+
+                    <div
+                        id="trackSubmissionMessage"
+                        class="track-modal-message"
+                        hidden
+                    ></div>
+
+                    <div
+                        id="trackSubmissionResult"
+                        class="track-modal-result"
+                        hidden
+                    ></div>
                 </div>
 
-                <button
-                    type="button"
-                    class="rates-modal-close"
-                    id="closeTrackSubmissionModalBtn"
-                    aria-label="Close track submission modal"
+                <aside
+                    class="track-guest-chat-column"
+                    data-guest-chat-column
+                    aria-label="Chat with Admin"
+                    aria-hidden="true"
+                    inert
+                    hidden
                 >
-                    ×
-                </button>
-
+                    <header class="track-guest-chat-panel-header">
+                        <div>
+                            <span>PRIVATE CHAT</span>
+                            <strong>Admin</strong>
+                        </div>
+                        <button
+                            type="button"
+                            class="track-guest-chat-panel-close"
+                            data-guest-chat-close
+                            aria-label="Close chat with Admin"
+                        >×</button>
+                    </header>
+                    <div class="track-guest-chat-panel-content" data-guest-chat-content></div>
+                </aside>
             </div>
-
-            <form id="trackSubmissionForm" class="tracking-modal-form">
-
-                <div class="tracking-modal-grid">
-
-                    <div class="tracking-modal-field">
-                        <label for="trackReferenceNumber">
-                            Reference Number
-                        </label>
-                        <input
-                            type="text"
-                            id="trackReferenceNumber"
-                            name="reference"
-                            placeholder="#SP-260911-XXXX"
-                            autocomplete="off"
-                            required
-                        >
-                    </div>
-
-                    <div class="tracking-modal-field">
-                        <label for="trackMobileNumber">
-                            Mobile Number
-                        </label>
-                        <input
-                            type="tel"
-                            id="trackMobileNumber"
-                            name="mobile"
-                            placeholder="09XXXXXXXXX"
-                            autocomplete="tel"
-                            required
-                        >
-                    </div>
-
-                </div>
-
-                <button type="submit" class="track-modal-submit">
-                    Track Submission
-                </button>
-
-            </form>
-
-            <div
-                id="trackSubmissionMessage"
-                class="track-modal-message"
-                hidden
-            ></div>
-
-            <div
-                id="trackSubmissionResult"
-                class="track-modal-result"
-                hidden
-            ></div>
-
         </div>
     </div>
 
@@ -2206,6 +2264,94 @@ $openFormRequested =
             return;
         }
 
+        const guestChatColumn = trackModal.querySelector('[data-guest-chat-column]');
+        const guestChatContent = guestChatColumn?.querySelector('[data-guest-chat-content]');
+        let guestChatCloseTimer = null;
+        let guestChatOpener = null;
+
+        guestChatColumn?.addEventListener('click', event => {
+            if (event.target.closest('[data-guest-chat-close]')) {
+                closeGuestChatDrawer();
+            }
+        });
+
+        function closeGuestChatDrawer(restoreFocus = true) {
+            if (!guestChatColumn || guestChatColumn.hidden) {
+                return;
+            }
+            if (guestChatCloseTimer !== null) {
+                window.clearTimeout(guestChatCloseTimer);
+            }
+            const card = trackModal.querySelector('.tracking-modal-card');
+            card?.classList.remove('has-guest-chat');
+            card?.classList.add('is-closing-guest-chat');
+            guestChatColumn.classList.remove('is-open');
+            guestChatColumn.inert = true;
+            guestChatColumn.setAttribute('aria-hidden', 'true');
+            guestChatCloseTimer = window.setTimeout(() => {
+                guestChatColumn.hidden = true;
+                card?.classList.remove('is-closing-guest-chat');
+                guestChatCloseTimer = null;
+            }, 280);
+            if (restoreFocus && guestChatOpener?.isConnected) {
+                guestChatOpener.focus();
+            }
+        }
+
+        async function openGuestChatDrawer(button) {
+            const conversationId = Number(button.dataset.conversationId || 0);
+            if (!Number.isInteger(conversationId) || conversationId < 1) {
+                throw new Error('The authorized chat conversation is unavailable.');
+            }
+            if (!guestChatColumn || !guestChatContent) {
+                throw new Error('The chat panel is unavailable.');
+            }
+            if (guestChatCloseTimer !== null) {
+                window.clearTimeout(guestChatCloseTimer);
+                guestChatCloseTimer = null;
+            }
+            guestChatColumn.hidden = false;
+            guestChatColumn.inert = false;
+            guestChatColumn.setAttribute('aria-hidden', 'false');
+            const card = trackModal.querySelector('.tracking-modal-card');
+            card?.classList.remove('is-closing-guest-chat');
+            card?.classList.add('has-guest-chat');
+            requestAnimationFrame(() => guestChatColumn.classList.add('is-open'));
+            guestChatOpener = button;
+            const closeButton = guestChatColumn.querySelector('[data-guest-chat-close]');
+            closeButton.focus();
+
+            if (Number(guestChatColumn.dataset.conversationId) === conversationId
+                && guestChatColumn.dataset.chatLoaded === 'true') {
+                return;
+            }
+            guestChatColumn.dataset.conversationId = String(conversationId);
+            guestChatColumn.dataset.chatLoaded = 'false';
+            const loading = document.createElement('p');
+            loading.className = 'track-guest-chat-loading';
+            loading.textContent = 'Connecting to Admin…';
+            guestChatContent.replaceChildren(loading);
+            const response = await fetch(
+                `/VNZ-TECH/includes/transaction-chat-window.php?conversation_id=${encodeURIComponent(conversationId)}`,
+                {
+                    method: 'GET',
+                    credentials: 'same-origin',
+                    cache: 'no-store',
+                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                }
+            );
+            const html = await response.text();
+            if (!response.ok) {
+                throw new Error(
+                    html.replace(/<[^>]*>/g, ' ').trim()
+                    || 'Unable to open this conversation.'
+                );
+            }
+            guestChatContent.innerHTML = html;
+            guestChatColumn.dataset.chatLoaded = 'true';
+            window.VNZTransactionChat?.scan?.(guestChatContent);
+        }
+
         function showTrackModal() {
             trackModal.hidden = false;
             syncBodyScrollLock();
@@ -2216,12 +2362,22 @@ $openFormRequested =
         }
 
         function hideTrackModal() {
+            closeGuestChatDrawer(false);
             trackModal.hidden = true;
             trackSubmissionMessage.hidden = true;
             trackSubmissionMessage.className = 'track-modal-message';
             trackSubmissionMessage.textContent = '';
             trackSubmissionResult.hidden = true;
             trackSubmissionResult.innerHTML = '';
+            guestChatContent?.replaceChildren();
+            if (guestChatColumn) {
+                guestChatColumn.dataset.chatLoaded = 'false';
+                guestChatColumn.dataset.conversationId = '';
+            }
+            trackModal.querySelector('.tracking-modal-card')?.classList.remove(
+                'has-guest-chat',
+                'is-closing-guest-chat'
+            );
             syncBodyScrollLock();
         }
 
@@ -2241,6 +2397,20 @@ $openFormRequested =
             });
         }
 
+        function escapeTrackingHtml(value) {
+            const element = document.createElement('span');
+            element.textContent = value == null ? '' : String(value);
+            return element.innerHTML;
+        }
+
+        function isActionableOffer(submission, offer) {
+            return String(submission.status || '').toLowerCase() === 'offer_sent'
+                && String(offer.sender_type || '').toLowerCase() === 'admin'
+                && ['sent', 'offer_sent', 'pending', 'active'].includes(
+                    String(offer.status || '').toLowerCase()
+                );
+        }
+
         function renderSubmissionResult(submission) {
             const items = submission.items || [];
             const offer = submission.offer;
@@ -2249,43 +2419,313 @@ $openFormRequested =
                 ? items.map((item, index) => `
                     <div class="track-result-row">
                         <strong>Item ${index + 1}</strong>
-                        <span>${item.brand || 'Item'} ${item.model || ''} · ${item.issue || 'N/A'}</span>
+                        <span>${escapeTrackingHtml(item.brand || 'Item')} ${escapeTrackingHtml(item.model || '')} · ${escapeTrackingHtml(item.issue || 'N/A')}</span>
                     </div>
                 `).join('')
                 : '<div class="track-result-row"><strong>Items</strong><span>No item details available.</span></div>';
 
+            const offerAmount = offer
+                ? Number(offer.offer_amount || 0)
+                : 0;
+            const formattedOffer = Number.isFinite(offerAmount)
+                ? offerAmount.toLocaleString('en-PH', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2
+                })
+                : '0.00';
+            const offerIsActionable = offer && isActionableOffer(submission, offer);
             const offerSummary = offer
                 ? `
                     <div class="track-result-row">
                         <strong>Latest Offer</strong>
-                        <span>₱${Number(offer.offer_amount || 0).toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                        <span>₱${formattedOffer}</span>
                     </div>
                     <div class="track-result-row">
                         <strong>Status</strong>
-                        <span>${offer.status || 'Pending'}</span>
+                        <span>${escapeTrackingHtml(offer.status || 'Pending')}</span>
                     </div>
+                    ${offerIsActionable ? `
+                        <section class="track-offer-actions" aria-label="Respond to current VNZ TECH offer">
+                            <p>Choose how you would like to respond to the ₱${formattedOffer} offer.</p>
+                            <div class="track-offer-action-buttons">
+                                <button type="button" class="track-offer-decline" data-track-offer-response="decline" data-offer-id="${Number(offer.id)}" data-offer-amount="${offerAmount}">Decline</button>
+                                <button type="button" class="track-offer-counter" data-open-track-counter>Counteroffer</button>
+                                <button type="button" class="track-offer-accept" data-track-offer-response="accept" data-offer-id="${Number(offer.id)}" data-offer-amount="${offerAmount}">Accept Offer</button>
+                            </div>
+                            <form class="track-counter-form" data-track-counter-form hidden>
+                                <label>
+                                    Counteroffer amount
+                                    <span class="track-counter-amount">
+                                        <span>₱</span>
+                                        <input type="number" name="counter_amount" min="0.01" max="999999999" step="0.01" inputmode="decimal" required>
+                                    </span>
+                                </label>
+                                <label>
+                                    Reason (optional)
+                                    <textarea name="feedback" maxlength="3000" rows="3" placeholder="Add a short message for VNZ TECH"></textarea>
+                                </label>
+                                <div class="track-counter-form-actions">
+                                    <button type="button" class="track-offer-cancel" data-cancel-track-counter>Cancel</button>
+                                    <button type="submit" class="track-offer-accept" data-submit-track-counter data-offer-id="${Number(offer.id)}">Send Counteroffer</button>
+                                </div>
+                            </form>
+                        </section>
+                    ` : ''}
                 `
                 : '<div class="track-result-row"><strong>Latest Offer</strong><span>No offer yet</span></div>';
+            const guestChatConversationId = Number(
+                submission.guest_chat_conversation_id || 0
+            );
+            const guestChatAction = submission.guest_chat_available === true
+                && Number.isInteger(guestChatConversationId)
+                && guestChatConversationId > 0
+                && String(submission.status || '').toLowerCase() === 'accepted'
+                ? `
+                    <section class="track-guest-chat" aria-label="Message Admin">
+                        <div>
+                            <strong>Offer accepted</strong>
+                            <p>Acceptance is confirmed; it does not mean payment has been made.</p>
+                        </div>
+                        <button
+                            type="button"
+                            data-open-guest-chat
+                            data-conversation-id="${guestChatConversationId}"
+                        >Chat with Admin</button>
+                    </section>
+                `
+                : '';
 
             trackSubmissionResult.innerHTML = `
-                <h3>${submission.reference_number}</h3>
+                <h3>${escapeTrackingHtml(submission.reference_number)}</h3>
                 <div class="track-result-row">
                     <strong>Seller</strong>
-                    <span>${submission.seller_name || 'N/A'}</span>
+                    <span>${escapeTrackingHtml(submission.seller_name || 'N/A')}</span>
                 </div>
                 <div class="track-result-row">
                     <strong>Status</strong>
-                    <span>${submission.status || 'Pending'}</span>
+                    <span>${escapeTrackingHtml(submission.status || 'Pending')}</span>
                 </div>
                 <div class="track-result-row">
                     <strong>Submitted</strong>
-                    <span>${formatDate(submission.created_at)}</span>
+                    <span>${escapeTrackingHtml(formatDate(submission.created_at))}</span>
                 </div>
                 ${itemSummary}
                 ${offerSummary}
+                ${guestChatAction}
             `;
             trackSubmissionResult.hidden = false;
         }
+
+        function setTrackingMessage(message, type) {
+            trackSubmissionMessage.className = `track-modal-message ${type}`;
+            trackSubmissionMessage.textContent = message;
+            trackSubmissionMessage.hidden = false;
+        }
+
+        async function refreshTrackedSubmission() {
+            const response = await fetch('/VNZ-TECH/backend/track_submission.php', {
+                method: 'POST',
+                body: new FormData(trackSubmissionForm),
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+            const data = await response.json();
+            if (!response.ok || !data.success) {
+                throw new Error(data.message || 'Unable to refresh this submission.');
+            }
+            renderSubmissionResult(data.submission);
+        }
+
+        let offerActionPending = false;
+
+        async function submitTrackedOfferAction(button, responseType) {
+            if (offerActionPending) {
+                return;
+            }
+
+            const reference = trackSubmissionForm.elements.reference.value.trim();
+            const amount = Number(button.dataset.offerAmount);
+            const formattedAmount = Number.isFinite(amount)
+                ? `₱${amount.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
+                : 'this offer';
+            const confirmed = await window.VNZDialog.confirm({
+                title: responseType === 'accept' ? 'Accept Offer?' : 'Decline Offer?',
+                message: responseType === 'accept'
+                    ? `Accept the current offer of ${formattedAmount} for submission ${reference}?`
+                    : `Decline the current offer of ${formattedAmount} for submission ${reference}?`,
+                confirmLabel: responseType === 'accept' ? 'Accept Offer' : 'Decline Offer',
+                danger: responseType === 'decline'
+            });
+
+            if (!confirmed) {
+                return;
+            }
+
+            offerActionPending = true;
+            trackSubmissionResult.querySelectorAll('button').forEach(action => {
+                action.disabled = true;
+            });
+
+            let actionSaved = false;
+            try {
+                const body = new FormData();
+                body.append('offer_id', button.dataset.offerId);
+                body.append('response', responseType);
+                body.append('reference', reference);
+                body.append('mobile', trackSubmissionForm.elements.mobile.value.trim());
+                body.append('csrf_token', <?= json_encode($tradeCsrfToken, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+
+                const response = await fetch('/VNZ-TECH/backend/respond_offer.php', {
+                    method: 'POST',
+                    body
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Unable to update this offer.');
+                }
+
+                actionSaved = true;
+                try {
+                    await refreshTrackedSubmission();
+                    setTrackingMessage(data.message, 'success');
+                } catch (refreshError) {
+                    setTrackingMessage(
+                        `${data.message} Reopen tracking or check again to load the latest status.`,
+                        'success'
+                    );
+                }
+            } catch (error) {
+                setTrackingMessage(
+                    actionSaved
+                        ? 'Your response was saved, but the latest submission status could not be loaded. Please check again.'
+                        : (error.message || 'Unable to update this offer.'),
+                    actionSaved ? 'success' : 'error'
+                );
+                if (!actionSaved) {
+                    trackSubmissionResult.querySelectorAll('button').forEach(action => {
+                        action.disabled = false;
+                    });
+                }
+            } finally {
+                offerActionPending = false;
+            }
+        }
+
+        trackSubmissionResult.addEventListener('click', function (event) {
+            const guestChatButton = event.target.closest('[data-open-guest-chat]');
+            if (guestChatButton) {
+                guestChatButton.disabled = true;
+                openGuestChatDrawer(guestChatButton).catch(error => {
+                    if (guestChatContent) {
+                        const message = document.createElement('p');
+                        message.className = 'track-guest-chat-error';
+                        message.textContent = error.message || 'Unable to open this conversation.';
+                        guestChatContent.replaceChildren(message);
+                    }
+                }).finally(() => {
+                    guestChatButton.disabled = false;
+                });
+                return;
+            }
+
+            const responseButton = event.target.closest('[data-track-offer-response]');
+            if (responseButton) {
+                submitTrackedOfferAction(
+                    responseButton,
+                    responseButton.dataset.trackOfferResponse
+                );
+                return;
+            }
+
+            const openCounterButton = event.target.closest('[data-open-track-counter]');
+            if (openCounterButton) {
+                const counterForm = trackSubmissionResult.querySelector('[data-track-counter-form]');
+                if (counterForm) {
+                    counterForm.hidden = false;
+                    openCounterButton.hidden = true;
+                    counterForm.querySelector('[name="counter_amount"]').focus();
+                }
+                return;
+            }
+
+            if (event.target.closest('[data-cancel-track-counter]')) {
+                const counterForm = trackSubmissionResult.querySelector('[data-track-counter-form]');
+                if (counterForm) {
+                    counterForm.reset();
+                    counterForm.hidden = true;
+                    const openButton = trackSubmissionResult.querySelector('[data-open-track-counter]');
+                    if (openButton) openButton.hidden = false;
+                }
+            }
+        });
+
+        trackSubmissionResult.addEventListener('submit', async function (event) {
+            const counterForm = event.target.closest('[data-track-counter-form]');
+            if (!counterForm || offerActionPending) {
+                return;
+            }
+            event.preventDefault();
+
+            const amountInput = counterForm.elements.counter_amount;
+            const amount = amountInput.value.trim();
+            if (!/^\d+(?:\.\d{1,2})?$/.test(amount) || Number(amount) <= 0 || Number(amount) > 999999999) {
+                setTrackingMessage('Enter a valid counteroffer amount greater than ₱0.00.', 'error');
+                amountInput.focus();
+                return;
+            }
+
+            const button = counterForm.querySelector('[data-submit-track-counter]');
+            offerActionPending = true;
+            trackSubmissionResult.querySelectorAll('button').forEach(action => {
+                action.disabled = true;
+            });
+
+            let counterSaved = false;
+            try {
+                const body = new FormData();
+                body.append('offer_id', button.dataset.offerId);
+                body.append('reference', trackSubmissionForm.elements.reference.value.trim());
+                body.append('mobile', trackSubmissionForm.elements.mobile.value.trim());
+                body.append('counter_amount', Number(amount).toFixed(2));
+                body.append('feedback', counterForm.elements.feedback.value.trim());
+                body.append('csrf_token', <?= json_encode($tradeCsrfToken, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>);
+
+                const response = await fetch('/VNZ-TECH/backend/counter_offer.php', {
+                    method: 'POST',
+                    body
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) {
+                    throw new Error(data.message || 'Unable to send the counteroffer.');
+                }
+
+                counterSaved = true;
+                try {
+                    await refreshTrackedSubmission();
+                    setTrackingMessage(data.message, 'success');
+                } catch (refreshError) {
+                    setTrackingMessage(
+                        `${data.message} Reopen tracking or check again to load the latest status.`,
+                        'success'
+                    );
+                }
+            } catch (error) {
+                setTrackingMessage(
+                    counterSaved
+                        ? 'Your counteroffer was saved, but the latest submission status could not be loaded. Please check again.'
+                        : (error.message || 'Unable to send the counteroffer.'),
+                    counterSaved ? 'success' : 'error'
+                );
+                if (!counterSaved) {
+                    trackSubmissionResult.querySelectorAll('button').forEach(action => {
+                        action.disabled = false;
+                    });
+                }
+            } finally {
+                offerActionPending = false;
+            }
+        });
 
         if (openTrackModalBtn) {
             openTrackModalBtn.addEventListener('click', showTrackModal);
@@ -2302,7 +2742,27 @@ $openFormRequested =
         });
 
         document.addEventListener('keydown', function (event) {
-            if (event.key === 'Escape' && !trackModal.hidden) {
+            if (guestChatColumn && !guestChatColumn.hidden && !guestChatColumn.inert) {
+                if (event.key === 'Escape') {
+                    event.stopPropagation();
+                    closeGuestChatDrawer();
+                    return;
+                }
+                if (event.key === 'Tab') {
+                    const focusable = Array.from(guestChatColumn.querySelectorAll(
+                        'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                    )).filter(element => !element.hidden);
+                    const first = focusable[0];
+                    const last = focusable[focusable.length - 1];
+                    if (event.shiftKey && document.activeElement === first) {
+                        event.preventDefault();
+                        last?.focus();
+                    } else if (!event.shiftKey && document.activeElement === last) {
+                        event.preventDefault();
+                        first?.focus();
+                    }
+                }
+            } else if (event.key === 'Escape' && !trackModal.hidden) {
                 hideTrackModal();
             }
         });
@@ -2339,9 +2799,7 @@ $openFormRequested =
                     throw new Error(data.message || 'Unable to track this submission.');
                 }
 
-                trackSubmissionMessage.className = 'track-modal-message success';
-                trackSubmissionMessage.textContent = 'Submission found. Here are the latest details.';
-                trackSubmissionMessage.hidden = false;
+                setTrackingMessage('Submission found. Here are the latest details.', 'success');
                 renderSubmissionResult(data.submission);
 
             } catch (error) {
@@ -3261,9 +3719,11 @@ function setupItem(article) {
 
                 if (files.length > 10) {
 
-                    alert(
-                        'You can upload a maximum of 10 photos per item.'
-                    );
+                    window.VNZDialog.alert({
+                        title: 'Photo Limit Reached',
+                        message: 'You can upload a maximum of 10 photos per item.',
+                        confirmLabel: 'Close'
+                    });
 
                 }
 
@@ -3434,9 +3894,11 @@ if (addItemBtn && form && itemsContainer) {
 
             event.preventDefault();
 
-            alert(
-                'Please add at least one item.'
-            );
+            window.VNZDialog.alert({
+                title: 'No Items Added',
+                message: 'Please add at least one item.',
+                confirmLabel: 'Close'
+            });
 
             return;
 

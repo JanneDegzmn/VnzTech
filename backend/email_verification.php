@@ -59,6 +59,52 @@ function getVerificationMailConfig(): array
     return $config;
 }
 
+function sendVnzEmail(
+    string $email,
+    string $subject,
+    string $htmlBody,
+    string $textBody,
+    ?array $config = null
+): void {
+    $config =
+        $config ?? getVerificationMailConfig();
+
+    try {
+        $mailer = new PHPMailer\PHPMailer\PHPMailer(true);
+        $mailer->isSMTP();
+        $mailer->Host = (string) $config['smtp_host'];
+        $mailer->SMTPAuth = true;
+        $mailer->Username = (string) $config['smtp_username'];
+        $mailer->Password = preg_replace(
+            '/\s+/',
+            '',
+            (string) $config['smtp_password']
+        );
+        $mailer->SMTPSecure =
+            PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
+        $mailer->Port = (int) $config['smtp_port'];
+        $mailer->CharSet =
+            PHPMailer\PHPMailer\PHPMailer::CHARSET_UTF8;
+        $mailer->setFrom(
+            (string) $config['from_email'],
+            (string) $config['from_name']
+        );
+        $mailer->addAddress($email);
+        $mailer->isHTML(true);
+        $mailer->Subject = $subject;
+        $mailer->Body = $htmlBody;
+        $mailer->AltBody = $textBody;
+
+        if (!$mailer->send()) {
+            throw new RuntimeException('SMTP did not accept the message.');
+        }
+    } catch (Throwable) {
+        throw new RuntimeException(
+            'Unable to send email using the configured SMTP service.'
+        );
+    }
+}
+
 function sendEmailVerification(PDO $pdo, int $userId, string $email): void
 {
     $config = getVerificationMailConfig();
@@ -117,41 +163,29 @@ function sendEmailVerification(PDO $pdo, int $userId, string $email): void
         '/backend/verify_email.php?token=' .
         rawurlencode($token);
 
+    $verificationHtml =
+        '<p>Thanks for creating a VNZ TECH seller account.</p>' .
+        '<p><a href="' . htmlspecialchars(
+            $verificationUrl,
+            ENT_QUOTES,
+            'UTF-8'
+        ) . '">Verify your email address</a></p>' .
+        '<p>This one-time link expires in 30 minutes. If you did not ' .
+        'create this account, you can ignore this email.</p>';
+
+    $verificationText =
+        "Verify your VNZ TECH email address using this one-time link:\n\n" .
+        $verificationUrl .
+        "\n\nThis link expires in 30 minutes.";
+
     try {
-        $mailer = new PHPMailer\PHPMailer\PHPMailer(true);
-        $mailer->isSMTP();
-        $mailer->Host = (string) $config['smtp_host'];
-        $mailer->SMTPAuth = true;
-        $mailer->Username = (string) $config['smtp_username'];
-        $mailer->Password = preg_replace(
-            '/\s+/',
-            '',
-            (string) $config['smtp_password']
+        sendVnzEmail(
+            $email,
+            'Verify your VNZ TECH email address',
+            $verificationHtml,
+            $verificationText,
+            $config
         );
-        $mailer->SMTPSecure = PHPMailer\PHPMailer\PHPMailer::ENCRYPTION_STARTTLS;
-        $mailer->Port = (int) $config['smtp_port'];
-        $mailer->CharSet = PHPMailer\PHPMailer\PHPMailer::CHARSET_UTF8;
-        $mailer->setFrom(
-            (string) $config['from_email'],
-            (string) $config['from_name']
-        );
-        $mailer->addAddress($email);
-        $mailer->isHTML(true);
-        $mailer->Subject = 'Verify your VNZ TECH email address';
-        $mailer->Body =
-            '<p>Thanks for creating a VNZ TECH seller account.</p>' .
-            '<p><a href="' . htmlspecialchars(
-                $verificationUrl,
-                ENT_QUOTES,
-                'UTF-8'
-            ) . '">Verify your email address</a></p>' .
-            '<p>This one-time link expires in 30 minutes. If you did not ' .
-            'create this account, you can ignore this email.</p>';
-        $mailer->AltBody =
-            "Verify your VNZ TECH email address using this one-time link:\n\n" .
-            $verificationUrl .
-            "\n\nThis link expires in 30 minutes.";
-        $mailer->send();
     } catch (Throwable $e) {
         $invalidateStmt = $pdo->prepare("
             UPDATE email_verification_tokens

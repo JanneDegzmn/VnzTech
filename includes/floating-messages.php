@@ -138,6 +138,29 @@ try {
                 <span class="floating-messages-tooltip" id="floating-messages-tooltip-contacts" aria-hidden="true">Sellers</span>
             </button>
         <?php endif; ?>
+        <?php if ($floatingMessagesActor['actor_type'] === 'admin'): ?>
+            <button
+                class="floating-messages-category"
+                type="button"
+                data-message-category="guest-sellers"
+                aria-label="Guest Sellers"
+                aria-describedby="floating-messages-tooltip-guest-sellers"
+                tabindex="-1"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="8" cy="8" r="3"></circle>
+                    <path d="M2.5 19c.4-3.4 2.3-5.2 5.5-5.2s5.1 1.8 5.5 5.2"></path>
+                    <path d="M17 4.5v6m-3-3h6"></path>
+                </svg>
+                <span
+                    class="floating-messages-category-badge"
+                    data-category-unread-badge="guest-sellers"
+                    aria-hidden="true"
+                    hidden
+                ></span>
+                <span class="floating-messages-tooltip" id="floating-messages-tooltip-guest-sellers" aria-hidden="true">Guest Sellers</span>
+            </button>
+        <?php endif; ?>
     </div>
 
     <button

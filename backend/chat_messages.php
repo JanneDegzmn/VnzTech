@@ -21,6 +21,7 @@ function chatMessageReplyPayload(PDO $pdo, int $conversationId, int $messageId, 
             m.sender_id,
             CASE
                 WHEN m.sender_type = 'seller' THEN u.full_name
+                WHEN m.sender_type = 'guest' THEN 'Guest Seller'
                 WHEN c.type = 'private' THEN COALESCE(
                     NULLIF(TRIM(CONCAT(a.first_name, ' ', a.last_name)), ''),
                     'Admin'
@@ -106,6 +107,7 @@ function chatLoadGlobalReadReceiptReaders(
                     NULLIF(TRIM(u.full_name), ''),
                     'Seller'
                 )
+                WHEN reader.actor_type = 'guest' THEN 'Guest Seller'
                 ELSE COALESCE(
                     NULLIF(TRIM(CONCAT(a.first_name, ' ', a.last_name)), ''),
                     'Admin'
@@ -179,6 +181,7 @@ function chatLoadMessageReactions(
             mr.actor_id,
             CASE
                 WHEN mr.actor_type = 'seller' THEN u.full_name
+                WHEN mr.actor_type = 'guest' THEN 'Guest Seller'
                 ELSE COALESCE(
                     NULLIF(TRIM(CONCAT(a.first_name, ' ', a.last_name)), ''),
                     'Admin'
@@ -257,6 +260,10 @@ function chatMessageReactionSummary(PDO $pdo, int $messageId, array $actor): arr
 
 function chatMessageActorDisplayName(PDO $pdo, array $actor): string
 {
+    if ($actor['actor_type'] === 'guest') {
+        return 'Guest Seller';
+    }
+
     if ($actor['actor_type'] === 'seller') {
         $stmt = $pdo->prepare("
             SELECT full_name
@@ -497,6 +504,7 @@ try {
                 u.profile_picture AS sender_profile_picture,
                 CASE
                     WHEN m.sender_type = 'seller' THEN u.full_name
+                    WHEN m.sender_type = 'guest' THEN 'Guest Seller'
                     WHEN c.type = 'private' THEN COALESCE(
                         NULLIF(TRIM(CONCAT(a.first_name, ' ', a.last_name)), ''),
                         'Admin'
@@ -796,6 +804,7 @@ try {
                     m.created_at,
                     CASE
                         WHEN m.sender_type = 'seller' THEN u.full_name
+                        WHEN m.sender_type = 'guest' THEN 'Guest Seller'
                         WHEN c.type = 'private' THEN COALESCE(
                             NULLIF(TRIM(CONCAT(a.first_name, ' ', a.last_name)), ''),
                             'Admin'
@@ -975,6 +984,7 @@ try {
                 m.created_at,
                 CASE
                     WHEN m.sender_type = 'seller' THEN u.full_name
+                    WHEN m.sender_type = 'guest' THEN 'Guest Seller'
                     WHEN c.type = 'private' THEN COALESCE(
                         NULLIF(TRIM(CONCAT(a.first_name, ' ', a.last_name)), ''),
                         'Admin'

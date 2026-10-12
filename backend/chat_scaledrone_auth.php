@@ -44,7 +44,14 @@ try {
             $conversationId,
             $actor
         );
-        if (in_array($roomContext['conversation_type'] ?? '', ['transaction', 'private'], true)) {
+        if (
+            in_array(
+                $roomContext['conversation_type'] ?? '',
+                ['transaction', 'private'],
+                true
+            )
+            && empty($roomContext['guest_submission'])
+        ) {
             $roomContext['call_room'] = chatGetAuthorizedScaledroneCallRoom(
                 $conversationId,
                 $actor

@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
+require_once __DIR__ . '/email_verification.php';
 
 
 /*
@@ -330,6 +331,8 @@ if (
                     full_name,
                     mobile,
                     address,
+                    email,
+                    email_verified_at,
                     is_active
                 FROM users
                 WHERE id = ?
@@ -384,6 +387,12 @@ $sellerMobile =
 $sellerAddress =
     null;
 
+$sellerEmail =
+    null;
+
+$sellerEmailVerified =
+    false;
+
 
 if (
     $userId !== null
@@ -415,6 +424,22 @@ if (
             500
         );
 
+    $accountEmail =
+        strtolower(
+            trim(
+                (string) ($authenticatedUser['email'] ?? '')
+            )
+        );
+
+    if (
+        strlen($accountEmail) <= 254 &&
+        filter_var($accountEmail, FILTER_VALIDATE_EMAIL)
+    ) {
+        $sellerEmail = $accountEmail;
+        $sellerEmailVerified =
+            !empty($authenticatedUser['email_verified_at']);
+    }
+
 } else {
 
     /*
@@ -441,6 +466,13 @@ if (
         cleanText(
             $_POST['seller_address'] ?? '',
             500
+        );
+
+    $sellerEmail =
+        strtolower(
+            trim(
+                (string) ($_POST['seller_email'] ?? '')
+            )
         );
 
 }
@@ -500,6 +532,18 @@ if (
         'Please complete your address in your Profile before submitting an item.'
     );
 
+}
+
+if (
+    $userId === null &&
+    (
+        strlen((string) $sellerEmail) > 254 ||
+        !filter_var($sellerEmail, FILTER_VALIDATE_EMAIL)
+    )
+) {
+    redirectWithError(
+        'Please provide a valid email address.'
+    );
 }
 
 
@@ -657,6 +701,7 @@ try {
                 reference_number,
                 seller_name,
                 seller_mobile,
+                seller_email,
                 seller_address,
                 selling_method,
                 status,
@@ -667,6 +712,7 @@ try {
             )
             VALUES
             (
+                ?,
                 ?,
                 ?,
                 ?,
@@ -691,6 +737,8 @@ try {
         $sellerName,
 
         $sellerMobile,
+
+        $sellerEmail,
 
         $sellerAddress,
 
@@ -1462,6 +1510,86 @@ try {
     */
 
     $pdo->commit();
+
+    $safeReference =
+        htmlspecialchars(
+            $referenceNumber,
+            ENT_QUOTES,
+            'UTF-8'
+        );
+
+    $safeSellerName =
+        htmlspecialchars(
+            (string) $sellerName,
+            ENT_QUOTES,
+            'UTF-8'
+        );
+
+    if (
+        $sellerEmail !== null &&
+        ($userId === null || $sellerEmailVerified)
+    ) {
+        try {
+            $receiptHtml =
+                '<p>Hello ' . $safeSellerName . ',</p>' .
+                '<p>We received your VNZ TECH submission. Our team will review the item details and contact you with updates.</p>' .
+                '<p>Submission reference: <strong>' . $safeReference . '</strong></p>';
+            $receiptText =
+                "Hello {$sellerName},\n\n" .
+                "We received your VNZ TECH submission. Our team will review the item details and contact you with updates.\n\n" .
+                "Submission reference: {$referenceNumber}";
+
+            sendVnzEmail(
+                $sellerEmail,
+                'VNZ TECH submission received: ' . $referenceNumber,
+                $receiptHtml,
+                $receiptText
+            );
+        } catch (Throwable $mailError) {
+            error_log(
+                'Submission receipt email could not be sent for submission ' .
+                $submissionId . '.'
+            );
+        }
+    }
+
+    try {
+        $mailConfig = getVerificationMailConfig();
+        $adminRecipient =
+            trim(
+                (string) ($mailConfig['admin_notification_email'] ?? '')
+            );
+
+        if (!filter_var($adminRecipient, FILTER_VALIDATE_EMAIL)) {
+            throw new RuntimeException(
+                'Admin email notification recipient is not configured.'
+            );
+        }
+
+        $adminHtml =
+            '<p>A new VNZ TECH seller submission has been received.</p>' .
+            '<p>Seller: <strong>' . $safeSellerName . '</strong></p>' .
+            '<p>Submission reference: <strong>' . $safeReference . '</strong></p>' .
+            '<p>Items submitted: <strong>' . (int) $processedItemCount . '</strong></p>';
+        $adminText =
+            "A new VNZ TECH seller submission has been received.\n\n" .
+            "Seller: {$sellerName}\n" .
+            "Submission reference: {$referenceNumber}\n" .
+            'Items submitted: ' . (int) $processedItemCount;
+
+        sendVnzEmail(
+            $adminRecipient,
+            'New VNZ TECH submission: ' . $referenceNumber,
+            $adminHtml,
+            $adminText,
+            $mailConfig
+        );
+    } catch (Throwable $mailError) {
+        error_log(
+            'Admin new-submission email could not be sent for submission ' .
+            $submissionId . '.'
+        );
+    }
 
 
     /*

@@ -139,6 +139,27 @@
     font-weight: 700;
 }
 
+.transaction-chat-revoke-guest {
+    display: inline-flex;
+    min-height: 34px;
+    align-items: center;
+    justify-content: center;
+    padding: 7px 10px;
+    color: #fecdd3;
+    background: rgba(127, 29, 29, 0.2);
+    border: 1px solid rgba(251, 113, 133, 0.34);
+    border-radius: 8px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.transaction-chat-revoke-guest:disabled {
+    opacity: 0.65;
+    cursor: default;
+}
+
 .transaction-chat-call-button:hover:not(:disabled),
 .transaction-chat-call-button:focus-visible {
     border-color: rgba(34, 184, 238, 0.55);
@@ -1099,6 +1120,26 @@
     --close-delay: 0ms;
 }
 
+.floating-messages-category[data-message-category="guest-sellers"] {
+    --closed-offset: 17px;
+    --open-delay: 240ms;
+    --close-delay: 0ms;
+}
+
+.floating-messages-root[data-actor-type="admin"] .floating-messages-category[data-message-category="global"] {
+    --closed-offset: 197px;
+}
+
+.floating-messages-root[data-actor-type="admin"] .floating-messages-category[data-message-category="private"] {
+    --closed-offset: 137px;
+}
+
+.floating-messages-root[data-actor-type="admin"] .floating-messages-category[data-message-category="contacts"] {
+    --closed-offset: 77px;
+    --open-delay: 160ms;
+    --close-delay: 80ms;
+}
+
 .floating-messages-root.is-menu-open .floating-messages-categories {
     pointer-events: auto;
 }
@@ -1111,7 +1152,8 @@
 }
 
 .floating-messages-category:hover,
-.floating-messages-category:focus-visible {
+.floating-messages-category:focus-visible,
+.floating-messages-category.is-active {
     color: #fff;
     background: linear-gradient(145deg, #263b4a, #172531);
     border-color: rgba(91, 207, 237, 0.66);
@@ -1380,6 +1422,14 @@
     text-transform: none;
 }
 
+.floating-messages-conversation.is-guest-seller {
+    grid-template-rows: auto auto auto;
+}
+
+.floating-messages-conversation.is-guest-seller .floating-messages-contact-avatar {
+    grid-row: 1 / span 3;
+}
+
 .floating-messages-conversation-unread {
     position: absolute;
     top: 50%;
@@ -1604,6 +1654,10 @@
     gap: 9px;
 }
 
+.floating-chat-window .transaction-chat-message-area {
+    min-height: 70px;
+}
+
 .floating-chat-window .transaction-chat-bubble {
     max-width: 88%;
     padding: 8px 10px;
@@ -1726,6 +1780,18 @@
     overscroll-behavior: contain;
     scrollbar-color: #344555 transparent;
     scrollbar-width: none;
+}
+
+.transaction-chat-message-area {
+    display: flex;
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 230px;
+}
+
+.transaction-chat-message-area .transaction-chat-messages {
+    width: 100%;
 }
 
 .transaction-chat-messages::-webkit-scrollbar {
@@ -2359,9 +2425,10 @@
 
 .transaction-chat-history-controls {
     display: flex;
+    flex: 0 0 auto;
     justify-content: center;
     min-height: 34px;
-    padding: 0 20px 8px;
+    padding: 0 0 8px;
 }
 
 .transaction-chat-history-controls button {
@@ -2381,6 +2448,47 @@
 .transaction-chat-history-controls button:disabled {
     opacity: 0.55;
     cursor: wait;
+}
+
+.transaction-chat-scroll-latest {
+    display: grid;
+    position: absolute;
+    z-index: 5;
+    right: 18px;
+    bottom: 16px;
+    width: 44px;
+    height: 44px;
+    place-items: center;
+    padding: 0;
+    color: #ffffff;
+    background: #087ca6;
+    border: 1px solid rgba(255, 255, 255, 0.32);
+    border-radius: 50%;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+}
+
+.transaction-chat-scroll-latest[hidden] {
+    display: none;
+}
+
+.transaction-chat-scroll-latest:hover {
+    background: #0996c8;
+}
+
+.transaction-chat-scroll-latest:focus-visible {
+    outline: 2px solid #ffffff;
+    outline-offset: 3px;
+}
+
+.transaction-chat-scroll-latest svg {
+    width: 22px;
+    height: 22px;
+    fill: none;
+    stroke: currentColor;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-width: 2;
 }
 
 .transaction-chat-composer {
@@ -2715,6 +2823,18 @@
 
     .floating-messages-category[data-message-category="contacts"] {
         --closed-offset: 17px;
+    }
+
+    .floating-messages-root[data-actor-type="admin"] .floating-messages-category[data-message-category="global"] {
+        --closed-offset: 167px;
+    }
+
+    .floating-messages-root[data-actor-type="admin"] .floating-messages-category[data-message-category="private"] {
+        --closed-offset: 117px;
+    }
+
+    .floating-messages-root[data-actor-type="admin"] .floating-messages-category[data-message-category="contacts"] {
+        --closed-offset: 67px;
     }
 }
 
@@ -3334,7 +3454,7 @@
 .floating-chat-window.is-maximized .transaction-chat[data-conversation-type="transaction"] {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(220px, 280px);
-    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
     align-items: stretch;
 }
 
@@ -3355,20 +3475,19 @@
     grid-row: 2;
 }
 
-.floating-chat-window.is-maximized .transaction-chat-messages {
+.floating-chat-window.is-maximized .transaction-chat-message-area {
     grid-column: 1;
     grid-row: 3;
     min-height: 0;
 }
 
-.floating-chat-window.is-maximized .transaction-chat-history-controls {
-    grid-column: 1;
-    grid-row: 4;
+.floating-chat-window.is-maximized .transaction-chat-message-area .transaction-chat-messages {
+    min-height: 0;
 }
 
 .floating-chat-window.is-maximized .transaction-chat-composer {
     grid-column: 1;
-    grid-row: 5;
+    grid-row: 4;
 }
 
 .transaction-chat-composer {
@@ -3906,7 +4025,7 @@
     @media (max-width: 700px) {
         .floating-chat-window.is-maximized .transaction-chat[data-conversation-type="transaction"] {
             grid-template-columns: minmax(0, 1fr);
-            grid-template-rows: auto auto auto minmax(0, 1fr) auto auto;
+            grid-template-rows: auto auto auto minmax(0, 1fr) auto;
         }
 
         .floating-chat-window.is-maximized .transaction-chat-info {
@@ -3919,16 +4038,12 @@
             grid-row: 3;
         }
 
-        .floating-chat-window.is-maximized .transaction-chat-messages {
+        .floating-chat-window.is-maximized .transaction-chat-message-area {
             grid-row: 4;
         }
 
-        .floating-chat-window.is-maximized .transaction-chat-history-controls {
-            grid-row: 5;
-        }
-
         .floating-chat-window.is-maximized .transaction-chat-composer {
-            grid-row: 6;
+            grid-row: 5;
         }
     }
 

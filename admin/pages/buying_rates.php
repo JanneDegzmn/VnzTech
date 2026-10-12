@@ -1046,12 +1046,22 @@ function rateArchivedLabel(?string $date): string
             const id = this.dataset.id;
             const category = this.dataset.category || 'this rate';
 
-            if (!confirm('Move "' + category + '" to the archive? You can restore it later, or permanently delete it from the Archived tab.')) {
+            if (this.disabled) {
+                return;
+            }
+            this.disabled = true;
+            const confirmed = await window.VNZDialog.confirm({
+                title: 'Archive Buying Rate?',
+                message: `Move "${category}" to the archive? You can restore it later or permanently delete it from the Archived tab.`,
+                confirmLabel: 'Move to Archive',
+                danger: true
+            });
+            if (!confirmed) {
+                this.disabled = false;
                 return;
             }
 
             const originalText = this.textContent;
-            this.disabled = true;
             this.textContent = '...';
 
             const body = new URLSearchParams();
@@ -1170,12 +1180,22 @@ function rateArchivedLabel(?string $date): string
             const id = this.dataset.id;
             const category = this.dataset.category || 'this rate';
 
-            if (!confirm('Permanently delete "' + category + '"? This cannot be undone.')) {
+            if (this.disabled) {
+                return;
+            }
+            this.disabled = true;
+            const confirmed = await window.VNZDialog.confirm({
+                title: 'Delete Buying Rate Permanently?',
+                message: `Permanently delete "${category}"? This cannot be undone.`,
+                confirmLabel: 'Delete Permanently',
+                danger: true
+            });
+            if (!confirmed) {
+                this.disabled = false;
                 return;
             }
 
             const originalText = this.textContent;
-            this.disabled = true;
             this.textContent = '...';
 
             const body = new URLSearchParams();

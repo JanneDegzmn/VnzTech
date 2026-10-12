@@ -1,0 +1,136 @@
+.vnz-dialog {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    width: min(440px, calc(100vw - 32px));
+    max-width: none;
+    max-height: calc(100vh - 32px);
+    padding: 0;
+    overflow: visible;
+    color: #edf5f8;
+    background: transparent;
+    border: 0;
+}
+
+.vnz-dialog-panel {
+    max-height: calc(100vh - 32px);
+    overflow-y: auto;
+}
+
+.vnz-dialog::backdrop {
+    background: rgba(3, 7, 11, 0.78);
+    backdrop-filter: blur(5px);
+}
+
+.vnz-dialog-panel {
+    padding: 26px;
+    background:
+        radial-gradient(circle at 100% 0, rgba(34, 184, 238, 0.1), transparent 38%),
+        #101821;
+    border: 1px solid rgba(148, 163, 184, 0.24);
+    border-radius: 16px;
+    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.58);
+}
+
+.vnz-dialog-mark {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    margin-bottom: 13px;
+    color: #7dd3fc;
+    background: rgba(14, 165, 233, 0.14);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    border-radius: 50%;
+    font-size: 17px;
+    font-weight: 800;
+}
+
+.vnz-dialog.is-danger .vnz-dialog-mark {
+    color: #fecaca;
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(248, 113, 113, 0.36);
+}
+
+.vnz-dialog-panel h2 {
+    margin: 0;
+    color: #f8fafc;
+    font-size: 19px;
+    font-weight: 800;
+    line-height: 1.3;
+}
+
+.vnz-dialog-panel p {
+    margin: 10px 0 22px;
+    color: #b6c3ce;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.vnz-dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 9px;
+}
+
+.vnz-dialog-actions button {
+    min-height: 40px;
+    padding: 9px 15px;
+    color: #dce7ee;
+    background: #1b2732;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 9px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 750;
+}
+
+.vnz-dialog-actions button:hover {
+    background: #253543;
+}
+
+.vnz-dialog-actions .vnz-dialog-confirm {
+    color: #04131b;
+    background: #38bdf8;
+    border-color: #38bdf8;
+}
+
+.vnz-dialog-actions .vnz-dialog-confirm:hover {
+    background: #7dd3fc;
+}
+
+.vnz-dialog.is-danger .vnz-dialog-actions .vnz-dialog-confirm {
+    color: #fff;
+    background: #dc4056;
+    border-color: #f06a79;
+}
+
+.vnz-dialog.is-danger .vnz-dialog-actions .vnz-dialog-confirm:hover {
+    background: #ef5265;
+}
+
+.vnz-dialog-actions button:focus-visible {
+    outline: 2px solid #e0f2fe;
+    outline-offset: 3px;
+}
+
+@media (max-width: 480px) {
+    .vnz-dialog {
+        width: calc(100vw - 32px);
+    }
+
+    .vnz-dialog-panel {
+        padding: 21px;
+    }
+
+    .vnz-dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    .vnz-dialog-actions button {
+        width: 100%;
+    }
+}

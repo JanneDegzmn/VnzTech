@@ -23,12 +23,15 @@ $transactionChatCsrfToken = generateCsrfToken();
 $transactionChatConversationType = $transactionChatConversationType ?? 'transaction';
 $transactionChatConversationDbId = $transactionChatConversationDbId ?? 0;
 $transactionChatDisplayName = $transactionChatDisplayName ?? (string) $transactionChatReference;
-$transactionChatHasContext = $transactionChatConversationType === 'transaction';
-$transactionChatCallsEnabled = in_array(
-    $transactionChatConversationType,
-    ['transaction', 'private'],
-    true
-);
+$transactionChatHasContext = $transactionChatConversationType === 'transaction'
+    || !empty($transactionChatShowTransactionContext);
+$transactionChatGuestSubmission = $transactionChatGuestSubmission ?? false;
+$transactionChatCallsEnabled = !$transactionChatGuestSubmission
+    && in_array(
+        $transactionChatConversationType,
+        ['transaction', 'private'],
+        true
+    );
 $transactionChatCallPeer = null;
 if ($transactionChatCallsEnabled && (int) $transactionChatConversationDbId > 0) {
     try {
@@ -92,6 +95,7 @@ foreach ($transactionChatItems as $transactionChatItem) {
         ENT_QUOTES,
         'UTF-8'
     ) ?>"
+    data-guest-submission-chat="<?= $transactionChatGuestSubmission ? 'true' : 'false' ?>"
     data-conversation-peer-name="<?= htmlspecialchars(
         (string) ($transactionChatCallPeer['display_name'] ?? ''),
         ENT_QUOTES,
@@ -142,6 +146,18 @@ foreach ($transactionChatItems as $transactionChatItem) {
             <p class="transaction-chat-presence-label" data-chat-presence>Presence unavailable</p>
         </div>
         <div class="transaction-chat-header-actions">
+            <?php if (
+                $transactionChatGuestSubmission
+                && $transactionChatActor['actor_type'] === 'admin'
+                && hasPermission('manage_offers')
+            ): ?>
+                <button
+                    type="button"
+                    class="transaction-chat-revoke-guest"
+                    data-chat-revoke-guest
+                    aria-label="Revoke guest access to this conversation"
+                >Revoke guest access</button>
+            <?php endif; ?>
             <?php if ($transactionChatCallsEnabled): ?>
                 <button type="button" class="transaction-chat-call-button" data-chat-call-audio disabled>
                     <span aria-hidden="true">☎</span> Audio call
@@ -324,26 +340,39 @@ foreach ($transactionChatItems as $transactionChatItem) {
         aria-live="polite"
     >Loading conversation…</div>
 
-    <div
-        class="transaction-chat-messages"
-        data-chat-messages
-        role="log"
-        aria-label="Transaction messages"
-        aria-live="polite"
-        aria-relevant="additions text"
-    >
-        <div class="transaction-chat-empty" data-chat-empty>
-            <span class="transaction-chat-empty-icon" aria-hidden="true">↗</span>
-            <strong>No messages yet</strong>
-            <span><?= $transactionChatHasContext
-                ? 'Messages about this transaction will appear here.'
-                : 'Start the conversation with a message.'
-            ?></span>
+    <div class="transaction-chat-message-area">
+        <div
+            class="transaction-chat-messages"
+            data-chat-messages
+            role="log"
+            aria-label="Transaction messages"
+            aria-live="polite"
+            aria-relevant="additions text"
+        >
+            <div class="transaction-chat-history-controls">
+                <button type="button" data-chat-load-older hidden>Load earlier messages</button>
+            </div>
+            <div class="transaction-chat-empty" data-chat-empty>
+                <span class="transaction-chat-empty-icon" aria-hidden="true">↗</span>
+                <strong>No messages yet</strong>
+                <span><?= $transactionChatHasContext
+                    ? 'Messages about this transaction will appear here.'
+                    : 'Start the conversation with a message.'
+                ?></span>
+            </div>
         </div>
-    </div>
-
-    <div class="transaction-chat-history-controls">
-        <button type="button" data-chat-load-older hidden>Load earlier messages</button>
+        <button
+            class="transaction-chat-scroll-latest"
+            type="button"
+            data-chat-scroll-latest
+            aria-label="Scroll to latest messages"
+            title="Scroll to latest messages"
+            hidden
+        >
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 4v15m-6-6 6 6 6-6" />
+            </svg>
+        </button>
     </div>
 
     <form class="transaction-chat-composer" data-chat-form>
