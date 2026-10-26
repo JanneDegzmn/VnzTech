@@ -3,6 +3,7 @@
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/email_verification.php';
+require_once __DIR__ . '/offer_response_authorization.php';
 
 
 /*
@@ -1510,6 +1511,28 @@ try {
     */
 
     $pdo->commit();
+
+    if (
+        $userId === null &&
+        empty($_SESSION['admin_id']) &&
+        empty($_SESSION['user_logged_in'])
+    ) {
+        $_SESSION['guest_registration_prefill'] = [
+            'full_name' => (string) $sellerName,
+            'mobile' => (string) $sellerMobile,
+            'email' => (string) $sellerEmail
+        ];
+    }
+
+    if ($userId === null && empty($_SESSION['admin_id'])) {
+        grantGuestOfferResponseAccess(
+            $_SESSION,
+            $submissionId,
+            !empty($_SESSION['user_logged_in'])
+                ? (int) ($_SESSION['user_id'] ?? 0)
+                : null
+        );
+    }
 
     $safeReference =
         htmlspecialchars(

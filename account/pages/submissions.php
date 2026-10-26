@@ -483,7 +483,7 @@ try {
     $params = [
         $userId
     ];
-    $pagination = vnzPaginationState(12);
+    $pagination = vnzPaginationState(5);
 
 
     if (

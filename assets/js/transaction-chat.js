@@ -1014,15 +1014,43 @@
             attachmentImage.loading = 'lazy';
             attachmentButton.append(attachmentImage);
         }
-        if (message.message_type === 'video' && message.attachment_url && !message.deleted_at) {
-            const video = document.createElement('video');
-            video.className = 'transaction-chat-video-attachment';
-            video.controls = true;
-            video.playsInline = true;
-            video.preload = 'metadata';
-            video.src = message.attachment_url;
-            video.setAttribute('aria-label', 'Video attachment');
-            attachmentButton = video;
+        if (message.message_type === 'video' && !message.deleted_at) {
+            bubble.classList.add('has-video-attachment');
+            if (message.attachment_url) {
+                const video = document.createElement('video');
+                video.className = 'transaction-chat-video-attachment';
+                video.controls = true;
+                video.playsInline = true;
+                video.preload = 'metadata';
+                video.setAttribute('aria-label', 'Video attachment');
+                video.addEventListener('error', () => {
+                    const fallback = document.createElement('div');
+                    fallback.className = 'transaction-chat-video-unavailable';
+                    const label = document.createElement('span');
+                    const mediaErrorCode = video.error?.code;
+                    label.textContent = mediaErrorCode === 4
+                        ? 'This video format or codec is not supported by this browser. Use H.264 MP4 or WebM.'
+                        : mediaErrorCode === 3
+                            ? 'This video could not be decoded. It may use an unsupported codec or be damaged.'
+                            : mediaErrorCode === 2
+                                ? 'This video could not be downloaded. Check your connection and try again.'
+                                : 'This video could not be loaded.';
+                    const openLink = document.createElement('a');
+                    openLink.href = message.attachment_url;
+                    openLink.target = '_blank';
+                    openLink.rel = 'noopener noreferrer';
+                    openLink.textContent = 'Open video';
+                    fallback.append(label, openLink);
+                    video.replaceWith(fallback);
+                }, {once: true});
+                video.src = message.attachment_url;
+                attachmentButton = video;
+            } else {
+                const unavailable = document.createElement('div');
+                unavailable.className = 'transaction-chat-video-unavailable';
+                unavailable.textContent = 'Video attachment unavailable.';
+                attachmentButton = unavailable;
+            }
         }
         if (message.message_type === 'file' && message.attachment_url && !message.deleted_at) {
             const documentCard = document.createElement('section');
@@ -1216,7 +1244,7 @@
             content.append(locationLink);
         } else if (
             messageContent !== ''
-            && !['image', 'file'].includes(message.message_type)
+            && !['image', 'file', 'video'].includes(message.message_type)
             && (message.message_type !== 'voice' || Boolean(message.deleted_at))
         ) {
             content.textContent = messageContent;
@@ -1592,6 +1620,7 @@
         const attachmentPreviewImage = widget.querySelector('[data-chat-attachment-preview-image]');
         const attachmentPreviewVideo = widget.querySelector('[data-chat-attachment-preview-video]');
         const attachmentName = widget.querySelector('[data-chat-attachment-name]');
+        const videoReadiness = widget.querySelector('[data-chat-video-readiness]');
         const attachmentRemove = widget.querySelector('[data-chat-attachment-remove]');
         const uploadProgress = widget.querySelector('[data-chat-upload-progress]');
         const uploadProgressBar = widget.querySelector('[data-chat-upload-progress-bar]');
@@ -1798,6 +1827,8 @@
         let editingMessageId = null;
         let replyToMessageId = null;
         let selectedAttachment = null;
+        let selectedAttachmentIsVideo = false;
+        let selectedVideoReady = false;
         let selectedImagePreviewUrl = null;
         let voiceState = 'idle';
         let voiceMediaRecorder = null;
@@ -1814,6 +1845,7 @@
         let callUnavailableReason = '';
         let currentCall = null;
         let callDurationTimer = null;
+        let callAudioQualityTimer = null;
         let callUnansweredTimer = null;
         let callDisconnectTimer = null;
         let callHideTimer = null;
@@ -1965,6 +1997,8 @@
 
         function clearSelectedImage() {
             selectedAttachment = null;
+            selectedAttachmentIsVideo = false;
+            selectedVideoReady = false;
             attachmentInput.value = '';
             attachmentPreview.hidden = true;
             attachmentPreviewImage.removeAttribute('src');
@@ -1975,6 +2009,9 @@
             attachmentPreviewVideo.hidden = true;
             attachmentName.textContent = '';
             attachmentName.removeAttribute('title');
+            videoReadiness.textContent = '';
+            videoReadiness.hidden = true;
+            videoReadiness.removeAttribute('data-state');
             if (selectedImagePreviewUrl) {
                 URL.revokeObjectURL(selectedImagePreviewUrl);
                 selectedImagePreviewUrl = null;
@@ -1985,6 +2022,44 @@
         function setAttachmentError(message = '') {
             uploadError.textContent = message;
             uploadError.hidden = message === '';
+        }
+
+        function updateVideoReadiness() {
+            if (
+                !selectedAttachmentIsVideo
+                || !selectedAttachment
+                || !selectedImagePreviewUrl
+                || attachmentPreviewVideo.getAttribute('src') !== selectedImagePreviewUrl
+            ) {
+                return;
+            }
+
+            const mediaErrorCode = attachmentPreviewVideo.error?.code;
+            if (mediaErrorCode) {
+                selectedVideoReady = false;
+                videoReadiness.dataset.state = 'error';
+                videoReadiness.textContent = mediaErrorCode === 4
+                    ? 'This browser cannot play this video format or codec. Choose another MP4 or WebM video.'
+                    : mediaErrorCode === 3
+                        ? 'This video could not be decoded. Choose another video file.'
+                        : 'This video could not be loaded for preview. Choose another file.';
+            } else if (
+                attachmentPreviewVideo.readyState >= HTMLMediaElement.HAVE_FUTURE_DATA
+                && attachmentPreviewVideo.videoWidth > 0
+                && attachmentPreviewVideo.videoHeight > 0
+                && Number.isFinite(attachmentPreviewVideo.duration)
+                && attachmentPreviewVideo.duration > 0
+            ) {
+                selectedVideoReady = true;
+                videoReadiness.dataset.state = 'ready';
+                videoReadiness.textContent = 'Ready to send — preview loaded and can play.';
+            } else {
+                selectedVideoReady = false;
+                videoReadiness.dataset.state = 'loading';
+                videoReadiness.textContent = 'Preparing video… Send unlocks when the preview can play.';
+            }
+            videoReadiness.hidden = false;
+            updateVoiceControls();
         }
 
         function updateVoiceControls() {
@@ -2008,7 +2083,8 @@
                 || sendingMessage
                 || sendOutcomeUnknown
                 || !actualConversationId
-                || (!input.value.trim() && !selectedAttachment);
+                || (!input.value.trim() && !selectedAttachment)
+                || (selectedAttachmentIsVideo && !selectedVideoReady);
             voiceSend.disabled = voiceState !== 'preview' || sendingMessage || sendOutcomeUnknown;
             voiceComposer.hidden = voiceState === 'idle';
             voicePreview.hidden = voiceState !== 'preview';
@@ -2770,6 +2846,7 @@
         function clearCallTimers() {
             [
                 callDurationTimer,
+                callAudioQualityTimer,
                 callUnansweredTimer,
                 callDisconnectTimer,
                 callHideTimer,
@@ -2782,6 +2859,7 @@
                     }
                 });
             callDurationTimer = null;
+            callAudioQualityTimer = null;
             callUnansweredTimer = null;
             callDisconnectTimer = null;
             callHideTimer = null;
@@ -3265,6 +3343,36 @@
                     trackKind: event.track.kind,
                     attached: remoteMedia.srcObject === call.remoteStream
                 });
+                if (event.track.kind === 'audio') {
+                    const receiver = connection.getReceivers().find(item => (
+                        item.track?.id === event.track.id
+                    ));
+                    if (receiver && 'jitterBufferTarget' in receiver) {
+                        try {
+                            receiver.jitterBufferTarget = 100;
+                            logVideoCallDiagnostic(call, 'audio-jitter-buffer-configured', null, {
+                                targetMs: receiver.jitterBufferTarget
+                            });
+                        } catch (error) {
+                            logVideoCallDiagnostic(call, 'audio-jitter-buffer-unavailable', error);
+                        }
+                    }
+                    event.track.onmute = () => {
+                        if (currentCall === call) {
+                            logVideoCallDiagnostic(call, 'remote-audio-muted');
+                        }
+                    };
+                    event.track.onunmute = () => {
+                        if (currentCall === call) {
+                            logVideoCallDiagnostic(call, 'remote-audio-unmuted');
+                        }
+                    };
+                    event.track.onended = () => {
+                        if (currentCall === call) {
+                            logVideoCallDiagnostic(call, 'remote-audio-ended');
+                        }
+                    };
+                }
                 if (event.track.kind === 'video') {
                     event.track.onunmute = () => {
                         if (currentCall === call) {
@@ -3327,6 +3435,12 @@
                         callDurationTimer = setInterval(() => {
                             updateCallDuration(call);
                         }, 1000);
+                    }
+                    if (callAudioQualityTimer === null) {
+                        void captureCallAudioQuality(call);
+                        callAudioQualityTimer = setInterval(() => {
+                            void captureCallAudioQuality(call);
+                        }, 5000);
                     }
                     call.statusText = `Connected · ${formatCallDuration(
                         Date.now() - callDurationStartedAt
@@ -3456,6 +3570,79 @@
             }
         }
 
+        async function captureCallAudioQuality(call) {
+            const connection = call?.connection;
+            if (
+                !connection
+                || currentCall !== call
+                || call.terminal
+                || call.audioQualitySampleInFlight
+                || typeof connection.getStats !== 'function'
+            ) {
+                return;
+            }
+            call.audioQualitySampleInFlight = true;
+            try {
+                const report = await connection.getStats();
+                if (currentCall !== call || call.terminal) {
+                    return;
+                }
+                const audio = Array.from(report.values()).find(stat => (
+                    stat.type === 'inbound-rtp'
+                    && (stat.kind === 'audio' || stat.mediaType === 'audio')
+                    && stat.isRemote !== true
+                ));
+                if (!audio) {
+                    return;
+                }
+                const current = {
+                    timestamp: Number(audio.timestamp),
+                    packetsReceived: Number(audio.packetsReceived),
+                    packetsLost: Number(audio.packetsLost),
+                    jitterMs: Number.isFinite(Number(audio.jitter))
+                        ? Math.round(Number(audio.jitter) * 1000)
+                        : null,
+                    concealedSamples: Number(audio.concealedSamples),
+                    totalSamplesReceived: Number(audio.totalSamplesReceived)
+                };
+                const previous = call.lastAudioQualitySample;
+                call.lastAudioQualitySample = current;
+                if (!previous) {
+                    return;
+                }
+                const receivedDelta = Math.max(0, current.packetsReceived - previous.packetsReceived);
+                const lostDelta = Math.max(0, current.packetsLost - previous.packetsLost);
+                const packetTotal = receivedDelta + lostDelta;
+                const concealedDelta = Math.max(0, current.concealedSamples - previous.concealedSamples);
+                const samplesDelta = Math.max(0, current.totalSamplesReceived - previous.totalSamplesReceived);
+                const packetLossPercent = packetTotal
+                    ? Math.round((lostDelta / packetTotal) * 1000) / 10
+                    : null;
+                const concealmentPercent = samplesDelta
+                    ? Math.round((concealedDelta / samplesDelta) * 1000) / 10
+                    : null;
+                if (
+                    (current.jitterMs !== null && current.jitterMs >= 50)
+                    || (packetLossPercent !== null && packetLossPercent >= 2)
+                    || (concealmentPercent !== null && concealmentPercent >= 5)
+                ) {
+                    logVideoCallDiagnostic(call, 'call-audio-quality-warning', null, {
+                        sampleIntervalMs: Math.max(0, Math.round(current.timestamp - previous.timestamp)),
+                        jitterMs: current.jitterMs,
+                        packetLossPercent,
+                        concealmentPercent
+                    });
+                }
+            } catch (error) {
+                if (!call.audioStatsUnavailableLogged) {
+                    call.audioStatsUnavailableLogged = true;
+                    logVideoCallDiagnostic(call, 'call-audio-quality-unavailable', error);
+                }
+            } finally {
+                call.audioQualitySampleInFlight = false;
+            }
+        }
+
         async function startCall(mode) {
             if (currentActorType !== 'seller') {
                 return;
@@ -3521,7 +3708,11 @@
                 const mediaStartedAt = callTimingNow();
                 logVideoCallDiagnostic(call, 'caller-get-user-media-start');
                 const localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
+                    audio: {
+                        echoCancellation: {ideal: true},
+                        noiseSuppression: {ideal: true},
+                        autoGainControl: {ideal: true}
+                    },
                     video: mode === 'video'
                 });
                 logVideoCallDiagnostic(call, 'caller-get-user-media-complete', null, {
@@ -3652,7 +3843,11 @@
                     attempt: call.mediaAcquisitionAttempts
                 });
                 const localStream = await navigator.mediaDevices.getUserMedia({
-                    audio: true,
+                    audio: {
+                        echoCancellation: {ideal: true},
+                        noiseSuppression: {ideal: true},
+                        autoGainControl: {ideal: true}
+                    },
                     video: call.mode === 'video'
                 });
                 logVideoCallDiagnostic(call, 'receiver-get-user-media-complete', null, {
@@ -4118,6 +4313,8 @@
 
             clearSelectedImage();
             selectedAttachment = file;
+            selectedAttachmentIsVideo = isVideo;
+            selectedVideoReady = false;
             attachmentName.textContent = `${sanitizeDisplayFilename(file.name)} · ${formatFileSize(file.size)}`;
             attachmentName.title = sanitizeDisplayFilename(file.name);
             if (isPdf) {
@@ -4126,8 +4323,12 @@
                 attachmentName.classList.remove('is-pdf');
                 selectedImagePreviewUrl = URL.createObjectURL(file);
                 if (isVideo) {
+                    videoReadiness.dataset.state = 'loading';
+                    videoReadiness.textContent = 'Preparing video… Send unlocks when the preview can play.';
+                    videoReadiness.hidden = false;
                     attachmentPreviewVideo.src = selectedImagePreviewUrl;
                     attachmentPreviewVideo.hidden = false;
+                    attachmentPreviewVideo.load();
                 } else {
                     attachmentPreviewImage.src = selectedImagePreviewUrl;
                     attachmentPreviewImage.hidden = false;
@@ -4333,6 +4534,11 @@
         attachmentInput.addEventListener('change', () => {
             chooseAttachment(attachmentInput.files?.[0] || null);
         }, {signal: widgetEventController.signal});
+        ['loadedmetadata', 'loadeddata', 'canplay', 'error'].forEach(eventName => {
+            attachmentPreviewVideo.addEventListener(eventName, updateVideoReadiness, {
+                signal: widgetEventController.signal
+            });
+        });
         voiceToggle.addEventListener('click', () => {
             if (voiceState === 'recording') {
                 stopVoiceRecording();
@@ -4429,7 +4635,7 @@
             signal: widgetEventController.signal
         });
         window.addEventListener('resize', () => {
-            if (callPanel.classList.contains('is-maximized')) {
+            if (callPanel?.classList.contains('is-maximized')) {
                 return;
             }
             if (callWindowBounds) {
@@ -4623,6 +4829,15 @@
                     });
                     lastReadMessageId =
                         Number(data.last_read_message_id) || targetMessageId;
+                    if (currentActorType === 'guest') {
+                        window.dispatchEvent(new CustomEvent('vnz:chat-unread-count', {
+                            detail: {
+                                conversationId: actualConversationId,
+                                actorType: currentActorType,
+                                count: 0
+                            }
+                        }));
+                    }
                     notifyChatStateChanged();
                 }
             } catch (error) {
@@ -4660,6 +4875,18 @@
                 }
 
                 const data = await getJson(`/VNZ-TECH/backend/chat_messages.php?${params.toString()}`);
+                if (
+                    currentActorType === 'guest'
+                    && Number(data.conversation_id) === actualConversationId
+                ) {
+                    window.dispatchEvent(new CustomEvent('vnz:chat-unread-count', {
+                        detail: {
+                            conversationId: actualConversationId,
+                            actorType: currentActorType,
+                            count: Number(data.unread_admin_count) || 0
+                        }
+                    }));
+                }
                 const nextCursor = Number(data.next_cursor);
                 const canAdvanceCursor = data.has_more === true
                     && Number.isSafeInteger(nextCursor)
@@ -4939,6 +5166,10 @@
             ) {
                 return;
             }
+            if (selectedAttachmentIsVideo && !selectedVideoReady) {
+                setStatus('Wait for the video preview to finish loading before sending.', 'warning');
+                return;
+            }
             stopTyping();
 
             const isBookMeCommand = !hasAttachment
@@ -5016,7 +5247,10 @@
                     messageMap.set(Number(updatedMessage.id), updatedMessage);
                     clearComposerState();
                     renderMessages(true);
-                    setStatus('Message updated.');
+                    setStatus(
+                        data.moderation_notice || 'Message updated.',
+                        data.moderation_notice ? 'warning' : ''
+                    );
                 } else {
                     upsertMessages([data.message], {forceScroll: true});
                     clearComposerState();
@@ -5046,6 +5280,9 @@
                             `Message saved. Realtime delivery: ${String(data.realtime_delivery || 'unknown').replaceAll('_', ' ')}. The message remains in history.`,
                             'warning'
                         );
+                    }
+                    if (data.moderation_notice) {
+                        setStatus(data.moderation_notice, 'warning');
                     }
                 }
             } catch (error) {
@@ -5083,6 +5320,7 @@
         function closeMessageMenu(menu, button) {
             menu.hidden = true;
             menu.classList.remove('opens-up', 'opens-left');
+            menu.closest('.transaction-chat-message')?.classList.remove('is-menu-open');
             button?.setAttribute('aria-expanded', 'false');
         }
 
@@ -5170,6 +5408,8 @@
                     }
                 });
                 menu.hidden = !opening;
+                moreButton.closest('.transaction-chat-message')
+                    ?.classList.toggle('is-menu-open', opening);
                 moreButton.setAttribute('aria-expanded', String(opening));
                 if (opening) {
                     positionMessageMenu(menu);

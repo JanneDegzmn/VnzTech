@@ -28,7 +28,7 @@ if (!in_array($offerStateFilter, $offerStates, true)) {
     $offerStateFilter = 'all';
 }
 $offerSearch = trim((string) ($_GET['offer_search'] ?? ''));
-$pagination = vnzPaginationState(12);
+$pagination = vnzPaginationState(5);
 
 if ($userId <= 0) {
     http_response_code(401);

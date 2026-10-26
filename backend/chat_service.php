@@ -801,6 +801,283 @@ function chatEnsureParticipant(
     ]);
 }
 
+function chatTradeRequestChatSchemaAvailable(): bool
+{
+    static $isAvailable = null;
+    if ($isAvailable !== null) {
+        return $isAvailable;
+    }
+
+    global $pdo;
+    $stmt = $pdo->prepare("
+        SELECT COUNT(*)
+        FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'trade_request_conversations'
+    ");
+    $stmt->execute();
+    $isAvailable = (int) $stmt->fetchColumn() === 1;
+
+    return $isAvailable;
+}
+
+function chatRequireTradeRequestChatSchema(): void
+{
+    if (!chatTradeRequestChatSchemaAvailable()) {
+        throw new ChatHttpException(
+            'Trade request chats are not configured yet. Apply the trade request chat migration first.',
+            503
+        );
+    }
+}
+
+function chatRequireTradeRequestManager(array $actor): void
+{
+    if (
+        $actor['actor_type'] !== 'admin'
+        || !hasPermission('manage_trades')
+    ) {
+        throw new ChatHttpException('Unauthorized.', 403);
+    }
+}
+
+function chatLoadTradeRequestChatRecord(int $tradeRequestId, bool $lockForUpdate = false): array
+{
+    global $pdo;
+
+    $sql = "
+        SELECT
+            tr.id AS trade_request_id,
+            tr.user_id AS seller_id,
+            tr.request_reference,
+            tr.status AS trade_request_status,
+            tr.updated_at,
+            ti.name AS trade_item_name,
+            u.full_name AS seller_full_name
+        FROM trade_requests tr
+        INNER JOIN trade_items ti
+            ON ti.id = tr.trade_item_id
+        INNER JOIN users u
+            ON u.id = tr.user_id
+        WHERE tr.id = ?
+        LIMIT 1
+    ";
+    if ($lockForUpdate) {
+        $sql .= ' FOR UPDATE';
+    }
+
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([$tradeRequestId]);
+    $record = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$record) {
+        throw new ChatHttpException('Trade request not found.', 404);
+    }
+
+    $record['trade_request_id'] = (int) $record['trade_request_id'];
+    $record['seller_id'] = (int) $record['seller_id'];
+
+    return $record;
+}
+
+function chatAuthorizeTradeRequestRecord(array $record, array $actor): void
+{
+    if ($actor['actor_type'] === 'seller') {
+        if ((int) $actor['actor_id'] !== (int) $record['seller_id']) {
+            throw new ChatHttpException('Unauthorized.', 403);
+        }
+        return;
+    }
+
+    chatRequireTradeRequestManager($actor);
+}
+
+function chatGetTradeRequestConversationContext(
+    int $conversationId,
+    array $actor
+): ?array {
+    if (!chatTradeRequestChatSchemaAvailable()) {
+        return null;
+    }
+
+    global $pdo;
+    $stmt = $pdo->prepare("
+        SELECT
+            c.type AS conversation_type,
+            c.transaction_id,
+            trc.trade_request_id
+        FROM trade_request_conversations trc
+        INNER JOIN conversations c
+            ON c.id = trc.conversation_id
+        WHERE trc.conversation_id = ?
+        LIMIT 1
+    ");
+    $stmt->execute([$conversationId]);
+    $mapping = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$mapping) {
+        return null;
+    }
+    if ($mapping['conversation_type'] !== 'private' || $mapping['transaction_id'] !== null) {
+        throw new ChatHttpException('Trade chat configuration is inconsistent.', 409);
+    }
+
+    $record = chatLoadTradeRequestChatRecord((int) $mapping['trade_request_id']);
+    chatAuthorizeTradeRequestRecord($record, $actor);
+    chatEnsureParticipant(
+        $conversationId,
+        $actor['actor_type'],
+        (int) $actor['actor_id']
+    );
+
+    return $record;
+}
+
+function chatGetOrCreateTradeRequestConversation(
+    int $tradeRequestId,
+    array $actor
+): array {
+    global $pdo;
+
+    chatRequireTradeRequestChatSchema();
+    if ($actor['actor_type'] === 'admin') {
+        chatRequireTradeRequestManager($actor);
+    } elseif ($actor['actor_type'] !== 'seller') {
+        throw new ChatHttpException('Unauthorized.', 403);
+    }
+
+    $lockName = 'vnz-chat-trade-' . $tradeRequestId;
+    chatAcquireNamedLock($lockName);
+
+    try {
+        $pdo->beginTransaction();
+        $record = chatLoadTradeRequestChatRecord($tradeRequestId, true);
+        chatAuthorizeTradeRequestRecord($record, $actor);
+
+        $mappingStmt = $pdo->prepare("
+            SELECT conversation_id
+            FROM trade_request_conversations
+            WHERE trade_request_id = ?
+            FOR UPDATE
+        ");
+        $mappingStmt->execute([$tradeRequestId]);
+        $conversationId = $mappingStmt->fetchColumn();
+
+        if ($conversationId === false) {
+            $insertConversation = $pdo->prepare("
+                INSERT INTO conversations (type, transaction_id)
+                VALUES ('private', NULL)
+            ");
+            $insertConversation->execute();
+            $conversationId = (int) $pdo->lastInsertId();
+
+            $insertMapping = $pdo->prepare("
+                INSERT INTO trade_request_conversations (
+                    trade_request_id,
+                    conversation_id
+                ) VALUES (?, ?)
+            ");
+            $insertMapping->execute([$tradeRequestId, $conversationId]);
+            chatEnsureParticipant(
+                (int) $conversationId,
+                'seller',
+                (int) $record['seller_id']
+            );
+
+            $adminsStmt = $pdo->query("
+                SELECT a.id
+                FROM admins a
+                WHERE a.is_active = 1
+                  AND EXISTS (
+                      SELECT 1
+                      FROM role_permissions rp
+                      INNER JOIN permissions p
+                          ON p.id = rp.permission_id
+                         AND p.name = 'manage_trades'
+                      WHERE rp.role_id = a.role_id
+                  )
+                  AND EXISTS (
+                      SELECT 1
+                      FROM role_permissions rp
+                      INNER JOIN permissions p
+                          ON p.id = rp.permission_id
+                         AND p.name = 'view_submissions'
+                      WHERE rp.role_id = a.role_id
+                  )
+                ORDER BY a.id
+            ");
+            $adminIds = $adminsStmt->fetchAll(PDO::FETCH_COLUMN);
+            if (!$adminIds) {
+                throw new ChatHttpException(
+                    'No active Trade Requests administrator is available for chat.',
+                    409
+                );
+            }
+            foreach ($adminIds as $adminId) {
+                chatEnsureParticipant(
+                    (int) $conversationId,
+                    'admin',
+                    (int) $adminId
+                );
+            }
+        } else {
+            $conversationId = (int) $conversationId;
+            $storedConversation = $pdo->prepare("
+                SELECT type, transaction_id
+                FROM conversations
+                WHERE id = ?
+                LIMIT 1
+            ");
+            $storedConversation->execute([$conversationId]);
+            $storedType = $storedConversation->fetch(PDO::FETCH_ASSOC);
+            if (
+                !$storedType
+                || $storedType['type'] !== 'private'
+                || $storedType['transaction_id'] !== null
+            ) {
+                throw new ChatHttpException('Trade chat configuration is inconsistent.', 409);
+            }
+
+            chatEnsureParticipant(
+                $conversationId,
+                'seller',
+                (int) $record['seller_id']
+            );
+            if ($actor['actor_type'] === 'admin') {
+                chatEnsureParticipant(
+                    $conversationId,
+                    'admin',
+                    (int) $actor['actor_id']
+                );
+            }
+        }
+
+        chatEnsureParticipant(
+            (int) $conversationId,
+            $actor['actor_type'],
+            (int) $actor['actor_id']
+        );
+        $pdo->commit();
+
+        $actorIsSeller = $actor['actor_type'] === 'seller';
+        return [
+            'conversation_id' => (int) $conversationId,
+            'conversation_type' => 'private',
+            'conversation_class' => 'trade_request',
+            'trade_request_id' => $tradeRequestId,
+            'trade_request_reference' => (string) $record['request_reference'],
+            'display_name' => ($actorIsSeller ? 'Admin' : (
+                trim((string) $record['seller_full_name']) ?: 'Seller'
+            )) . ' · ' . $record['request_reference']
+        ];
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    } finally {
+        chatReleaseNamedLock($lockName);
+    }
+}
+
 function chatValidateActorIdentity(string $actorType, int $actorId): array
 {
     global $pdo;
@@ -918,6 +1195,13 @@ function chatFindPrivateConversationId(array $firstActor, array $secondActor): ?
     $submissionCondition = chatGuestSubmissionSchemaAvailable()
         ? 'AND c.submission_id IS NULL'
         : '';
+    $tradeRequestCondition = chatTradeRequestChatSchemaAvailable()
+        ? 'AND NOT EXISTS (
+                SELECT 1
+                FROM trade_request_conversations trade_chat
+                WHERE trade_chat.conversation_id = c.id
+            )'
+        : '';
     $stmt = $pdo->prepare("
         SELECT c.id
         FROM conversations c
@@ -932,6 +1216,7 @@ function chatFindPrivateConversationId(array $firstActor, array $secondActor): ?
         WHERE c.type = 'private'
           AND c.transaction_id IS NULL
           $submissionCondition
+          $tradeRequestCondition
           AND p1.id <> p2.id
           AND (
               SELECT COUNT(*)
@@ -1388,6 +1673,10 @@ function chatRequireConversationMembership(
 ): array {
     global $pdo;
 
+    $tradeRequestContext = chatGetTradeRequestConversationContext(
+        $conversationId,
+        $actor
+    );
     $submissionIdSelect = chatGuestSubmissionSchemaAvailable()
         ? 'c.submission_id'
         : 'NULL AS submission_id';
@@ -1396,6 +1685,7 @@ function chatRequireConversationMembership(
             c.id AS conversation_id,
             c.type AS conversation_type,
             c.transaction_id,
+            p.last_read_message_id,
             $submissionIdSelect
         FROM conversations c
         INNER JOIN conversation_participants p
@@ -1466,6 +1756,92 @@ function chatRequireConversationMembership(
         ");
         $participantStmt->execute([$conversationId]);
         $participants = $participantStmt->fetchAll();
+        if ($tradeRequestContext !== null) {
+            if ($conversation['submission_id'] !== null) {
+                throw new ChatHttpException('Unauthorized.', 403);
+            }
+            $sellerParticipant = null;
+            $adminParticipants = [];
+            foreach ($participants as $participant) {
+                if ($participant['actor_type'] === 'seller') {
+                    if (
+                        $sellerParticipant !== null
+                        || (int) $participant['actor_id']
+                            !== (int) $tradeRequestContext['seller_id']
+                    ) {
+                        throw new ChatHttpException('Unauthorized.', 403);
+                    }
+                    $sellerParticipant = $participant;
+                } elseif ($participant['actor_type'] === 'admin') {
+                    $adminParticipants[] = $participant;
+                } else {
+                    throw new ChatHttpException('Unauthorized.', 403);
+                }
+            }
+            if ($sellerParticipant === null || !$adminParticipants) {
+                throw new ChatHttpException('Unauthorized.', 403);
+            }
+
+            $eligibleAdminStmt = $pdo->prepare("
+                SELECT a.id
+                FROM admins a
+                WHERE a.id = ?
+                  AND a.is_active = 1
+                  AND EXISTS (
+                      SELECT 1
+                      FROM role_permissions rp
+                      INNER JOIN permissions p
+                          ON p.id = rp.permission_id
+                         AND p.name = 'manage_trades'
+                      WHERE rp.role_id = a.role_id
+                  )
+                  AND EXISTS (
+                      SELECT 1
+                      FROM role_permissions rp
+                      INNER JOIN permissions p
+                          ON p.id = rp.permission_id
+                         AND p.name = 'view_submissions'
+                      WHERE rp.role_id = a.role_id
+                  )
+                LIMIT 1
+            ");
+            $hasEligibleAdmin = false;
+            foreach ($adminParticipants as $participant) {
+                $eligibleAdminStmt->execute([(int) $participant['actor_id']]);
+                if ($eligibleAdminStmt->fetchColumn()) {
+                    $hasEligibleAdmin = true;
+                    break;
+                }
+            }
+            if (!$hasEligibleAdmin) {
+                throw new ChatHttpException('Unauthorized.', 403);
+            }
+
+            $sellerIdentity = chatValidateActorIdentity(
+                'seller',
+                (int) $tradeRequestContext['seller_id']
+            );
+            $conversation['conversation_class'] = 'trade_request';
+            $conversation['trade_request_id'] =
+                (int) $tradeRequestContext['trade_request_id'];
+            $conversation['trade_request_reference'] =
+                (string) $tradeRequestContext['request_reference'];
+            $conversation['trade_request_status'] =
+                (string) $tradeRequestContext['trade_request_status'];
+            $conversation['trade_item_name'] =
+                (string) $tradeRequestContext['trade_item_name'];
+            $conversation['seller_id'] =
+                (int) $tradeRequestContext['seller_id'];
+            $conversation['seller_full_name'] = $sellerIdentity['display_name'];
+            $conversation['claimed_submission'] = false;
+            $conversation['guest_submission'] = false;
+            $conversation['display_name'] = $actor['actor_type'] === 'admin'
+                ? 'SELLER - ' . $sellerIdentity['display_name']
+                    . ' · ' . $tradeRequestContext['request_reference']
+                : 'Admin · ' . $tradeRequestContext['request_reference'];
+
+            return $conversation;
+        }
         if (count($participants) !== 2) {
             throw new ChatHttpException('Unauthorized.', 403);
         }

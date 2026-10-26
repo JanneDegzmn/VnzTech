@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
+require_once __DIR__ . '/../../backend/csrf.php';
 
 if (
     empty($_SESSION['user_logged_in']) ||
@@ -138,6 +139,7 @@ $profilePicture =
     profilePicturePath(
         $user['profile_picture'] ?? ''
     );
+$csrfToken = generateCsrfToken();
 
 ?>
 
@@ -362,6 +364,80 @@ $profilePicture =
 
     </form>
 
+    <form
+        id="sellerPasswordForm"
+        class="seller-profile-form"
+        action="/VNZ-TECH/backend/update_password.php"
+        method="POST"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="<?= profileEscape($csrfToken) ?>"
+        >
+
+        <div
+            id="passwordMessage"
+            class="profile-message"
+            role="status"
+            aria-live="polite"
+        ></div>
+
+        <section class="profile-form-section">
+            <div class="profile-section-title">
+                Change Password
+            </div>
+
+            <div class="profile-form-grid">
+                <div class="profile-form-group profile-form-full">
+                    <label for="current_password">Current Password</label>
+                    <input
+                        type="password"
+                        id="current_password"
+                        name="current_password"
+                        autocomplete="current-password"
+                        required
+                    >
+                </div>
+
+                <div class="profile-form-group">
+                    <label for="new_password">New Password</label>
+                    <input
+                        type="password"
+                        id="new_password"
+                        name="new_password"
+                        minlength="8"
+                        autocomplete="new-password"
+                        required
+                    >
+                    <small>At least 8 characters.</small>
+                </div>
+
+                <div class="profile-form-group">
+                    <label for="confirm_password">Confirm New Password</label>
+                    <input
+                        type="password"
+                        id="confirm_password"
+                        name="confirm_password"
+                        minlength="8"
+                        autocomplete="new-password"
+                        required
+                    >
+                </div>
+            </div>
+
+            <div class="profile-form-actions">
+                <button
+                    type="submit"
+                    class="profile-save-button"
+                    id="sellerPasswordSubmit"
+                >
+                    UPDATE PASSWORD
+                </button>
+            </div>
+        </section>
+    </form>
+
 </section>
 
 <script>
@@ -377,6 +453,8 @@ $profilePicture =
             'profileMessage'
         );
 
+    const passwordForm = document.getElementById('sellerPasswordForm');
+    const passwordMessage = document.getElementById('passwordMessage');
 
     if (!form) {
         return;
@@ -478,6 +556,50 @@ $profilePicture =
 
         }
     );
+
+    if (passwordForm && passwordMessage) {
+        passwordForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            passwordMessage.className = 'profile-message';
+            passwordMessage.textContent = '';
+
+            if (
+                passwordForm.querySelector('#new_password').value !==
+                passwordForm.querySelector('#confirm_password').value
+            ) {
+                passwordMessage.classList.add('show', 'error');
+                passwordMessage.textContent =
+                    'New password and confirmation do not match.';
+                return;
+            }
+
+            const button = document.getElementById('sellerPasswordSubmit');
+            button.disabled = true;
+            button.textContent = 'UPDATING...';
+
+            try {
+                const response = await fetch(passwordForm.action, {
+                    method: 'POST',
+                    body: new FormData(passwordForm),
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' }
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Unable to update your password.');
+                }
+                passwordMessage.classList.add('show', 'success');
+                passwordMessage.textContent = result.message || 'Password updated successfully.';
+                passwordForm.reset();
+            } catch (error) {
+                passwordMessage.classList.add('show', 'error');
+                passwordMessage.textContent = error.message || 'Something went wrong.';
+            } finally {
+                button.disabled = false;
+                button.textContent = 'UPDATE PASSWORD';
+            }
+        });
+    }
 
 })();
 </script>

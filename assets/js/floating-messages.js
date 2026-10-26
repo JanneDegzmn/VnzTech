@@ -4,6 +4,7 @@
     const chatCloseTimers = new WeakMap();
     const pendingOpens = new WeakMap();
     const unreadRefreshVersions = new WeakMap();
+    const tradeUnreadFailures = new WeakSet();
     const selectionRefreshVersions = new WeakMap();
     const callControllerPromises = new WeakMap();
     const callableConversations = new WeakMap();
@@ -31,6 +32,8 @@
                 ? 'Private Chat'
                 : category === 'guest-sellers'
                     ? 'Guest Sellers'
+                    : category === 'trade-requests'
+                        ? 'Trade Requests'
                     : (root.dataset.actorType === 'seller' ? 'Admin' : 'Sellers');
         const label = unreadLabel(count);
         badge.textContent = label;
@@ -46,17 +49,24 @@
         }
     }
 
-    function updateUnreadBadges(root, conversations, pulse) {
+    function updateUnreadBadges(root, conversations, pulse, tradeRequests = []) {
         const totals = {
             global: 0,
             private: 0,
             contacts: 0,
-            'guest-sellers': 0
+            'guest-sellers': 0,
+            'trade-requests': tradeRequests.reduce(
+                (sum, tradeRequest) => sum + (Number(tradeRequest.unread_count) || 0),
+                0
+            )
         };
-        let total = 0;
+        let total = totals['trade-requests'];
 
         conversations.forEach(conversation => {
             const unread = Number(conversation.unread_count) || 0;
+            if (conversation.conversation_class === 'trade_request') {
+                return;
+            }
             total += unread;
             if (conversation.conversation_type === 'global') {
                 totals.global += unread;
@@ -192,31 +202,29 @@
     function refreshUnread(root, pulse = false) {
         const requestVersion = (unreadRefreshVersions.get(root) || 0) + 1;
         unreadRefreshVersions.set(root, requestVersion);
-        fetch('/VNZ-TECH/backend/chat_conversations.php?action=list', {
-            method: 'GET',
-            credentials: 'same-origin',
-            cache: 'no-store'
-        })
-            .then(async response => {
-                let payload;
-                try {
-                    payload = await response.json();
-                } catch {
-                    throw new Error('Unable to read conversation status.');
-                }
-                if (!response.ok || payload.success !== true) {
-                    throw new Error(payload.message || 'Unable to load conversations.');
-                }
-                return Array.isArray(payload.data?.conversations)
-                    ? payload.data.conversations
-                    : [];
-            })
-            .then(conversations => {
+        Promise.all([
+            getJson('/VNZ-TECH/backend/chat_conversations.php?action=list'),
+            root.querySelector('[data-category-unread-badge="trade-requests"]')
+                ? getJson('/VNZ-TECH/backend/chat_conversations.php?action=trade_requests')
+                .then(data => Array.isArray(data.trade_requests) ? data.trade_requests : [])
+                .catch(error => {
+                    if (!tradeUnreadFailures.has(root)) {
+                        console.error('Unable to refresh trade request unread counts:', error);
+                        tradeUnreadFailures.add(root);
+                    }
+                    return [];
+                })
+                : Promise.resolve([])
+        ])
+            .then(([conversationData, tradeRequests]) => {
                 if (unreadRefreshVersions.get(root) !== requestVersion) {
                     return;
                 }
+                const conversations = Array.isArray(conversationData.conversations)
+                    ? conversationData.conversations
+                    : [];
                 root.dataset.conversations = JSON.stringify(conversations);
-                updateUnreadBadges(root, conversations, pulse);
+                updateUnreadBadges(root, conversations, pulse, tradeRequests);
                 updateConversationPresence(root, conversations);
                 const panel = root.querySelector('[data-floating-messages-panel]');
                 const category = root.dataset.activeCategory;
@@ -242,6 +250,8 @@
                                 ? 'Private Chat'
                                 : category === 'guest-sellers'
                                     ? 'Guest Sellers'
+                                    : category === 'trade-requests'
+                                        ? 'Trade Requests'
                                     : (root.dataset.actorType === 'seller' ? 'Admin' : 'Sellers')
                     );
                 });
@@ -253,7 +263,7 @@
             });
     }
 
-    function renderSelectionList(root, contacts, conversations, category) {
+    function renderSelectionList(root, contacts, conversations, category, tradeRequests = []) {
         const list = root.querySelector('[data-floating-messages-list]');
         list.replaceChildren();
 
@@ -272,6 +282,45 @@
                 button.append(badge);
             }
         };
+        if (category === 'trade-requests') {
+            if (tradeRequests.length > 0) {
+                addHeading('TRADE REQUEST CHATS');
+                tradeRequests.forEach(tradeRequest => {
+                    const button = document.createElement('button');
+                    const title = document.createElement('strong');
+                    const requester = document.createElement('span');
+                    const reference = document.createElement('span');
+                    const status = document.createElement('span');
+                    const preview = document.createElement('small');
+                    button.type = 'button';
+                    button.className = 'floating-messages-conversation is-trade-request';
+                    button.dataset.tradeRequestId = String(tradeRequest.trade_request_id);
+                    title.textContent = String(tradeRequest.trade_item_name || 'Trade request');
+                    requester.className = 'floating-messages-trade-request-requester';
+                    requester.textContent = root.dataset.actorType === 'admin'
+                        ? String(tradeRequest.seller_full_name || 'Seller')
+                        : 'Your trade request';
+                    reference.textContent = String(tradeRequest.request_reference || 'Trade request');
+                    status.className = 'floating-messages-trade-request-status';
+                    status.textContent = String(tradeRequest.trade_request_status || 'PENDING')
+                        .replaceAll('_', ' ');
+                    preview.textContent = String(tradeRequest.last_message || '').trim()
+                        || 'Open trade chat';
+                    button.append(title, requester, reference, status, preview);
+                    addUnread(button, tradeRequest.unread_count);
+                    list.append(button);
+                });
+            } else {
+                const empty = document.createElement('p');
+                empty.className = 'floating-messages-list-state';
+                empty.textContent = root.dataset.actorType === 'admin'
+                    ? 'No trade requests are available yet.'
+                    : 'You have not submitted a trade request yet.';
+                list.append(empty);
+            }
+            return;
+        }
+
         const appendCallActions = (row, conversation) => {
             if (root.dataset.actorType !== 'seller' || !conversation.call_eligible) {
                 return;
@@ -499,12 +548,19 @@
         const errorPanel = root.querySelector('[data-floating-messages-error]');
         try {
             let contacts = [];
+            let tradeRequests = [];
             let availableConversations = conversations;
             if (category === 'private') {
                 const contactData = await getJson(
                     '/VNZ-TECH/backend/chat_conversations.php?action=contacts&category=private'
                 );
                 contacts = contactData.contacts || [];
+            }
+            if (category === 'trade-requests') {
+                const tradeRequestData = await getJson(
+                    '/VNZ-TECH/backend/chat_conversations.php?action=trade_requests'
+                );
+                tradeRequests = tradeRequestData.trade_requests || [];
             }
             if (
                 category === 'contacts'
@@ -533,7 +589,8 @@
                 root,
                 contacts,
                 availableConversations,
-                category
+                category,
+                tradeRequests
             );
         } catch (error) {
             if (
@@ -1260,6 +1317,25 @@
         }
     }
 
+    async function openTradeRequestConversation(root, tradeRequestId) {
+        if (!Number.isInteger(tradeRequestId) || tradeRequestId <= 0) {
+            throw new Error('The trade request could not be opened.');
+        }
+
+        const conversation = await postForm({
+            action: 'open_trade_request',
+            trade_request_id: String(tradeRequestId),
+            csrf_token: root.dataset.csrfToken
+        });
+        await openFloatingWindow(root, {
+            conversationType: 'private',
+            conversationId: Number(conversation.conversation_id),
+            transactionId: 0,
+            displayName: conversation.display_name || 'Trade request chat'
+        });
+        refreshUnread(root);
+    }
+
     async function openCategory(root, category) {
         const title = root.querySelector('[data-floating-messages-title]');
         const list = root.querySelector('[data-floating-messages-list]');
@@ -1296,7 +1372,9 @@
             ? 'Private Chat'
             : category === 'guest-sellers'
                 ? 'Guest Sellers'
-                : (actorType === 'seller' ? 'Admin conversations' : 'Seller conversations');
+                : category === 'trade-requests'
+                    ? 'Trade Request Chats'
+                    : (actorType === 'seller' ? 'Admin conversations' : 'Seller conversations');
         root.dataset.activeCategory = category;
         list.hidden = false;
         list.replaceChildren();
@@ -1379,6 +1457,18 @@
                 });
                 return;
             }
+            const tradeRequest = event.target.closest('[data-trade-request-id]');
+            if (tradeRequest) {
+                openTradeRequestConversation(
+                    root,
+                    Number(tradeRequest.dataset.tradeRequestId)
+                ).catch(error => {
+                    const errorPanel = root.querySelector('[data-floating-messages-error]');
+                    errorPanel.textContent = error.message || 'Unable to open this trade request chat.';
+                    errorPanel.hidden = false;
+                });
+                return;
+            }
             const transaction = event.target.closest('[data-transaction-id]');
             if (transaction) {
                 openTransactionWindow(
@@ -1401,6 +1491,23 @@
                     errorPanel.hidden = false;
                 });
             }
+        });
+
+        document.addEventListener('click', event => {
+            const tradeChatButton = event.target.closest('[data-open-trade-request-chat]');
+            if (!tradeChatButton) {
+                return;
+            }
+            event.preventDefault();
+            openTradeRequestConversation(
+                root,
+                Number(tradeChatButton.dataset.openTradeRequestChat)
+            ).catch(error => {
+                const errorPanel = root.querySelector('[data-floating-messages-error]');
+                errorPanel.textContent = error.message || 'Unable to open this trade request chat.';
+                errorPanel.hidden = false;
+                setPanelOpen(root, true);
+            });
         });
 
         root.querySelector('[data-floating-chat-windows]').addEventListener('click', event => {

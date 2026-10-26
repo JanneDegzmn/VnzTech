@@ -161,6 +161,31 @@ try {
                 <span class="floating-messages-tooltip" id="floating-messages-tooltip-guest-sellers" aria-hidden="true">Guest Sellers</span>
             </button>
         <?php endif; ?>
+        <?php if (
+            $floatingMessagesActor['actor_type'] === 'seller'
+            || hasPermission('manage_trades')
+        ): ?>
+            <button
+                class="floating-messages-category"
+                type="button"
+                data-message-category="trade-requests"
+                aria-label="Trade Requests"
+                aria-describedby="floating-messages-tooltip-trade-requests"
+                tabindex="-1"
+            >
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M3 7.5 12 3l9 4.5v9L12 21l-9-4.5v-9Z"></path>
+                    <path d="m3.5 7.8 8.5 4.4 8.5-4.4M12 12.2V21"></path>
+                </svg>
+                <span
+                    class="floating-messages-category-badge"
+                    data-category-unread-badge="trade-requests"
+                    aria-hidden="true"
+                    hidden
+                ></span>
+                <span class="floating-messages-tooltip" id="floating-messages-tooltip-trade-requests" aria-hidden="true">Trade Requests</span>
+            </button>
+        <?php endif; ?>
     </div>
 
     <button

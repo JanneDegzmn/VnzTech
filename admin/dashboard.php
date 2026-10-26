@@ -38,6 +38,26 @@ $csrfToken = generateCsrfToken();
     >
     <link
         rel="stylesheet"
+        href="/VNZ-TECH/assets/css/admin_theme.css?v=<?= filemtime(__DIR__ . '/../assets/css/admin_theme.css') ?>"
+    >
+    <script>
+        (function () {
+            try {
+                const theme = localStorage.getItem('vnz-admin-theme');
+                if (theme === 'light') {
+                    document.documentElement.setAttribute('data-admin-theme', 'light');
+                }
+            } catch (error) {
+                console.error('Unable to load the admin theme preference.', error);
+            }
+        })();
+    </script>
+    <script
+        src="/VNZ-TECH/assets/js/admin-theme.js?v=<?= filemtime(__DIR__ . '/../assets/js/admin-theme.js') ?>"
+        defer
+    ></script>
+    <link
+        rel="stylesheet"
         href="/VNZ-TECH/assets/css/transaction_chat.css?v=<?= filemtime(__DIR__ . '/../assets/css/transaction_chat.css') ?>"
     >
     <script
@@ -289,6 +309,12 @@ $csrfToken = generateCsrfToken();
                     <span class="nav-text">
                         Trade Requests
                     </span>
+
+                    <span
+                        class="admin-notification-badge"
+                        id="tradeRequestsBadge"
+                        hidden
+                    >0</span>
 
                 </button>
 
@@ -583,6 +609,11 @@ document.addEventListener(
                 'transactionsBadge'
             );
 
+        const tradeRequestsBadge =
+            document.getElementById(
+                'tradeRequestsBadge'
+            );
+
         const adminCsrfToken =
             <?= json_encode(
                 $csrfToken,
@@ -701,6 +732,11 @@ document.addEventListener(
                 updateNotificationBadge(
                     transactionsBadge,
                     data.transactions_count
+                );
+
+                updateNotificationBadge(
+                    tradeRequestsBadge,
+                    data.trade_requests_count
                 );
 
             } catch (error) {
@@ -992,7 +1028,8 @@ document.addEventListener(
         function loadPage(
             page,
             pushState = true,
-            params = {}
+            params = {},
+            paginationTop = null
         ) {
 
             const focusedElement = contentArea.contains(document.activeElement)
@@ -1037,19 +1074,14 @@ document.addEventListener(
             );
 
 
-            contentArea.innerHTML = `
-
-                <div class="content-loading">
-
-                    <div class="loading-spinner"></div>
-
-                    <span>
-                        Loading...
-                    </span>
-
-                </div>
-
-            `;
+            if (paginationTop === null) {
+                contentArea.innerHTML = `
+                    <div class="content-loading">
+                        <div class="loading-spinner"></div>
+                        <span>Loading...</span>
+                    </div>
+                `;
+            }
 
 
             setActiveNavigation(
@@ -1200,6 +1232,18 @@ document.addEventListener(
                             && typeof replacement.setSelectionRange === 'function'
                         ) {
                             replacement.setSelectionRange(selectionStart, selectionEnd);
+                        }
+                    }
+
+                    if (paginationTop !== null) {
+                        const replacementPagination = contentArea.querySelector('.vnz-pagination');
+                        if (replacementPagination) {
+                            const offset = replacementPagination.getBoundingClientRect().top - paginationTop;
+                            window.scrollTo({
+                                top: window.scrollY + offset,
+                                left: window.scrollX,
+                                behavior: 'auto'
+                            });
                         }
                     }
 
@@ -1433,7 +1477,13 @@ document.addEventListener(
                     params[key] = value;
                 }
             );
-            loadPage(link.dataset.adminPage, true, params);
+            const pagination = link.closest('.vnz-pagination');
+            loadPage(
+                link.dataset.adminPage,
+                true,
+                params,
+                pagination ? pagination.getBoundingClientRect().top : null
+            );
         });
 
 

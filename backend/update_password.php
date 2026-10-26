@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
+require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/remember_login.php';
 
 header('Content-Type: application/json; charset=UTF-8');
@@ -42,6 +43,17 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
         'success' => false,
         'message' => 'Invalid request method.'
+    ]);
+
+    exit;
+}
+
+if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
+    http_response_code(419);
+
+    echo json_encode([
+        'success' => false,
+        'message' => 'Your session has expired. Refresh the page and try again.'
     ]);
 
     exit;

@@ -110,7 +110,7 @@ if (!in_array($status, $allowedStatuses, true)) {
 $search = trim($_GET['search'] ?? '');
 $fromDate = trim($_GET['from'] ?? '');
 $toDate = trim($_GET['to'] ?? '');
-$pagination = vnzPaginationState(12);
+$pagination = vnzPaginationState(5);
 
 $allowedDateRanges = [
     'today',

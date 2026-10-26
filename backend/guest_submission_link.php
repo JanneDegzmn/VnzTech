@@ -379,3 +379,26 @@ function linkVerifiedGuestSubmissions(PDO $pdo, int $sellerId): int
 
     return $linkedCount;
 }
+
+function linkVerifiedGuestSubmissionsAfterSignIn(
+    PDO $pdo,
+    int $sellerId
+): int {
+    if ($pdo->inTransaction()) {
+        throw new LogicException(
+            'Guest submissions must be linked in their own transaction after sign-in.'
+        );
+    }
+
+    $pdo->beginTransaction();
+    try {
+        $linkedCount = linkVerifiedGuestSubmissions($pdo, $sellerId);
+        $pdo->commit();
+        return $linkedCount;
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    }
+}

@@ -1,0 +1,935 @@
+html[data-public-theme="light"] {
+    color-scheme: light;
+    --bg: #f4f7fa;
+    --bg-soft: #edf2f7;
+    --panel: #ffffff;
+    --panel-2: #f7f9fc;
+    --panel-3: #edf2f7;
+    --line: #dce3eb;
+    --line-light: #c6d0dc;
+    --white: #18212b;
+    --soft: #465565;
+    --muted: #586675;
+    --muted-dark: #718091;
+}
+
+html,
+body,
+body *,
+body *::before,
+body *::after {
+    transition:
+        color 220ms ease,
+        background-color 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+}
+
+.public-theme-toggle {
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 20000;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 15px;
+    border: 1px solid #34404c;
+    border-radius: 999px;
+    background: rgba(13, 18, 23, 0.96);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.22);
+    color: #e7edf3;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+}
+
+.public-theme-toggle:hover {
+    border-color: #0ea5e9;
+    background: #151d25;
+}
+
+.public-theme-toggle [data-theme-icon] {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.tracking-modal-minimized {
+    position: fixed;
+    right: calc(max(12px, env(safe-area-inset-right)) + 132px);
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 20001;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    color: #e7edf3;
+    background: rgba(13, 18, 23, 0.97);
+    border: 1px solid #34404c;
+    border-radius: 999px;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.24);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    animation: tracking-modal-minimized-in 0.22s ease-out both;
+}
+
+.tracking-modal-minimized[hidden] {
+    display: none !important;
+}
+
+.tracking-modal-minimized:hover,
+.tracking-modal-minimized:focus-visible {
+    border-color: #0ea5e9;
+    background: #151d25;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22), 0 8px 26px rgba(0, 0, 0, 0.24);
+    transform: translateY(-2px);
+}
+
+.tracking-modal-minimized > span:first-child {
+    font-size: 16px;
+}
+
+.tracking-modal-unread-badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    display: grid;
+    min-width: 21px;
+    height: 21px;
+    place-items: center;
+    padding: 0 5px;
+    color: #ffffff;
+    background: #ef4444;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(127, 29, 29, 0.3);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    animation: tracking-modal-unread-pulse 0.45s ease-out;
+}
+
+.tracking-modal-unread-badge[hidden] {
+    display: none !important;
+}
+
+.tracking-modal-minimized.has-unread-replies .tracking-modal-unread-badge {
+    animation: tracking-modal-unread-pulse 0.45s ease-out;
+}
+
+@keyframes tracking-modal-unread-pulse {
+    0% { transform: scale(0.55); }
+    65% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+}
+
+@keyframes tracking-modal-minimized-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+body.public-theme-has-chat .floating-messages-launcher {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(66px + env(safe-area-inset-bottom));
+}
+
+html[data-public-theme="light"] .public-theme-toggle {
+    border-color: #c6d0dc;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 26px rgba(30, 55, 80, 0.14);
+    color: #263746;
+}
+
+html[data-public-theme="light"] .public-theme-toggle:hover {
+    border-color: #0284c7;
+    background: #f2f8fc;
+}
+
+html[data-public-theme="light"] .tracking-modal-minimized {
+    color: #263746;
+    background: rgba(255, 255, 255, 0.97);
+    border-color: #c6d0dc;
+    box-shadow: 0 8px 26px rgba(30, 55, 80, 0.16);
+}
+
+html[data-public-theme="light"] .tracking-modal-minimized:hover,
+html[data-public-theme="light"] .tracking-modal-minimized:focus-visible {
+    color: #075985;
+    background: #f2f8fc;
+    border-color: #0284c7;
+}
+
+html[data-public-theme="light"] .tracking-modal-unread-badge {
+    color: #ffffff;
+    background: #dc2626;
+    border-color: #ffffff;
+}
+
+@media (max-width: 420px) {
+    .tracking-modal-minimized {
+        gap: 5px;
+        padding: 0 12px;
+        font-size: 11px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tracking-modal-minimized,
+    .tracking-modal-unread-badge {
+        animation: none;
+        transition: none;
+    }
+}
+
+html[data-public-theme="light"] body {
+    background: #f4f7fa;
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .seller-page {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .site-header {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: #dce3eb;
+    box-shadow: 0 5px 20px rgba(30, 55, 80, 0.06);
+}
+
+html[data-public-theme="light"] .brand-mark,
+html[data-public-theme="light"] .brand-name {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .nav-link,
+html[data-public-theme="light"] .header-back,
+html[data-public-theme="light"] .footer-link,
+html[data-public-theme="light"] .footer-contact-item,
+html[data-public-theme="light"] .footer-contact-item a {
+    color: #465565;
+}
+
+html[data-public-theme="light"] .nav-link:hover,
+html[data-public-theme="light"] .nav-link.is-active,
+html[data-public-theme="light"] .footer-link:hover,
+html[data-public-theme="light"] .footer-contact-item a:hover {
+    color: #0369a1;
+}
+
+@media (max-width: 1080px) {
+    html[data-public-theme="light"] .nav-menu {
+        background: #ffffff;
+        border-bottom-color: #dce3eb;
+        box-shadow: 0 16px 30px rgba(30, 55, 80, 0.12);
+    }
+
+    html[data-public-theme="light"] .nav-link {
+        background: #ffffff;
+        border-bottom-color: #e5ebf1;
+        color: #344454;
+    }
+
+    html[data-public-theme="light"] .nav-link:hover,
+    html[data-public-theme="light"] .nav-link:focus-visible,
+    html[data-public-theme="light"] .nav-link.is-active {
+        background: #f1f7fb;
+        color: #075985;
+    }
+
+    html[data-public-theme="light"] .nav-actions {
+        border-color: #dce3eb;
+    }
+
+    html[data-public-theme="light"] .nav-toggle {
+        background: #ffffff;
+        border-color: #c6d0dc;
+        color: #344454;
+    }
+
+    html[data-public-theme="light"] .nav-toggle-bar {
+        background: #344454;
+    }
+}
+
+html[data-public-theme="light"] .header-login-btn,
+html[data-public-theme="light"] .header-account-btn,
+html[data-public-theme="light"] .header-track-btn,
+html[data-public-theme="light"] .hero-btn-secondary,
+html[data-public-theme="light"] .close-form-btn {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #344454;
+}
+
+html[data-public-theme="light"] .header-login-btn:hover,
+html[data-public-theme="light"] .header-account-btn:hover,
+html[data-public-theme="light"] .header-track-btn:hover,
+html[data-public-theme="light"] .hero-btn-secondary:hover,
+html[data-public-theme="light"] .close-form-btn:hover {
+    background: #eaf4fa;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-public-theme="light"] .marketing-section,
+html[data-public-theme="light"] .hero-section {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme="light"] .section-dot-nav {
+    background: rgba(255, 255, 255, 0.94);
+    border-color: #dce3eb;
+    box-shadow: 0 12px 28px rgba(30, 55, 80, 0.16);
+}
+
+html[data-public-theme="light"] .dot-link {
+    background: #dce3eb;
+    border-color: #b8c5d2;
+}
+
+html[data-public-theme="light"] .dot-link::after {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: #dce3eb;
+    color: #344454;
+    box-shadow: 0 5px 16px rgba(30, 55, 80, 0.12);
+}
+
+html[data-public-theme="light"] .dot-link:hover,
+html[data-public-theme="light"] .dot-link:focus-visible,
+html[data-public-theme="light"] .dot-link.is-active {
+    background: #0284c7;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.14);
+}
+
+html[data-public-theme="light"] .hero-section {
+    background:
+        radial-gradient(circle at 78% 42%, rgba(2, 132, 199, 0.08), transparent 34%),
+        linear-gradient(120deg, #ffffff 0%, #f2f6fa 100%);
+}
+
+html[data-public-theme="light"] .hero-copy h1,
+html[data-public-theme="light"] .section-intro h2,
+html[data-public-theme="light"] .education-card h3,
+html[data-public-theme="light"] .form-section-header h2,
+html[data-public-theme="light"] .process-banner strong,
+html[data-public-theme="light"] .footer-cta-title,
+html[data-public-theme="light"] .success-screen h1 {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .hero-copy h1 span,
+html[data-public-theme="light"] .section-intro h2 span,
+html[data-public-theme="light"] .hero-statement span,
+html[data-public-theme="light"] .hero-statement span:first-child {
+    color: #708090;
+}
+
+html[data-public-theme="light"] .eyebrow,
+html[data-public-theme="light"] .section-kicker,
+html[data-public-theme="light"] .hero-description,
+html[data-public-theme="light"] .section-intro p,
+html[data-public-theme="light"] .education-card p,
+html[data-public-theme="light"] .mini-points span,
+html[data-public-theme="light"] .process-banner p,
+html[data-public-theme="light"] .form-section-header p,
+html[data-public-theme="light"] .footer-tagline,
+html[data-public-theme="light"] .footer-description {
+    color: #586675;
+}
+
+html[data-public-theme="light"] .hero-meta span,
+html[data-public-theme="light"] .card-flow span,
+html[data-public-theme="light"] .process-banner,
+html[data-public-theme="light"] .education-card,
+html[data-public-theme="light"] .step-card,
+html[data-public-theme="light"] .form-block,
+html[data-public-theme="light"] .item-form-card,
+html[data-public-theme="light"] .choice-card span,
+html[data-public-theme="light"] .item-type-choice span,
+html[data-public-theme="light"] .upload-box,
+html[data-public-theme="light"] .account-email-note,
+html[data-public-theme="light"] .account-success-note,
+html[data-public-theme="light"] .photo-preview {
+    background: #ffffff;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme="light"] .final-cta {
+    background: linear-gradient(180deg, #ffffff 0%, #f4f7fa 100%);
+    border-color: #dce3eb;
+    box-shadow: 0 12px 32px rgba(30, 55, 80, 0.08);
+}
+
+html[data-public-theme="light"] .final-cta h3 {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .final-cta > span {
+    color: #586675;
+}
+
+html[data-public-theme="light"] .final-cta .hero-btn-primary {
+    background: #dce6ee;
+    border-color: #c6d3df;
+    color: #18212b;
+    box-shadow: 0 4px 12px rgba(30, 55, 80, 0.1);
+}
+
+html[data-public-theme="light"] .final-cta .hero-btn-primary:hover,
+html[data-public-theme="light"] .final-cta .hero-btn-primary:focus-visible {
+    background: #cbd9e4;
+    border-color: #aebfce;
+    color: #111b24;
+}
+
+html[data-public-theme="light"] .trade-view-all-btn {
+    background: #dce6ee;
+    border-color: #aebfce;
+    color: #263746;
+}
+
+html[data-public-theme="light"] .trade-view-all-btn:hover,
+html[data-public-theme="light"] .trade-view-all-btn:focus-visible {
+    background: #cbd9e4;
+    border-color: #8fa5b8;
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .education-section,
+html[data-public-theme="light"] .process-section {
+    background: linear-gradient(180deg, #f7f9fc 0%, #edf2f7 100%);
+}
+
+html[data-public-theme="light"] .card-index,
+html[data-public-theme="light"] .card-label,
+html[data-public-theme="light"] .card-flow b {
+    color: #718091;
+}
+
+html[data-public-theme="light"] .site-footer {
+    background: #ffffff;
+    color: #344454;
+}
+
+html[data-public-theme="light"] .footer-title,
+html[data-public-theme="light"] .footer-brand {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .footer-bottom,
+html[data-public-theme="light"] .footer-grid,
+html[data-public-theme="light"] .footer-cta {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme="light"] .submission-form-section {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .form-block-title,
+html[data-public-theme="light"] .form-block-title strong,
+html[data-public-theme="light"] .item-form-header h3,
+html[data-public-theme="light"] .photo-heading strong,
+html[data-public-theme="light"] .form-disclaimer strong {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .form-block-title small,
+html[data-public-theme="light"] .form-group label,
+html[data-public-theme="light"] .form-group label small,
+html[data-public-theme="light"] .photo-heading > small,
+html[data-public-theme="light"] .upload-box small,
+html[data-public-theme="light"] .form-disclaimer span,
+html[data-public-theme="light"] .submit-area p {
+    color: #586675;
+}
+
+html[data-public-theme="light"] .form-block-title > span:first-child {
+    background: #eef3f8;
+    border-color: #dce3eb;
+    color: #526171;
+}
+
+html[data-public-theme="light"] .final-cta .submission-form-section {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme="light"] .form-disclaimer {
+    background: #fff9e8;
+    border-color: #eadcae;
+}
+
+html[data-public-theme="light"] .form-disclaimer strong {
+    color: #805700;
+}
+
+html[data-public-theme="light"] .form-disclaimer span {
+    color: #665b3f;
+}
+
+html[data-public-theme="light"] .form-group input,
+html[data-public-theme="light"] .form-group select,
+html[data-public-theme="light"] .form-group textarea,
+html[data-public-theme="light"] .price-input input,
+html[data-public-theme="light"] .tracking-modal-field input,
+html[data-public-theme="light"] .tracking-modal-field select,
+html[data-public-theme="light"] .track-counter-form input {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #18212b;
+    color-scheme: light;
+}
+
+html[data-public-theme="light"] .form-group select option {
+    background: #ffffff;
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .price-input {
+    background: #ffffff;
+    border-color: #c6d0dc;
+}
+
+html[data-public-theme="light"] .price-input > span {
+    color: #465565;
+}
+
+html[data-public-theme="light"] .choice-card input:checked + span,
+html[data-public-theme="light"] .item-type-choice input:checked + span {
+    background: #e8f5fc;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-public-theme="light"] .choice-card strong,
+html[data-public-theme="light"] .item-type-choice strong {
+    color: #263746;
+}
+
+html[data-public-theme="light"] .choice-card small,
+html[data-public-theme="light"] .item-type-choice small {
+    color: #526171;
+}
+
+html[data-public-theme="light"] .choice-card input:checked + span strong,
+html[data-public-theme="light"] .item-type-choice input:checked + span strong {
+    color: #075985;
+}
+
+html[data-public-theme="light"] .choice-card input:checked + span small,
+html[data-public-theme="light"] .item-type-choice input:checked + span small {
+    color: #36566b;
+}
+
+html[data-public-theme="light"] .submit-btn {
+    background: #dce6ee;
+    border: 1px solid #b8c8d6;
+    color: #263746;
+}
+
+html[data-public-theme="light"] .submit-btn:hover,
+html[data-public-theme="light"] .submit-btn:focus-visible {
+    background: #cbd9e4;
+    border-color: #9fb2c2;
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .selling-method,
+html[data-public-theme="light"] .photo-upload-block,
+html[data-public-theme="light"] .form-disclaimer {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme="light"] .account-selling-banner {
+    background: linear-gradient(135deg, #e8f5fc, #ffffff);
+    border-color: #b6dced;
+    box-shadow: 0 12px 30px rgba(30, 55, 80, 0.08);
+}
+
+html[data-public-theme="light"] .account-selling-copy strong,
+html[data-public-theme="light"] .account-email-note strong {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .account-selling-copy small,
+html[data-public-theme="light"] .account-email-note small,
+html[data-public-theme="light"] .account-email-note span,
+html[data-public-theme="light"] .account-success-note span {
+    color: #586675;
+}
+
+html[data-public-theme="light"] .account-banner-link {
+    background: #ffffff;
+    border-color: #b6dced;
+    color: #075985;
+}
+
+html[data-public-theme="light"] .seller-modal-card,
+html[data-public-theme="light"] .rates-modal-header,
+html[data-public-theme="light"] .rates-modal-body,
+html[data-public-theme="light"] .tracking-modal-details,
+html[data-public-theme="light"] .tracking-modal-card,
+html[data-public-theme="light"] .trade-modal-card,
+html[data-public-theme="light"] .trade-request-modal-card {
+    background: #ffffff;
+    border-color: #dce3eb;
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .seller-modal-card h2 {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .seller-modal-card p {
+    color: #526171;
+}
+
+html[data-public-theme="light"] .seller-modal-kicker,
+html[data-public-theme="light"] .tracking-modal-field label,
+html[data-public-theme="light"] .rates-modal-state,
+html[data-public-theme="light"] .track-result-row strong {
+    color: #586675;
+}
+
+html[data-public-theme="light"] .seller-modal-btn-primary {
+    color: #ffffff;
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    border-color: #0284c7;
+}
+
+html[data-public-theme="light"] .seller-modal-btn-primary:hover {
+    background: linear-gradient(135deg, #0369a1, #075985);
+}
+
+html[data-public-theme="light"] .seller-modal-btn-secondary {
+    color: #344454;
+    background: #ffffff;
+    border-color: #c6d0dc;
+}
+
+html[data-public-theme="light"] .seller-modal-btn-secondary:hover {
+    color: #075985;
+    background: #f1f8fc;
+    border-color: #91cce5;
+}
+
+html[data-public-theme="light"] .seller-modal-btn-danger {
+    color: #991b1b;
+    background: #fff1f2;
+    border-color: #fecdd3;
+}
+
+html[data-public-theme="light"] .seller-modal-btn-danger:hover {
+    background: #ffe4e6;
+}
+
+html[data-public-theme="light"] .seller-modal-btn:focus-visible {
+    outline: 3px solid rgba(2, 132, 199, 0.35);
+    outline-offset: 3px;
+}
+
+html[data-public-theme="light"] .track-modal-message.success {
+    background: #edf8f1;
+    border-color: #b8dfc7;
+    color: #245a38;
+}
+
+html[data-public-theme="light"] .track-modal-message.error {
+    background: #fff1f0;
+    border-color: #efc1bd;
+    color: #8b2f2a;
+}
+
+html[data-public-theme="light"] .rates-group-title,
+html[data-public-theme="light"] .rates-row-label span,
+html[data-public-theme="light"] .rates-row-price small,
+html[data-public-theme="light"] .rates-modal-footnote {
+    color: #586675;
+}
+
+html[data-public-theme="light"] .rates-row {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme="light"] .rates-row-label strong,
+html[data-public-theme="light"] .rates-row-price {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .rates-modal-close,
+html[data-public-theme="light"] .track-guest-chat-back,
+html[data-public-theme="light"] .track-guest-chat-panel-close {
+    background: #f1f5f9;
+    border-color: #dce3eb;
+    color: #465565;
+}
+
+html[data-public-theme="light"] .trade-modal-card-item,
+html[data-public-theme="light"] .trade-modal-requirement,
+html[data-public-theme="light"] .track-result-row,
+html[data-public-theme="light"] .track-guest-chat,
+html[data-public-theme="light"] .track-counter-form {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme="light"] .track-result-row {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border: 1px solid #dce3eb;
+    border-radius: 8px;
+    background: #f7f9fc;
+}
+
+html[data-public-theme="light"] .track-result-row:last-child {
+    margin-bottom: 0;
+}
+
+html[data-public-theme="light"] .track-result-row strong {
+    color: #465565;
+}
+
+html[data-public-theme="light"] .track-offer-action-buttons button,
+html[data-public-theme="light"] .track-counter-form-actions button {
+    background: #e8edf2;
+    border-color: #c6d0dc;
+    color: #344454;
+}
+
+html[data-public-theme="light"] .track-offer-action-buttons button:hover,
+html[data-public-theme="light"] .track-counter-form-actions button:hover {
+    background: #dce5ec;
+    border-color: #9eafbf;
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .track-offer-action-buttons .track-offer-accept,
+html[data-public-theme="light"] .track-counter-form-actions .track-offer-accept {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+
+html[data-public-theme="light"] .track-offer-action-buttons .track-offer-accept:hover,
+html[data-public-theme="light"] .track-counter-form-actions .track-offer-accept:hover {
+    background: #075985;
+    border-color: #075985;
+    color: #ffffff;
+}
+
+html[data-public-theme="light"] .track-offer-actions button:disabled {
+    opacity: 0.6;
+}
+
+html[data-public-theme="light"] .track-guest-chat {
+    background: linear-gradient(135deg, #edf6fb, #f7f9fc);
+    border-color: #b6dced;
+}
+
+html[data-public-theme="light"] .track-guest-chat > div:first-child strong {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .track-guest-chat p {
+    color: #465565;
+}
+
+html[data-public-theme="light"] .track-guest-account-links a {
+    color: #075985;
+}
+
+html[data-public-theme="light"] .track-guest-account-links a:hover,
+html[data-public-theme="light"] .track-guest-account-links a:focus-visible {
+    color: #0c4a6e;
+}
+
+html[data-public-theme="light"] .track-guest-chat > button {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+
+html[data-public-theme="light"] .track-guest-chat > button:hover,
+html[data-public-theme="light"] .track-guest-chat > button:focus-visible {
+    background: #075985;
+    border-color: #075985;
+    color: #ffffff;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column {
+    color: #18212b;
+    background: #f7f9fc;
+    border-left-color: #dce3eb;
+}
+
+html[data-public-theme="light"] .track-guest-chat-panel-header {
+    background: #ffffff;
+    border-bottom-color: #dce3eb;
+}
+
+html[data-public-theme="light"] .track-guest-chat-panel-header span {
+    color: #0369a1;
+}
+
+html[data-public-theme="light"] .track-guest-chat-panel-header strong {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat {
+    --chat-bg: #ffffff;
+    --chat-panel: #f7f9fc;
+    --chat-border: #dce3eb;
+    --chat-text: #18212b;
+    --chat-muted: #586675;
+    --chat-accent: #0369a1;
+    --chat-accent-dark: #075985;
+    --chat-own: #dbeefa;
+    --chat-other: #f1f5f9;
+    --chat-video-ready: #15803d;
+    --chat-video-error: #b91c1c;
+    background: #ffffff;
+    box-shadow: none;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-info {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-info-item strong,
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-info-quantity {
+    color: #075985;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-info-photo,
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-info-photo-placeholder {
+    background: #edf2f7;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-composer {
+    background: #f7f9fc;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-message.is-own > .transaction-chat-bubble {
+    background: #dbeefa;
+    border-color: #b6dced;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-message-content {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-message-content a {
+    color: #075985;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-message time {
+    color: #465565;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-attachment-preview,
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-voice-composer {
+    color: #344454;
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-connection,
+html[data-public-theme="light"] .track-guest-chat-column .transaction-chat-call-button {
+    background: #f1f5f9;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme="light"] .login-wrapper,
+html[data-public-theme="light"] .register-wrapper {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .login-card,
+html[data-public-theme="light"] .register-card {
+    background: rgba(255, 255, 255, 0.97);
+    border-color: #dce3eb;
+    box-shadow: 0 25px 70px rgba(30, 55, 80, 0.14);
+}
+
+html[data-public-theme="light"] .login-card h2,
+html[data-public-theme="light"] .register-card h2,
+html[data-public-theme="light"] .brand h1,
+html[data-public-theme="light"] .field label,
+html[data-public-theme="light"] .upload-content label {
+    color: #18212b;
+}
+
+html[data-public-theme="light"] .subtitle,
+html[data-public-theme="light"] .brand p,
+html[data-public-theme="light"] .remember,
+html[data-public-theme="light"] .register-link,
+html[data-public-theme="light"] .login-link,
+html[data-public-theme="light"] .terms label,
+html[data-public-theme="light"] .upload-content p {
+    color: #586675;
+}
+
+html[data-public-theme="light"] .field input,
+html[data-public-theme="light"] .field select {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #18212b;
+    color-scheme: light;
+}
+
+html[data-public-theme="light"] .message.error {
+    background: #fff0f0;
+    border-color: #efc3c3;
+    color: #9b2626;
+}
+
+html[data-public-theme="light"] .message.success {
+    background: #eaf8ef;
+    border-color: #b7e0c4;
+    color: #17643a;
+}
+
+html[data-public-theme="light"] .page-back a {
+    color: #526171;
+}
+
+html[data-public-theme="light"] .page-back a:hover {
+    color: #075985;
+}
+
+html[data-public-theme="light"] .avatar-preview {
+    background: #f1f5f9;
+    border-color: #c6d0dc;
+    color: #586675;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html,
+    body,
+    body *,
+    body *::before,
+    body *::after {
+        transition-duration: 0.01ms;
+    }
+}

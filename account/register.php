@@ -1,10 +1,14 @@
 <?php
 
-session_start();
+require_once __DIR__ . '/../backend/session.php';
 
 $success = isset($_GET['success']) && $_GET['success'] === '1';
 $verification = $_GET['verification'] ?? '';
 $error = $_GET['error'] ?? '';
+$guestRegistrationPrefill = $_SESSION['guest_registration_prefill'] ?? [];
+if (!is_array($guestRegistrationPrefill)) {
+    $guestRegistrationPrefill = [];
+}
 
 ?>
 
@@ -24,10 +28,31 @@ $error = $_GET['error'] ?? '';
 
     <title>Create Account | VNZ TECH</title>
 
+    <script>
+        (function () {
+            try {
+                document.documentElement.setAttribute(
+                    'data-public-theme',
+                    localStorage.getItem('vnz-public-theme') === 'light' ? 'light' : 'dark'
+                );
+            } catch (error) {
+                document.documentElement.setAttribute('data-public-theme', 'dark');
+                console.error('Unable to load the public theme preference.', error);
+            }
+        })();
+    </script>
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/seller_register.css"
+        href="/VNZ-TECH/assets/css/seller_register.css?v=<?= filemtime(__DIR__ . '/../assets/css/seller_register.css') ?>"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/public_theme.css?v=<?= filemtime(__DIR__ . '/../assets/css/public_theme.css') ?>"
+    >
+    <script
+        src="/VNZ-TECH/assets/js/public-theme.js?v=<?= filemtime(__DIR__ . '/../assets/js/public-theme.js') ?>"
+        defer
+    ></script>
 
 </head>
 
@@ -131,6 +156,8 @@ $error = $_GET['error'] ?? '';
                     id="full_name"
                     name="full_name"
                     maxlength="150"
+                    autocomplete="name"
+                    value="<?= htmlspecialchars((string) ($guestRegistrationPrefill['full_name'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                     required
                 >
 
@@ -147,6 +174,8 @@ $error = $_GET['error'] ?? '';
                     id="mobile"
                     name="mobile"
                     maxlength="30"
+                    autocomplete="tel"
+                    value="<?= htmlspecialchars((string) ($guestRegistrationPrefill['mobile'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                     required
                 >
 
@@ -163,6 +192,8 @@ $error = $_GET['error'] ?? '';
                     id="email"
                     name="email"
                     maxlength="190"
+                    autocomplete="email"
+                    value="<?= htmlspecialchars((string) ($guestRegistrationPrefill['email'] ?? ''), ENT_QUOTES, 'UTF-8') ?>"
                     required
                 >
 

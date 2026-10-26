@@ -41,7 +41,10 @@ try {
            AND p.actor_type = ?
            AND p.actor_id = ?
         WHERE m.id = ?
-          AND m.message_type IN ('image', 'file', 'voice', 'video')
+          AND (
+              m.message_type IN ('image', 'file', 'voice', 'video')
+              OR m.message_type = ''
+          )
           AND m.deleted_at IS NULL
         LIMIT 1
     ");
@@ -52,6 +55,12 @@ try {
     ]);
     $attachment = $stmt->fetch(PDO::FETCH_ASSOC);
     if (!$attachment) {
+        chatAttachmentErrorResponse(404);
+        exit;
+    }
+
+    $attachment['message_type'] = chatEffectiveMessageType($attachment);
+    if (!in_array($attachment['message_type'], ['image', 'file', 'voice', 'video'], true)) {
         chatAttachmentErrorResponse(404);
         exit;
     }

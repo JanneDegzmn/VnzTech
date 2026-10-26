@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/csrf.php';
 require_once __DIR__ . '/../../backend/chat_service.php';
+require_once __DIR__ . '/../../backend/guest_submission_link.php';
 
 if (
     empty($_SESSION['user_logged_in']) ||
@@ -89,6 +90,21 @@ try {
         ';
 
         exit;
+    }
+
+    $guestSubmissionLinkNotice = null;
+    if ($user['email_verified_at'] !== null) {
+        try {
+            if (linkVerifiedGuestSubmissionsAfterSignIn($pdo, $userId) > 0) {
+                $guestSubmissionLinkNotice = 'linked';
+            }
+        } catch (Throwable $linkError) {
+            error_log(
+                'Guest submission linking after Seller sign-in failed: ' .
+                $linkError->getMessage()
+            );
+            $guestSubmissionLinkNotice = 'failed';
+        }
     }
 
 
@@ -461,6 +477,16 @@ $initial = strtoupper(
 ?>
 
 <section class="dashboard-page">
+
+    <?php if ($guestSubmissionLinkNotice === 'linked'): ?>
+        <div class="guest-submission-link-notice guest-submission-link-success" role="status">
+            Your eligible guest submission and its chat history are now linked to this account.
+        </div>
+    <?php elseif ($guestSubmissionLinkNotice === 'failed'): ?>
+        <div class="guest-submission-link-notice guest-submission-link-warning" role="alert">
+            We could not finish linking your guest submission. Please contact support for help.
+        </div>
+    <?php endif; ?>
 
     <!-- =====================================================
          HEADER
@@ -924,13 +950,13 @@ $initial = strtoupper(
             </div>
 
 
-            <button
-                type="button"
+            <a
+                href="/VNZ-TECH/account/dashboard.php?page=transactions"
                 class="section-link"
-                disabled
+                data-seller-page="transactions"
             >
                 VIEW ALL
-            </button>
+            </a>
 
         </div>
 

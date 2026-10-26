@@ -109,6 +109,25 @@ function chatVideoMaxBytes(): int
     return $limit;
 }
 
+function chatEffectiveMessageType(array $message): string
+{
+    $messageType = (string) ($message['message_type'] ?? '');
+    if ($messageType !== '') {
+        return $messageType;
+    }
+
+    $attachmentPath = (string) ($message['attachment_path'] ?? '');
+    $attachmentSize = (int) ($message['attachment_size'] ?? 0);
+    if (
+        $attachmentSize > 0
+        && preg_match('/\A[a-f0-9]{32}\.(?:mp4|webm)\z/', $attachmentPath) === 1
+    ) {
+        return 'video';
+    }
+
+    return $messageType;
+}
+
 function chatSanitizeAttachmentName(string $name, string $extension): string
 {
     $name = str_replace('\\', '/', $name);

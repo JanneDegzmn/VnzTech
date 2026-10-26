@@ -109,6 +109,17 @@ try {
     $newTransactionCount =
         (int) $transactionStmt->fetchColumn();
 
+    $pendingTradeRequestCount = 0;
+    if (function_exists('hasPermission') && hasPermission('manage_trades')) {
+        $tradeRequestStmt = $pdo->query("
+            SELECT COUNT(*)
+            FROM trade_requests
+            WHERE status = 'PENDING'
+        ");
+        $pendingTradeRequestCount =
+            (int) $tradeRequestStmt->fetchColumn();
+    }
+
 
     /*
     |--------------------------------------------------------------------------
@@ -129,7 +140,10 @@ try {
             $newCounterOfferCount,
 
         'transactions_count' =>
-            $newTransactionCount
+            $newTransactionCount,
+
+        'trade_requests_count' =>
+            $pendingTradeRequestCount
     ]);
 
     exit;

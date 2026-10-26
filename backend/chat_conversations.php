@@ -48,6 +48,109 @@ try {
         chatJsonResponse(true, 'Guest chat access was revoked.', 200);
     }
 
+    if ($action === 'trade_requests') {
+        chatRequireMethod('GET');
+        chatRequireTradeRequestChatSchema();
+        if ($actor['actor_type'] === 'admin') {
+            chatRequireTradeRequestManager($actor);
+        } elseif ($actor['actor_type'] !== 'seller') {
+            throw new ChatHttpException('Unauthorized.', 403);
+        }
+
+        global $pdo;
+        $sql = "
+            SELECT
+                tr.id AS trade_request_id,
+                tr.request_reference,
+                tr.status AS trade_request_status,
+                tr.updated_at,
+                ti.name AS trade_item_name,
+                u.full_name AS seller_full_name,
+                trc.conversation_id,
+                c.updated_at AS conversation_updated_at,
+                (
+                    SELECT CASE
+                        WHEN m.deleted_at IS NOT NULL THEN 'Message deleted'
+                        ELSE LEFT(m.content, 120)
+                    END
+                    FROM messages m
+                    WHERE m.conversation_id = trc.conversation_id
+                    ORDER BY m.created_at DESC, m.id DESC
+                    LIMIT 1
+                ) AS last_message
+            FROM trade_requests tr
+            INNER JOIN trade_items ti
+                ON ti.id = tr.trade_item_id
+            INNER JOIN users u
+                ON u.id = tr.user_id
+            LEFT JOIN trade_request_conversations trc
+                ON trc.trade_request_id = tr.id
+            LEFT JOIN conversations c
+                ON c.id = trc.conversation_id
+        ";
+        $params = [];
+        if ($actor['actor_type'] === 'seller') {
+            $sql .= ' WHERE tr.user_id = ?';
+            $params[] = (int) $actor['actor_id'];
+        }
+        $sql .= ' ORDER BY COALESCE(c.updated_at, tr.updated_at) DESC, tr.id DESC';
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute($params);
+        $tradeRequests = [];
+        foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $tradeRequest) {
+            $conversationId = $tradeRequest['conversation_id'] === null
+                ? null
+                : (int) $tradeRequest['conversation_id'];
+            $unreadCount = 0;
+            if ($conversationId !== null) {
+                chatGetTradeRequestConversationContext($conversationId, $actor);
+                $unreadCount = chatCountUnreadMessages($conversationId, $actor);
+            }
+            $tradeRequests[] = [
+                'trade_request_id' => (int) $tradeRequest['trade_request_id'],
+                'conversation_id' => $conversationId,
+                'request_reference' => (string) $tradeRequest['request_reference'],
+                'trade_request_status' => (string) $tradeRequest['trade_request_status'],
+                'trade_item_name' => (string) $tradeRequest['trade_item_name'],
+                'seller_full_name' => (string) $tradeRequest['seller_full_name'],
+                'last_message' => (string) ($tradeRequest['last_message'] ?? ''),
+                'updated_at' => (string) (
+                    $tradeRequest['conversation_updated_at']
+                    ?? $tradeRequest['updated_at']
+                ),
+                'unread_count' => $unreadCount
+            ];
+        }
+
+        chatJsonResponse(
+            true,
+            'Trade request chats loaded.',
+            200,
+            ['trade_requests' => $tradeRequests]
+        );
+    }
+
+    if ($action === 'open_trade_request') {
+        chatRequireMethod('POST');
+        chatRequireCsrf();
+        $tradeRequestId = chatPositiveInteger(
+            $_POST['trade_request_id'] ?? null,
+            'trade request ID'
+        );
+        $conversation = chatGetOrCreateTradeRequestConversation(
+            $tradeRequestId,
+            $actor
+        );
+
+        chatJsonResponse(
+            true,
+            'Trade request chat opened.',
+            200,
+            $conversation
+        );
+    }
+
     if ($action === 'open') {
         chatRequireMethod('POST');
         chatRequireCsrf();

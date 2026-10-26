@@ -393,6 +393,7 @@ $stmt = $pdo->prepare("
         reference_number,
         seller_name,
         seller_mobile,
+        seller_email,
         user_id,
         seller_address,
         selling_method,
@@ -462,6 +463,20 @@ if ($submissionUserId !== null) {
     ]);
 
     exit;
+}
+
+if (
+    $submissionUserId === null &&
+    empty($_SESSION['user_logged_in']) &&
+    !empty($submission['seller_name']) &&
+    !empty($submission['seller_mobile']) &&
+    filter_var((string) ($submission['seller_email'] ?? ''), FILTER_VALIDATE_EMAIL)
+) {
+    $_SESSION['guest_registration_prefill'] = [
+        'full_name' => (string) $submission['seller_name'],
+        'mobile' => (string) $submission['seller_mobile'],
+        'email' => (string) $submission['seller_email']
+    ];
 }
 
 

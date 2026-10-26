@@ -16,6 +16,8 @@ $transactionChatResolvedConversationId = 0;
 $transactionChatGuestSubmission = false;
 $transactionChatClaimedSubmission = false;
 $transactionChatConversationClass = 'transaction';
+$transactionChatTradeRequestData = null;
+$transactionChatTradeRequirements = [];
 
 try {
     $transactionChatActor = chatGetCurrentActor();
@@ -35,6 +37,20 @@ try {
             }
             $transactionChatWindowId = (int) $conversation['transaction_id'];
             $transactionChatResolvedConversationId = (int) $conversation['conversation_id'];
+        } elseif (
+            $conversation['conversation_type'] === 'private'
+            && !empty($conversation['claimed_submission'])
+        ) {
+            if (
+                $conversation['transaction_id'] === null
+                || (int) $conversation['transaction_id'] <= 0
+            ) {
+                throw new ChatHttpException('Unauthorized.', 403);
+            }
+            $transactionChatWindowId = (int) $conversation['transaction_id'];
+            $transactionChatResolvedConversationId = (int) $conversation['conversation_id'];
+            $transactionChatClaimedSubmission = true;
+            $transactionChatShowTransactionContext = true;
         } elseif (in_array($conversation['conversation_type'], ['global', 'private'], true)) {
             $transactionChatConversationType = $conversation['conversation_type'];
             $transactionChatConversationClass =
@@ -56,7 +72,47 @@ try {
             $transactionChatSubmissionItems = [];
             $transactionChatPhotosByItem = [];
 
-            if ($conversation['submission_id'] !== null) {
+            if ($conversation['conversation_class'] === 'trade_request') {
+                $tradeRequestStmt = $pdo->prepare("
+                    SELECT
+                        tr.request_reference,
+                        tr.status AS request_status,
+                        tr.created_at AS requested_at,
+                        ti.name AS item_name,
+                        ti.`condition` AS item_condition,
+                        ti.description AS item_description,
+                        ti.image_path AS item_image_path
+                    FROM trade_requests tr
+                    INNER JOIN trade_items ti
+                        ON ti.id = tr.trade_item_id
+                    WHERE tr.id = ?
+                    LIMIT 1
+                ");
+                $tradeRequestStmt->execute([
+                    (int) $conversation['trade_request_id']
+                ]);
+                $transactionChatTradeRequestData =
+                    $tradeRequestStmt->fetch(PDO::FETCH_ASSOC);
+                if (!$transactionChatTradeRequestData) {
+                    throw new ChatHttpException('Trade request not found.', 404);
+                }
+
+                $tradeRequirementsStmt = $pdo->prepare("
+                    SELECT requirement_type, quantity, storage, description
+                    FROM trade_requirements
+                    WHERE trade_item_id = (
+                        SELECT trade_item_id
+                        FROM trade_requests
+                        WHERE id = ?
+                    )
+                    ORDER BY sort_order ASC, id ASC
+                ");
+                $tradeRequirementsStmt->execute([
+                    (int) $conversation['trade_request_id']
+                ]);
+                $transactionChatTradeRequirements =
+                    $tradeRequirementsStmt->fetchAll(PDO::FETCH_ASSOC);
+            } elseif ($conversation['submission_id'] !== null) {
                 $guestContextStmt = $pdo->prepare("
                     SELECT
                         s.id AS submission_id,

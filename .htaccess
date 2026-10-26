@@ -1,2 +1,3 @@
 RewriteEngine On
+RewriteRule (^|/)\.git(?:/|$) - [R=404,END,NC]
 RewriteRule ^VNZ-TECH/(.*)$ /$1 [L]

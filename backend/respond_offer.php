@@ -3,6 +3,7 @@
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/offer_response_authorization.php';
 
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, private');
@@ -280,13 +281,7 @@ try {
         );
     }
 
-    $sellerId = (int) ($_SESSION['user_id'] ?? 0);
-    if (
-        !empty($_SESSION['user_logged_in'])
-        && $sellerId > 0
-        && $submission['user_id'] !== null
-        && (int) $submission['user_id'] !== $sellerId
-    ) {
+    if (!offerResponseSessionIsAuthorized($submission, $_SESSION)) {
         throw new RuntimeException(
             'You are not authorized to respond to this submission.',
             403
@@ -317,21 +312,18 @@ try {
     $latestOfferStmt->execute([(int) $submissionId]);
     $data = $latestOfferStmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$data || (int) $data['offer_id'] !== $offerId) {
+    if (!offerResponseOfferBelongsToSubmission(
+        $data ?: null,
+        $offerId,
+        (int) $submissionId
+    )) {
         throw new RuntimeException(
             'This offer is no longer the active negotiation.',
             409
         );
     }
 
-    if (
-        strtolower((string) $data['sender_type']) !== 'admin'
-        || !in_array(
-            strtolower((string) $data['status']),
-            ['sent', 'offer_sent', 'pending', 'active'],
-            true
-        )
-    ) {
+    if (!offerResponseOfferIsAvailable($data)) {
         throw new RuntimeException(
             'This offer is not available for a response.',
             409

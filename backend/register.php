@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/email_verification.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -170,6 +171,8 @@ try {
         $profilePicturePath,
         $language
     ]);
+
+    unset($_SESSION['guest_registration_prefill']);
 
     $userId = (int) $pdo->lastInsertId();
     $verificationEmailSent = false;

@@ -54,10 +54,31 @@ $csrfToken = generateCsrfToken();
 
     <title>Login | VNZ TECH</title>
 
+    <script>
+        (function () {
+            try {
+                document.documentElement.setAttribute(
+                    'data-public-theme',
+                    localStorage.getItem('vnz-public-theme') === 'light' ? 'light' : 'dark'
+                );
+            } catch (error) {
+                document.documentElement.setAttribute('data-public-theme', 'dark');
+                console.error('Unable to load the public theme preference.', error);
+            }
+        })();
+    </script>
     <link
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/seller_login.css?v=20261006-seller-2fa"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/public_theme.css?v=<?= filemtime(__DIR__ . '/../assets/css/public_theme.css') ?>"
+    >
+    <script
+        src="/VNZ-TECH/assets/js/public-theme.js?v=<?= filemtime(__DIR__ . '/../assets/js/public-theme.js') ?>"
+        defer
+    ></script>
 
 </head>
 

@@ -75,16 +75,37 @@ $openFormRequested =
         Sell Your Broken Phone or Scrap | VNZ TECH
     </title>
 
+    <script>
+        (function () {
+            try {
+                document.documentElement.setAttribute(
+                    'data-public-theme',
+                    localStorage.getItem('vnz-public-theme') === 'light' ? 'light' : 'dark'
+                );
+            } catch (error) {
+                document.documentElement.setAttribute('data-public-theme', 'dark');
+                console.error('Unable to load the public theme preference.', error);
+            }
+        })();
+    </script>
     <link
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/sell.css?v=<?= filemtime(__DIR__ . '/assets/css/sell.css') ?>"
     >
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261013-guest-calls"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=<?= filemtime(__DIR__ . '/assets/css/transaction_chat.css') ?>"
+    >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/public_theme.css?v=<?= filemtime(__DIR__ . '/assets/css/public_theme.css') ?>"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261014-call-media-feedback"
+        src="/VNZ-TECH/assets/js/public-theme.js?v=<?= filemtime(__DIR__ . '/assets/js/public-theme.js') ?>"
+        defer
+    ></script>
+    <script
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=<?= filemtime(__DIR__ . '/assets/js/transaction-chat.js') ?>"
         defer
     ></script>
 
@@ -1206,14 +1227,48 @@ $openFormRequested =
                             </h2>
                         </div>
 
-                        <button
-                            type="button"
-                            class="rates-modal-close"
-                            id="closeTrackSubmissionModalBtn"
-                            aria-label="Close track submission modal"
-                        >
-                            ×
-                        </button>
+                        <div class="tracking-modal-header-actions">
+                            <button
+                                type="button"
+                                class="rates-modal-close tracking-modal-lock"
+                                id="toggleTrackModalLockBtn"
+                                aria-label="Keep Track Submission open"
+                                aria-pressed="false"
+                                title="Keep Track Submission open"
+                            >
+                                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                                    <path class="track-modal-lock-shackle track-modal-lock-shackle-open" d="M7 10V7a5 5 0 0 1 9.7-1.5" />
+                                    <path class="track-modal-lock-shackle track-modal-lock-shackle-closed" d="M7 10V7a5 5 0 0 1 10 0v3" />
+                                    <rect x="5" y="10" width="14" height="11" rx="2" />
+                                    <circle cx="12" cy="15" r="1" />
+                                    <path d="M12 16v2" />
+                                </svg>
+                            </button>
+                            <button
+                                type="button"
+                                class="rates-modal-close tracking-modal-minimize"
+                                id="minimizeTrackSubmissionModalBtn"
+                                aria-label="Minimize Track Submission"
+                                title="Minimize and browse the page"
+                            >
+                                <span aria-hidden="true">−</span>
+                            </button>
+                            <span
+                                class="tracking-modal-lock-status"
+                                id="trackModalLockStatus"
+                                aria-live="polite"
+                                hidden
+                            >Modal locked open</span>
+
+                            <button
+                                type="button"
+                                class="rates-modal-close"
+                                id="closeTrackSubmissionModalBtn"
+                                aria-label="Close track submission modal"
+                            >
+                                ×
+                            </button>
+                        </div>
 
                     </div>
 
@@ -1305,6 +1360,22 @@ $openFormRequested =
             </div>
         </div>
     </div>
+    <button
+        type="button"
+        class="tracking-modal-minimized"
+        id="restoreTrackSubmissionModalBtn"
+        aria-label="Restore Track Submission"
+        hidden
+    >
+        <span aria-hidden="true">↗</span>
+        <span>Track Status</span>
+        <span
+            class="tracking-modal-unread-badge"
+            id="trackModalUnreadBadge"
+            aria-hidden="true"
+            hidden
+        ></span>
+    </button>
 
 
     <?php
@@ -2254,6 +2325,11 @@ $openFormRequested =
         const trackModal = document.getElementById('trackSubmissionModal');
         const openTrackModalBtn = document.getElementById('openTrackModalBtn');
         const closeTrackSubmissionModalBtn = document.getElementById('closeTrackSubmissionModalBtn');
+        const toggleTrackModalLockBtn = document.getElementById('toggleTrackModalLockBtn');
+        const minimizeTrackSubmissionModalBtn = document.getElementById('minimizeTrackSubmissionModalBtn');
+        const restoreTrackSubmissionModalBtn = document.getElementById('restoreTrackSubmissionModalBtn');
+        const trackModalUnreadBadge = document.getElementById('trackModalUnreadBadge');
+        const trackModalLockStatus = document.getElementById('trackModalLockStatus');
         const trackSubmissionForm = document.getElementById('trackSubmissionForm');
         const trackSubmissionMessage = document.getElementById('trackSubmissionMessage');
         const trackSubmissionResult = document.getElementById('trackSubmissionResult');
@@ -2267,8 +2343,130 @@ $openFormRequested =
         const guestChatBackButton = guestChatColumn?.querySelector('[data-guest-chat-back]');
         const trackDetails = trackModal.querySelector('[data-track-details]');
         const mobileGuestChat = window.matchMedia('(max-width: 1040px)');
+        const trackModalStorageKey = 'vnz-track-submission-modal';
         let guestChatCloseTimer = null;
         let guestChatOpener = null;
+        let trackModalLocked = false;
+        let lockAnimationTimer = null;
+        let trackModalMode = 'closed';
+        let trackModalChatOpen = false;
+        let trackModalUnreadCount = 0;
+        let restoredTrackState = null;
+
+        try {
+            const storedTrackState = sessionStorage.getItem(trackModalStorageKey);
+            if (storedTrackState) {
+                const parsedTrackState = JSON.parse(storedTrackState);
+                if (parsedTrackState && parsedTrackState.locked === true) {
+                    restoredTrackState = {
+                        mode: parsedTrackState.mode === 'minimized' ? 'minimized' : 'open',
+                        reference: typeof parsedTrackState.reference === 'string'
+                            ? parsedTrackState.reference
+                            : '',
+                        mobile: typeof parsedTrackState.mobile === 'string'
+                            ? parsedTrackState.mobile
+                            : '',
+                        chatOpen: parsedTrackState.chatOpen === true,
+                        unreadCount: Number.isSafeInteger(parsedTrackState.unreadCount)
+                            ? Math.max(0, parsedTrackState.unreadCount)
+                            : 0
+                    };
+                }
+            }
+        } catch (error) {
+            console.error('Unable to restore the locked Track Submission modal.', error);
+            try {
+                sessionStorage.removeItem(trackModalStorageKey);
+            } catch (storageError) {
+                console.error('Unable to clear the saved Track Submission state.', storageError);
+            }
+        }
+
+        function persistTrackModalState() {
+            if (!trackModalLocked || trackModalMode === 'closed') {
+                return;
+            }
+            try {
+                sessionStorage.setItem(trackModalStorageKey, JSON.stringify({
+                    locked: true,
+                    mode: trackModalMode,
+                    reference: trackSubmissionForm.elements.reference.value.trim(),
+                    mobile: trackSubmissionForm.elements.mobile.value.trim(),
+                    chatOpen: trackModalChatOpen,
+                    unreadCount: trackModalUnreadCount
+                }));
+            } catch (error) {
+                console.error('Unable to preserve the locked Track Submission modal.', error);
+            }
+        }
+
+        function clearSavedTrackModalState() {
+            try {
+                sessionStorage.removeItem(trackModalStorageKey);
+            } catch (error) {
+                console.error('Unable to clear the saved Track Submission state.', error);
+            }
+        }
+
+        function setTrackModalUnreadCount(count) {
+            trackModalUnreadCount = Math.max(0, Number(count) || 0);
+            if (trackModalUnreadBadge) {
+                trackModalUnreadBadge.textContent = trackModalUnreadCount > 99
+                    ? '99+'
+                    : String(trackModalUnreadCount);
+                trackModalUnreadBadge.hidden = trackModalUnreadCount === 0;
+            }
+            restoreTrackSubmissionModalBtn?.classList.toggle(
+                'has-unread-replies',
+                trackModalUnreadCount > 0
+            );
+            const label = trackModalUnreadCount > 0
+                ? `Restore Track Submission, ${trackModalUnreadCount} unread Admin ${trackModalUnreadCount === 1 ? 'reply' : 'replies'}`
+                : 'Restore Track Submission';
+            restoreTrackSubmissionModalBtn?.setAttribute('aria-label', label);
+            persistTrackModalState();
+        }
+
+        window.addEventListener('vnz:chat-unread-count', event => {
+            const detail = event.detail || {};
+            if (
+                detail.actorType === 'guest'
+                && Number(detail.conversationId) === Number(guestChatColumn?.dataset.conversationId)
+            ) {
+                setTrackModalUnreadCount(detail.count);
+            }
+        });
+
+        function setTrackModalLocked(locked) {
+            trackModalLocked = locked;
+            restoreTrackSubmissionModalBtn?.classList.toggle('is-locked', locked);
+            if (!toggleTrackModalLockBtn) {
+                return;
+            }
+            toggleTrackModalLockBtn.classList.toggle('is-locked', locked);
+            toggleTrackModalLockBtn.setAttribute('aria-pressed', String(locked));
+            if (trackModalLockStatus) {
+                trackModalLockStatus.hidden = !locked;
+            }
+            const label = locked
+                ? 'Unlock Track Submission modal'
+                : 'Keep Track Submission open';
+            toggleTrackModalLockBtn.setAttribute('aria-label', label);
+            toggleTrackModalLockBtn.title = label;
+            if (locked) {
+                persistTrackModalState();
+            } else {
+                trackModalChatOpen = false;
+                clearSavedTrackModalState();
+            }
+            toggleTrackModalLockBtn.classList.remove('is-changing');
+            void toggleTrackModalLockBtn.offsetWidth;
+            toggleTrackModalLockBtn.classList.add('is-changing');
+            window.clearTimeout(lockAnimationTimer);
+            lockAnimationTimer = window.setTimeout(() => {
+                toggleTrackModalLockBtn.classList.remove('is-changing');
+            }, 450);
+        }
 
         guestChatColumn?.addEventListener('click', event => {
             if (
@@ -2283,6 +2481,8 @@ $openFormRequested =
             if (!guestChatColumn || guestChatColumn.hidden) {
                 return;
             }
+            trackModalChatOpen = false;
+            persistTrackModalState();
             if (guestChatCloseTimer !== null) {
                 window.clearTimeout(guestChatCloseTimer);
             }
@@ -2314,6 +2514,8 @@ $openFormRequested =
             if (!guestChatColumn || !guestChatContent) {
                 throw new Error('The chat panel is unavailable.');
             }
+            trackModalChatOpen = true;
+            persistTrackModalState();
             if (guestChatCloseTimer !== null) {
                 window.clearTimeout(guestChatCloseTimer);
                 guestChatCloseTimer = null;
@@ -2334,7 +2536,9 @@ $openFormRequested =
             const initialFocusTarget = mobileGuestChat.matches
                 ? guestChatBackButton
                 : guestChatColumn.querySelector('[data-guest-chat-close]');
-            initialFocusTarget?.focus();
+            if (trackModalMode !== 'minimized') {
+                initialFocusTarget?.focus();
+            }
 
             if (Number(guestChatColumn.dataset.conversationId) === conversationId
                 && guestChatColumn.dataset.chatLoaded === 'true') {
@@ -2367,15 +2571,51 @@ $openFormRequested =
         }
 
         function showTrackModal() {
+            if (trackModalMode === 'minimized') {
+                restoreTrackModal();
+                return;
+            }
+            setTrackModalLocked(false);
+            trackModalMode = 'open';
             trackModal.hidden = false;
+            restoreTrackSubmissionModalBtn.hidden = true;
+            document.body.classList.remove('has-minimized-track-modal');
             syncBodyScrollLock();
-            const firstInput = trackSubmissionForm.querySelector('input');
+            const firstInput = trackSubmissionForm.querySelector('input:not([type="hidden"])');
             if (firstInput) {
                 setTimeout(() => firstInput.focus(), 50);
             }
         }
 
+        function minimizeTrackModal() {
+            if (trackModal.hidden) {
+                return;
+            }
+            trackModalMode = 'minimized';
+            trackModal.hidden = true;
+            restoreTrackSubmissionModalBtn.hidden = false;
+            document.body.classList.add('has-minimized-track-modal');
+            persistTrackModalState();
+            syncBodyScrollLock();
+            restoreTrackSubmissionModalBtn.focus();
+        }
+
+        function restoreTrackModal() {
+            trackModalMode = 'open';
+            trackModal.hidden = false;
+            restoreTrackSubmissionModalBtn.hidden = true;
+            document.body.classList.remove('has-minimized-track-modal');
+            persistTrackModalState();
+            syncBodyScrollLock();
+            closeTrackSubmissionModalBtn?.focus();
+        }
+
         function hideTrackModal() {
+            setTrackModalLocked(false);
+            setTrackModalUnreadCount(0);
+            trackModalMode = 'closed';
+            restoreTrackSubmissionModalBtn.hidden = true;
+            document.body.classList.remove('has-minimized-track-modal');
             closeGuestChatDrawer(false);
             trackModal.hidden = true;
             trackSubmissionMessage.hidden = true;
@@ -2769,8 +3009,22 @@ $openFormRequested =
             closeTrackSubmissionModalBtn.addEventListener('click', hideTrackModal);
         }
 
+        if (minimizeTrackSubmissionModalBtn) {
+            minimizeTrackSubmissionModalBtn.addEventListener('click', minimizeTrackModal);
+        }
+
+        if (restoreTrackSubmissionModalBtn) {
+            restoreTrackSubmissionModalBtn.addEventListener('click', restoreTrackModal);
+        }
+
+        if (toggleTrackModalLockBtn) {
+            toggleTrackModalLockBtn.addEventListener('click', function () {
+                setTrackModalLocked(!trackModalLocked);
+            });
+        }
+
         trackModal.addEventListener('click', function (event) {
-            if (event.target === trackModal) {
+            if (event.target === trackModal && !trackModalLocked) {
                 hideTrackModal();
             }
         });
@@ -2797,12 +3051,15 @@ $openFormRequested =
                     }
                 }
             } else if (event.key === 'Escape' && !trackModal.hidden) {
-                hideTrackModal();
+                if (!trackModalLocked) {
+                    hideTrackModal();
+                }
             }
         });
 
         trackSubmissionForm.addEventListener('submit', async function (event) {
             event.preventDefault();
+            persistTrackModalState();
 
             const formData = new FormData(trackSubmissionForm);
             const submitBtn = trackSubmissionForm.querySelector('button[type="submit"]');
@@ -2832,6 +3089,22 @@ $openFormRequested =
 
                 setTrackingMessage('Submission found. Here are the latest details.', 'success');
                 renderSubmissionResult(data.submission);
+                if (trackModalChatOpen) {
+                    const chatButton = trackSubmissionResult.querySelector('[data-open-guest-chat]');
+                    if (chatButton) {
+                        try {
+                            await openGuestChatDrawer(chatButton);
+                        } catch (error) {
+                            const message = document.createElement('p');
+                            message.className = 'track-guest-chat-error';
+                            message.textContent = error.message || 'Unable to reopen the chat.';
+                            guestChatContent?.replaceChildren(message);
+                        }
+                    } else {
+                        trackModalChatOpen = false;
+                        persistTrackModalState();
+                    }
+                }
 
             } catch (error) {
                 trackSubmissionMessage.className = 'track-modal-message error';
@@ -2844,6 +3117,31 @@ $openFormRequested =
                 }
             }
         });
+
+        trackSubmissionForm.addEventListener('input', persistTrackModalState);
+
+        if (restoredTrackState) {
+            trackSubmissionForm.elements.reference.value = restoredTrackState.reference;
+            trackSubmissionForm.elements.mobile.value = restoredTrackState.mobile;
+            trackModalChatOpen = restoredTrackState.chatOpen;
+            trackModalUnreadCount = restoredTrackState.unreadCount;
+            setTrackModalLocked(true);
+            setTrackModalUnreadCount(trackModalUnreadCount);
+            trackModalMode = restoredTrackState.mode;
+            if (trackModalMode === 'minimized') {
+                trackModal.hidden = true;
+                restoreTrackSubmissionModalBtn.hidden = false;
+                document.body.classList.add('has-minimized-track-modal');
+            } else {
+                trackModal.hidden = false;
+                restoreTrackSubmissionModalBtn.hidden = true;
+            }
+            persistTrackModalState();
+            syncBodyScrollLock();
+            if (restoredTrackState.reference && restoredTrackState.mobile) {
+                trackSubmissionForm.requestSubmit();
+            }
+        }
     })();
 </script>
 

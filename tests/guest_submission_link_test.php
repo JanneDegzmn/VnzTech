@@ -277,6 +277,33 @@ runTest('links verified guest submissions and preserves chat history', static fu
     );
 });
 
+runTest('links eligible submissions when an existing verified Seller signs in', static function (): void {
+    $pdo = createTestDatabase();
+    seedEligibleSubmission($pdo);
+
+    $linked = linkVerifiedGuestSubmissionsAfterSignIn($pdo, 1);
+
+    testAssert($linked === 1, 'Expected sign-in to link the eligible guest submission.');
+    testAssert(
+        (int) $pdo->query('SELECT user_id FROM submissions WHERE id = 101')->fetchColumn() === 1,
+        'Expected the existing verified Seller to become the submission owner.'
+    );
+});
+
+runTest('sign-in does not link submissions for an unverified Seller', static function (): void {
+    $pdo = createTestDatabase();
+    seedEligibleSubmission($pdo);
+    $pdo->exec("UPDATE users SET email_verified_at = NULL WHERE id = 1");
+
+    $linked = linkVerifiedGuestSubmissionsAfterSignIn($pdo, 1);
+
+    testAssert($linked === 0, 'An unverified Seller must not link guest submissions.');
+    testAssert(
+        $pdo->query('SELECT user_id FROM submissions WHERE id = 101')->fetchColumn() === null,
+        'An unverified Seller must not become the submission owner.'
+    );
+});
+
 runTest('does not link before Seller email verification', static function (): void {
     $pdo = createTestDatabase();
     seedEligibleSubmission($pdo);

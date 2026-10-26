@@ -282,6 +282,255 @@
     line-height: 1.5;
 }
 
+.admin-global-chat-moderation {
+    margin: 0 0 18px;
+}
+
+.admin-global-chat-moderation-heading,
+.admin-global-chat-rule-heading,
+.admin-global-chat-case-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.admin-global-chat-moderation-heading > div {
+    min-width: 0;
+}
+
+.admin-global-chat-moderation-heading > div > p {
+    margin: 7px 0 18px;
+    color: #858585;
+    font-size: 11px;
+    line-height: 1.5;
+}
+
+.admin-global-chat-rule-form {
+    padding: 20px;
+    background: linear-gradient(145deg, #171d25, #11161d);
+    border: 1px solid #303b48;
+    border-radius: 12px;
+    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.14);
+}
+
+.admin-global-chat-rule-form .operations-form-grid {
+    gap: 16px 18px;
+}
+
+.admin-global-chat-rule-form .operations-field {
+    gap: 8px;
+}
+
+.admin-global-chat-rule-form .operations-field label {
+    color: #c4d0dc;
+    font-size: 11px;
+    letter-spacing: 0.01em;
+}
+
+.admin-global-chat-rule-form .operations-field input,
+.admin-global-chat-rule-form .operations-field select {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 12px;
+    color: #e8eef5;
+    background-color: #0d131a;
+    border: 1px solid #3a4857;
+    border-radius: 8px;
+    color-scheme: dark;
+    font: inherit;
+    font-size: 12px;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.admin-global-chat-rule-form .operations-field select {
+    cursor: pointer;
+}
+
+.admin-global-chat-rule-form .operations-field input:hover,
+.admin-global-chat-rule-form .operations-field select:hover {
+    border-color: #587084;
+}
+
+.admin-global-chat-rule-form .operations-field input:focus,
+.admin-global-chat-rule-form .operations-field select:focus {
+    border-color: #36bde8;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(54, 189, 232, 0.16);
+}
+
+.admin-global-chat-rule-form .operations-field select option {
+    color: #e8eef5;
+    background: #111923;
+}
+
+.admin-global-chat-rule-form .operations-form-actions {
+    gap: 9px;
+    margin-top: 20px;
+}
+
+.admin-global-chat-rule-form .operations-button {
+    min-height: 38px;
+    padding: 9px 14px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 750;
+}
+
+.admin-global-chat-moderation-columns {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 18px;
+    margin-top: 20px;
+}
+
+.admin-global-chat-moderation-column {
+    min-width: 0;
+}
+
+.admin-global-chat-moderation-column h3 {
+    margin: 0 0 11px;
+    font-size: 13px;
+}
+
+.admin-global-chat-search {
+    display: block;
+    margin-bottom: 10px;
+}
+
+.admin-global-chat-search input {
+    width: 100%;
+    min-height: 38px;
+    box-sizing: border-box;
+    padding: 0 12px;
+    color: #e8eef5;
+    background: #0d131a;
+    border: 1px solid #354353;
+    border-radius: 8px;
+    color-scheme: dark;
+    font: inherit;
+    font-size: 11px;
+}
+
+.admin-global-chat-search input:focus {
+    border-color: #36bde8;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(54, 189, 232, 0.16);
+}
+
+.admin-global-chat-rules,
+.admin-global-chat-cases {
+    display: grid;
+    max-height: 560px;
+    gap: 9px;
+    overflow: auto;
+    padding: 1px;
+}
+
+.admin-global-chat-rule,
+.admin-global-chat-case {
+    min-width: 0;
+    padding: 12px;
+    background: #151515;
+    border: 1px solid #292929;
+    border-radius: 8px;
+}
+
+.admin-global-chat-rule-heading strong,
+.admin-global-chat-case-heading strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
+    font-size: 12px;
+}
+
+.admin-global-chat-rule-state,
+.admin-global-chat-case-state {
+    flex: 0 0 auto;
+    padding: 3px 7px;
+    color: #a0a0a0;
+    background: #242424;
+    border-radius: 999px;
+    font-size: 9px;
+    font-weight: 750;
+    text-transform: uppercase;
+}
+
+.admin-global-chat-rule-state.is-enabled,
+.admin-global-chat-case-state.is-pending {
+    color: #a7f3d0;
+    background: #123b2e;
+}
+
+.admin-global-chat-case-state.is-restricted {
+    color: #fecaca;
+    background: #4a1f1f;
+}
+
+.admin-global-chat-case-state.is-dismissed {
+    color: #bfdbfe;
+    background: #1e3452;
+}
+
+.admin-global-chat-rule-meta,
+.admin-global-chat-case-meta {
+    margin: 7px 0 0;
+    color: #929292;
+    font-size: 10px;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+}
+
+.admin-global-chat-case blockquote {
+    margin: 10px 0;
+    padding: 9px 11px;
+    color: #e2e2e2;
+    background: #101010;
+    border-left: 3px solid #378cb0;
+    border-radius: 4px;
+    font-size: 11px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+}
+
+.admin-global-chat-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.admin-global-chat-small-button {
+    min-height: 30px;
+    padding: 6px 9px;
+    font-size: 10px;
+}
+
+.admin-global-chat-small-button.is-danger {
+    color: #fecaca;
+    border-color: #713838;
+}
+
+.admin-global-chat-decision-reason {
+    width: 100%;
+    min-height: 62px;
+    box-sizing: border-box;
+    margin-top: 10px;
+    padding: 9px 10px;
+    color: #ededed;
+    background: #101010;
+    border: 1px solid #343434;
+    border-radius: 6px;
+    font: inherit;
+    font-size: 11px;
+    resize: vertical;
+}
+
+.admin-global-chat-cancel-edit {
+    margin-left: 7px;
+}
+
 .operations-form-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -291,6 +540,32 @@
 .operations-field input {
     width: 100%;
     box-sizing: border-box;
+}
+
+.admin-appearance-card .operations-field select {
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 0 13px;
+    color: #edf4fa;
+    background-color: #0d131a;
+    border: 1px solid #3a4857;
+    border-radius: 9px;
+    color-scheme: dark;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.admin-appearance-card .operations-field select:hover {
+    border-color: #587084;
+}
+
+.admin-appearance-card .operations-field select:focus-visible {
+    border-color: #36bde8;
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(54, 189, 232, 0.16);
 }
 
 .operations-form-actions {
@@ -376,9 +651,13 @@
 }
 
 .admin-2fa-login-preference {
-    grid-template-columns: minmax(0, 1fr) auto !important;
-    align-items: end;
-    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) !important;
+    align-items: stretch;
+    gap: 14px;
+    padding: 16px;
+    background: linear-gradient(145deg, #151e27, #10161d);
+    border: 1px solid #2d3b48;
+    border-radius: 10px;
 }
 
 .admin-2fa-preference-field {
@@ -395,20 +674,28 @@
 
 .admin-2fa-preference-field select {
     width: 100%;
-    min-height: 40px;
-    padding: 0 12px;
-    border: 1px solid #343e48;
-    border-radius: 7px;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 0 13px;
+    border: 1px solid #3a4857;
+    border-radius: 8px;
     outline: none;
-    background: #0b1015;
-    color: #f3f6f8;
+    background: #0d131a;
+    color: #edf4fa;
     color-scheme: dark;
     font: inherit;
     font-size: 12px;
+    cursor: pointer;
+    transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
-.admin-2fa-preference-field select:focus {
-    border-color: #0ea5e9;
+.admin-2fa-preference-field select:hover {
+    border-color: #587084;
+}
+
+.admin-2fa-preference-field select:focus-visible {
+    border-color: #36bde8;
+    box-shadow: 0 0 0 3px rgba(54, 189, 232, 0.16);
 }
 
 .admin-2fa-preference-field small {
@@ -418,18 +705,23 @@
 }
 
 .admin-2fa-login-preference .operations-form-actions {
-    grid-column: auto !important;
+    grid-column: 1 / -1 !important;
+    justify-content: flex-start;
     margin: 0 !important;
     padding: 0 !important;
 }
 
 .admin-2fa-login-preference .operations-button {
-    min-height: 40px;
+    min-height: 42px;
+    padding: 0 16px;
     border-color: #0284c7;
     background: linear-gradient(135deg, #0ea5e9, #0284c7);
     color: #fff;
-    text-transform: uppercase;
-    letter-spacing: 0.4px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 750;
+    text-transform: none;
+    letter-spacing: 0.01em;
 }
 
 .admin-2fa-card form[data-admin-2fa-form] {
@@ -688,6 +980,7 @@
     .operations-stats,
     .operations-status-grid,
     .operations-settings-grid,
+    .admin-global-chat-moderation-columns,
     .operations-form-grid {
         grid-template-columns: 1fr;
     }
@@ -698,6 +991,20 @@
 
     .operations-settings-card {
         padding: 16px;
+    }
+
+    .admin-global-chat-rule-form {
+        padding: 14px;
+    }
+
+    .admin-global-chat-rule-form .operations-form-actions {
+        align-items: stretch;
+        flex-direction: column;
+    }
+
+    .admin-global-chat-rule-form .operations-form-actions .operations-button {
+        width: 100%;
+        margin: 0;
     }
 
     .admin-2fa-setup-step {

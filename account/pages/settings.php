@@ -41,6 +41,7 @@ try {
         SELECT
             u.email,
             u.email_verified_at,
+            u.language,
             u.totp_enabled_at,
             u.totp_login_required,
             COALESCE(p.submission_updates, 0) AS submission_updates,
@@ -128,6 +129,52 @@ $verificationNotice =
 
     </div>
 
+
+    <form
+        id="sellerLanguageForm"
+        class="seller-profile-form"
+        action="/VNZ-TECH/backend/update_seller_language.php"
+        method="POST"
+    >
+        <input type="hidden" name="csrf_token" value="<?= settingsEscape($csrfToken) ?>">
+        <section class="profile-form-section">
+            <div class="profile-section-title">Language</div>
+            <p class="settings-supporting-text">
+                Choose the language for supported Seller portal labels. Your choice is saved to your account.
+            </p>
+            <div class="profile-form-grid">
+                <div class="profile-form-group">
+                    <label for="sellerLanguage">Preferred Language</label>
+                    <select id="sellerLanguage" name="language">
+                        <option value="en" <?= ($user['language'] ?? 'en') === 'en' ? 'selected' : '' ?>>English</option>
+                        <option value="fil" <?= ($user['language'] ?? '') === 'fil' ? 'selected' : '' ?>>Filipino</option>
+                    </select>
+                </div>
+            </div>
+            <div id="sellerLanguageMessage" class="profile-message" role="status" aria-live="polite"></div>
+            <div class="profile-form-actions">
+                <button type="submit" class="profile-save-button" id="sellerLanguageSubmit">
+                    SAVE LANGUAGE
+                </button>
+            </div>
+        </section>
+    </form>
+
+    <section class="profile-form-section">
+        <div class="profile-section-title">Appearance</div>
+        <p class="settings-supporting-text">
+            Choose how the Seller portal looks. This setting is saved in this browser.
+        </p>
+        <div class="profile-form-grid">
+            <div class="profile-form-group">
+                <label for="sellerThemePreference">Theme</label>
+                <select id="sellerThemePreference" name="theme">
+                    <option value="dark">Dark mode</option>
+                    <option value="light">Light mode</option>
+                </select>
+            </div>
+        </div>
+    </section>
 
     <section class="profile-form-section settings-email-card">
 
@@ -352,102 +399,45 @@ $verificationNotice =
     </form>
 
 
-    <form
-        id="sellerPasswordForm"
-        class="seller-profile-form"
-        action="/VNZ-TECH/backend/update_password.php"
-        method="POST"
-    >
-
-        <div
-            id="passwordMessage"
-            class="profile-message"
-            role="status"
-            aria-live="polite"
-        ></div>
-
-        <div class="profile-form-section">
-
-            <div class="profile-section-title">
-                Change Password
-            </div>
-
-            <div class="profile-form-grid">
-
-                <div class="profile-form-group profile-form-full">
-
-                    <label for="current_password">
-                        Current Password
-                    </label>
-
-                    <input
-                        type="password"
-                        id="current_password"
-                        name="current_password"
-                        autocomplete="current-password"
-                        required
-                    >
-
-                </div>
-
-                <div class="profile-form-group">
-
-                    <label for="new_password">
-                        New Password
-                    </label>
-
-                    <input
-                        type="password"
-                        id="new_password"
-                        name="new_password"
-                        minlength="8"
-                        autocomplete="new-password"
-                        required
-                    >
-
-                    <small>
-                        At least 8 characters.
-                    </small>
-
-                </div>
-
-                <div class="profile-form-group">
-
-                    <label for="confirm_password">
-                        Confirm New Password
-                    </label>
-
-                    <input
-                        type="password"
-                        id="confirm_password"
-                        name="confirm_password"
-                        minlength="8"
-                        autocomplete="new-password"
-                        required
-                    >
-
-                </div>
-
-            </div>
-
-            <div class="profile-form-actions">
-                <button
-                    type="submit"
-                    class="profile-save-button"
-                    id="sellerPasswordSubmit"
-                >
-                    UPDATE PASSWORD
-                </button>
-            </div>
-
-        </div>
-
-    </form>
-
 </section>
 
 <script>
 (function () {
+
+    const languageForm = document.getElementById('sellerLanguageForm');
+    if (languageForm) {
+        languageForm.addEventListener('submit', async function (event) {
+            event.preventDefault();
+            const button = document.getElementById('sellerLanguageSubmit');
+            const message = document.getElementById('sellerLanguageMessage');
+            const originalLabel = button.textContent;
+            button.disabled = true;
+            button.textContent = 'SAVING...';
+            message.className = 'profile-message';
+            message.textContent = '';
+
+            try {
+                const response = await fetch(languageForm.action, {
+                    method: 'POST',
+                    body: new FormData(languageForm),
+                    credentials: 'same-origin',
+                    headers: { Accept: 'application/json' }
+                });
+                const result = await response.json();
+                if (!response.ok || !result.success) {
+                    throw new Error(result.message || 'Unable to save language preference.');
+                }
+                message.classList.add('show', 'success');
+                message.textContent = result.message;
+                window.setTimeout(() => window.location.reload(), 350);
+            } catch (error) {
+                message.classList.add('show', 'error');
+                message.textContent = error.message || 'Unable to save language preference.';
+                button.disabled = false;
+                button.textContent = originalLabel;
+            }
+        });
+    }
 
     function bindForm(formId, messageId, submitId, pendingText, defaultText, successFallback) {
         const form = document.getElementById(formId);
@@ -463,17 +453,6 @@ $verificationNotice =
 
             message.className = 'profile-message';
             message.textContent = '';
-
-            if (
-                formId === 'sellerPasswordForm' &&
-                form.querySelector('#new_password').value !==
-                    form.querySelector('#confirm_password').value
-            ) {
-                message.classList.add('show', 'error');
-                message.textContent =
-                    'New password and confirmation do not match.';
-                return;
-            }
 
             if (submitButton) {
                 submitButton.disabled = true;
@@ -498,9 +477,6 @@ $verificationNotice =
                 message.classList.add('show', 'success');
                 message.textContent = result.message || successFallback;
 
-                if (formId === 'sellerPasswordForm') {
-                    form.reset();
-                }
             } catch (error) {
                 message.classList.add('show', 'error');
                 message.textContent =
@@ -521,15 +497,6 @@ $verificationNotice =
         'SAVING...',
         'SAVE PREFERENCES',
         'Notification preferences saved.'
-    );
-
-    bindForm(
-        'sellerPasswordForm',
-        'passwordMessage',
-        'sellerPasswordSubmit',
-        'UPDATING...',
-        'UPDATE PASSWORD',
-        'Password updated successfully.'
     );
 
     bindForm(

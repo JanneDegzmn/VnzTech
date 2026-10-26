@@ -11,7 +11,7 @@ if (empty($_SESSION['user_logged_in']) || empty($_SESSION['user_id'])) {
 
 $userId = (int) $_SESSION['user_id'];
 $csrfToken = generateCsrfToken();
-$pagination = vnzPaginationState(12);
+$pagination = vnzPaginationState(5);
 $requestCountStmt = $pdo->prepare('SELECT COUNT(*) FROM trade_requests WHERE user_id = ?');
 $requestCountStmt->execute([$userId]);
 $pagination = vnzPaginationClamp($pagination, (int) $requestCountStmt->fetchColumn());
@@ -192,6 +192,11 @@ function tradeHistoryFormatDate(?string $date): string
                             <?php if ($tradeRequest[$dateField]): ?><div><strong><?= $dateLabel ?>:</strong> <?= htmlspecialchars(tradeHistoryFormatDate($tradeRequest[$dateField]), ENT_QUOTES, 'UTF-8') ?></div><?php endif; ?>
                         <?php endforeach; ?>
                     </div>
+                    <button
+                        type="button"
+                        class="trade-history-chat-button"
+                        data-open-trade-request-chat="<?= (int) $tradeRequest['id'] ?>"
+                    >Chat about this trade</button>
                 </article>
             <?php endforeach; ?>
         </div>

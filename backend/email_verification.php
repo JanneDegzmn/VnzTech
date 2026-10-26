@@ -1,5 +1,78 @@
 <?php
 
+function resolveVerificationBaseUrl(string $configuredBaseUrl): string
+{
+    $environmentBaseUrl = getenv('VNZ_APP_BASE_URL');
+    if ($environmentBaseUrl === false || trim($environmentBaseUrl) === '') {
+        $environmentBaseUrl = $_SERVER['VNZ_APP_BASE_URL']
+            ?? $_ENV['VNZ_APP_BASE_URL']
+            ?? '';
+    }
+
+    $configuredParts = parse_url($configuredBaseUrl);
+    $configuredHost = strtolower((string) ($configuredParts['host'] ?? ''));
+    $localHosts = ['localhost', '127.0.0.1', '::1'];
+    $requestHostHeader = trim((string) ($_SERVER['HTTP_HOST'] ?? ''));
+    $requestParts = $requestHostHeader !== ''
+        ? parse_url('//' . $requestHostHeader)
+        : false;
+    $requestHost = strtolower((string) ($requestParts['host'] ?? ''));
+    $applicationPath = rtrim((string) ($configuredParts['path'] ?? ''), '/');
+
+    if (trim((string) $environmentBaseUrl) !== '') {
+        $baseUrl = trim((string) $environmentBaseUrl);
+        $parts = parse_url($baseUrl);
+        if (
+            !filter_var($baseUrl, FILTER_VALIDATE_URL) ||
+            !is_array($parts) ||
+            !in_array(strtolower((string) ($parts['scheme'] ?? '')), ['http', 'https'], true) ||
+            empty($parts['host']) ||
+            isset($parts['user']) ||
+            isset($parts['pass']) ||
+            isset($parts['query']) ||
+            isset($parts['fragment'])
+        ) {
+            throw new RuntimeException('VNZ_APP_BASE_URL must be a valid HTTP or HTTPS application URL.');
+        }
+
+        $environmentHost = strtolower((string) ($parts['host'] ?? ''));
+        if (
+            $requestHost === 'vnztech.alwaysdata.net' &&
+            in_array($environmentHost, $localHosts, true)
+        ) {
+            return 'https://vnztech.alwaysdata.net' . $applicationPath;
+        }
+
+        return rtrim($baseUrl, '/');
+    }
+
+    if ($requestHost === 'vnztech.alwaysdata.net') {
+        return 'https://vnztech.alwaysdata.net' . $applicationPath;
+    }
+
+    if (!in_array($configuredHost, $localHosts, true)) {
+        return rtrim($configuredBaseUrl, '/');
+    }
+
+    if ($requestHostHeader === '') {
+        return rtrim($configuredBaseUrl, '/');
+    }
+
+    if (in_array($requestHost, $localHosts, true)) {
+        $scheme = (
+            !empty($_SERVER['HTTPS']) &&
+            strtolower((string) $_SERVER['HTTPS']) !== 'off'
+        ) ? 'https' : 'http';
+        $port = isset($requestParts['port']) ? ':' . (int) $requestParts['port'] : '';
+
+        return $scheme . '://' . $requestHost . $port . $applicationPath;
+    }
+
+    throw new RuntimeException(
+        'Set VNZ_APP_BASE_URL to the public application URL before sending verification email.'
+    );
+}
+
 function getVerificationMailConfig(): array
 {
     $autoloadPath =
@@ -55,6 +128,10 @@ function getVerificationMailConfig(): array
             'Email service configuration contains an invalid email or base URL.'
         );
     }
+
+    $config['base_url'] = resolveVerificationBaseUrl(
+        (string) $config['base_url']
+    );
 
     return $config;
 }

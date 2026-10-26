@@ -6,6 +6,7 @@ ini_set('display_errors', '0');
 require_once __DIR__ . '/chat_service.php';
 require_once __DIR__ . '/chat_scaledrone.php';
 require_once __DIR__ . '/chat_attachments.php';
+require_once __DIR__ . '/global_chat_moderation_service.php';
 
 function chatMessageReactionOptions(): array
 {
@@ -30,6 +31,8 @@ function chatMessageReplyPayload(PDO $pdo, int $conversationId, int $messageId, 
             END AS sender_display_name,
             m.content,
             m.message_type,
+            m.attachment_path,
+            m.attachment_size,
             m.deleted_at,
             m.edited_at,
             m.created_at
@@ -53,11 +56,12 @@ function chatMessageReplyPayload(PDO $pdo, int $conversationId, int $messageId, 
         return null;
     }
 
+    $messageType = chatEffectiveMessageType($reply);
     $content = (string) ($reply['content'] ?? '');
     if (!empty($reply['deleted_at'])) {
         $content = 'This message was deleted';
-    } elseif ($content === '' && in_array($reply['message_type'] ?? '', ['image', 'file', 'voice', 'video'], true)) {
-        $content = match ($reply['message_type']) {
+    } elseif ($content === '' && in_array($messageType, ['image', 'file', 'voice', 'video'], true)) {
+        $content = match ($messageType) {
             'file' => 'PDF document',
             'voice' => 'Voice message',
             'video' => 'Video',
@@ -335,13 +339,14 @@ function chatNormalizeMessagePayload(
     ?array $reactionMap = null
 ): array
 {
+    $messageType = chatEffectiveMessageType($message);
     $attachmentName = '';
     if (
         empty($message['deleted_at'])
-        && in_array($message['message_type'], ['image', 'file', 'voice'], true)
+        && in_array($messageType, ['image', 'file', 'voice', 'video'], true)
         && !empty($message['attachment_path'])
     ) {
-        $attachmentExtension = $message['message_type'] === 'file'
+        $attachmentExtension = $messageType === 'file'
             ? 'pdf'
             : strtolower((string) pathinfo(
                 (string) $message['attachment_path'],
@@ -366,16 +371,16 @@ function chatNormalizeMessagePayload(
             (string) ($message['sender_display_name'] ?? '')
         ),
         'sender_profile_picture' => chatMessagePayloadProfilePicture($message),
-        'message_type' => $message['message_type'],
+        'message_type' => $messageType,
         'content' => !empty($message['deleted_at'])
             ? 'This message was deleted'
             : (
-                in_array($message['message_type'], ['voice', 'video'], true)
+                in_array($messageType, ['voice', 'video'], true)
                 && trim((string) ($message['content'] ?? '')) === ''
-                    ? ($message['message_type'] === 'voice' ? 'Voice message' : 'Video')
+                    ? ($messageType === 'voice' ? 'Voice message' : 'Video')
                     : (string) ($message['content'] ?? '')
             ),
-        'attachment_url' => in_array($message['message_type'], ['image', 'file', 'voice', 'video'], true)
+        'attachment_url' => in_array($messageType, ['image', 'file', 'voice', 'video'], true)
             && empty($message['deleted_at'])
             && !empty($message['attachment_path'])
                 ? '/VNZ-TECH/backend/chat_attachment.php?message_id='
@@ -628,6 +633,25 @@ try {
         $nextCursor = $hasMore && $messages
             ? (int) $messages[0]['id']
             : null;
+        $unreadAdminCount = 0;
+        if (
+            $actor['actor_type'] === 'guest'
+            && $conversationContext['conversation_type'] === 'private'
+        ) {
+            $unreadStmt = $pdo->prepare("
+                SELECT COUNT(*)
+                FROM messages
+                WHERE conversation_id = ?
+                  AND sender_type = 'admin'
+                  AND deleted_at IS NULL
+                  AND id > COALESCE(?, 0)
+            ");
+            $unreadStmt->execute([
+                $conversationId,
+                $conversationContext['last_read_message_id']
+            ]);
+            $unreadAdminCount = (int) $unreadStmt->fetchColumn();
+        }
 
         chatJsonResponse(
             true,
@@ -637,7 +661,8 @@ try {
                 'conversation_id' => (int) $conversationId,
                 'messages' => $messages,
                 'has_more' => $hasMore,
-                'next_cursor' => $nextCursor
+                'next_cursor' => $nextCursor,
+                'unread_admin_count' => $unreadAdminCount
             ]
         );
     }
@@ -650,7 +675,7 @@ try {
             $_POST['conversation_id'] ?? null,
             'conversation ID'
         );
-        chatRequireConversationMembership($conversationId, $actor);
+        $conversationContext = chatRequireConversationMembership($conversationId, $actor);
 
         $messageTypeInput = $_POST['message_type'] ?? 'text';
 
@@ -725,6 +750,24 @@ try {
             );
         }
 
+        $moderationMatches = [];
+        if (
+            globalChatModerationAppliesToConversationType(
+                (string) $conversationContext['conversation_type']
+            )
+            && $content !== ''
+        ) {
+            $moderationMatches = globalChatModerationLoadMatches($pdo, $content);
+            foreach ($moderationMatches as $moderationMatch) {
+                if ($moderationMatch['action'] === 'block') {
+                    throw new ChatHttpException(
+                        'This Global Chat message cannot be sent because it matches a configured chat rule.',
+                        422
+                    );
+                }
+            }
+        }
+
         $replyToMessageId = null;
         if (isset($_POST['reply_to_message_id'])) {
             $replyToMessageId = chatPositiveInteger(
@@ -789,6 +832,15 @@ try {
             ]);
 
             $messageId = (int) $pdo->lastInsertId();
+            if ($moderationMatches) {
+                globalChatModerationRecordReviewCases(
+                    $pdo,
+                    $messageId,
+                    $content,
+                    $actor,
+                    $moderationMatches
+                );
+            }
             $messageStmt = $pdo->prepare("
                 SELECT
                     m.id,
@@ -871,6 +923,32 @@ try {
             : 'Message saved; realtime delivery is '
                 . str_replace('_', ' ', $realtimeDelivery)
                 . '.';
+        $moderationNotice = null;
+        if (
+            $moderationMatches
+            && count(array_filter(
+                $moderationMatches,
+                static fn(array $match): bool => $match['action'] === 'review'
+            )) > 0
+        ) {
+            $moderationNotice = 'Message sent and queued for Admin review.';
+        } elseif (
+            $moderationMatches
+            && count(array_filter(
+                $moderationMatches,
+                static fn(array $match): bool => $match['action'] === 'warn'
+            )) > 0
+        ) {
+            $moderationNotice = 'Message sent. Please keep Global Chat respectful and safe.';
+        }
+        if ($moderationNotice !== null && $realtimeDelivery !== 'published') {
+            $moderationNotice .= ' Realtime delivery: '
+                . str_replace('_', ' ', $realtimeDelivery)
+                . '; the message remains in history.';
+        }
+        if ($moderationNotice !== null) {
+            $responseMessage = $moderationNotice;
+        }
 
         chatJsonResponse(
             true,
@@ -879,7 +957,8 @@ try {
             [
                 'persisted' => true,
                 'realtime_delivery' => $realtimeDelivery,
-                'message' => $normalizedMessage
+                'message' => $normalizedMessage,
+                'moderation_notice' => $moderationNotice
             ]
         );
     }
@@ -896,7 +975,7 @@ try {
             $_POST['message_id'] ?? null,
             'message ID'
         );
-        chatRequireConversationMembership($conversationId, $actor);
+        $conversationContext = chatRequireConversationMembership($conversationId, $actor);
 
         $content = $_POST['content'] ?? null;
         if (!is_string($content)) {
@@ -915,6 +994,24 @@ try {
         }
 
         global $pdo;
+        $moderationMatches = [];
+        if (
+            globalChatModerationAppliesToConversationType(
+                (string) $conversationContext['conversation_type']
+            )
+            && $content !== ''
+        ) {
+            $moderationMatches = globalChatModerationLoadMatches($pdo, $content);
+            foreach ($moderationMatches as $moderationMatch) {
+                if ($moderationMatch['action'] === 'block') {
+                    throw new ChatHttpException(
+                        'This Global Chat edit cannot be saved because it matches a configured chat rule.',
+                        422
+                    );
+                }
+            }
+        }
+
         $messageStmt = $pdo->prepare("
             SELECT id, sender_type, sender_id, message_type, deleted_at, edited_at, content
             FROM messages
@@ -948,25 +1045,43 @@ try {
             throw new ChatHttpException('You can only edit your own messages.', 403);
         }
 
-        $updateStmt = $pdo->prepare("
-            UPDATE messages
-            SET content = ?, edited_at = NOW()
-            WHERE id = ?
-              AND conversation_id = ?
-              AND sender_type = ?
-              AND sender_id = ?
-              AND deleted_at IS NULL
-        ");
-        $updateStmt->execute([
-            $content,
-            $messageId,
-            $conversationId,
-            $actor['actor_type'],
-            $actor['actor_id']
-        ]);
+        $pdo->beginTransaction();
+        try {
+            $updateStmt = $pdo->prepare("
+                UPDATE messages
+                SET content = ?, edited_at = NOW()
+                WHERE id = ?
+                  AND conversation_id = ?
+                  AND sender_type = ?
+                  AND sender_id = ?
+                  AND deleted_at IS NULL
+            ");
+            $updateStmt->execute([
+                $content,
+                $messageId,
+                $conversationId,
+                $actor['actor_type'],
+                $actor['actor_id']
+            ]);
 
-        if ($updateStmt->rowCount() !== 1) {
-            throw new ChatHttpException('Unable to update this message.', 409);
+            if ($updateStmt->rowCount() !== 1) {
+                throw new ChatHttpException('Unable to update this message.', 409);
+            }
+            if ($moderationMatches) {
+                globalChatModerationRecordReviewCases(
+                    $pdo,
+                    $messageId,
+                    $content,
+                    $actor,
+                    $moderationMatches
+                );
+            }
+            $pdo->commit();
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+            throw $e;
         }
 
         $updatedStmt = $pdo->prepare("
@@ -1023,6 +1138,26 @@ try {
             ]
         );
 
+        $moderationNotice = null;
+        if ($moderationMatches) {
+            if (count(array_filter(
+                $moderationMatches,
+                static fn(array $match): bool => $match['action'] === 'review'
+            )) > 0) {
+                $moderationNotice = 'Edit saved and queued for Admin review.';
+            } elseif (count(array_filter(
+                $moderationMatches,
+                static fn(array $match): bool => $match['action'] === 'warn'
+            )) > 0) {
+                $moderationNotice = 'Edit saved. Please keep Global Chat respectful and safe.';
+            }
+        }
+        if ($moderationNotice !== null && $realtimeDelivery !== 'published') {
+            $moderationNotice .= ' Realtime delivery: '
+                . str_replace('_', ' ', $realtimeDelivery)
+                . '; the edit remains in history.';
+        }
+
         chatJsonResponse(
             true,
             $realtimeDelivery === 'published'
@@ -1036,7 +1171,8 @@ try {
                     $actor,
                     $conversationId
                 ),
-                'realtime_delivery' => $realtimeDelivery
+                'realtime_delivery' => $realtimeDelivery,
+                'moderation_notice' => $moderationNotice
             ]
         );
     }

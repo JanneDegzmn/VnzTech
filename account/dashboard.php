@@ -199,10 +199,13 @@ $initialAlertMessage =
     isset($_GET['error'])
         ? trim((string) $_GET['error'])
         : '';
+$sellerLanguage = ($sellerAccount['language'] ?? 'en') === 'fil'
+    ? 'fil'
+    : 'en';
 
 ?>
 <!DOCTYPE html>
-<html lang="en">
+<html lang="<?= htmlspecialchars($sellerLanguage, ENT_QUOTES, 'UTF-8') ?>" data-seller-language="<?= htmlspecialchars($sellerLanguage, ENT_QUOTES, 'UTF-8') ?>">
 
 <head>
 
@@ -234,6 +237,10 @@ $initialAlertMessage =
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/transaction_chat.css?v=<?= filemtime(__DIR__ . '/../assets/css/transaction_chat.css') ?>"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/seller_theme.css?v=<?= filemtime(__DIR__ . '/../assets/css/seller_theme.css') ?>"
+    >
     <script
         src="/VNZ-TECH/assets/js/transaction-chat.js?v=<?= filemtime(__DIR__ . '/../assets/js/transaction-chat.js') ?>"
         defer
@@ -242,6 +249,24 @@ $initialAlertMessage =
         src="/VNZ-TECH/assets/js/floating-messages.js?v=<?= filemtime(__DIR__ . '/../assets/js/floating-messages.js') ?>"
         defer
     ></script>
+    <script
+        src="/VNZ-TECH/assets/js/seller-language.js?v=<?= filemtime(__DIR__ . '/../assets/js/seller-language.js') ?>"
+        defer
+    ></script>
+    <script
+        src="/VNZ-TECH/assets/js/seller-theme.js?v=<?= filemtime(__DIR__ . '/../assets/js/seller-theme.js') ?>"
+        defer
+    ></script>
+    <script>
+        try {
+            const savedSellerTheme = localStorage.getItem('vnz-seller-theme');
+            if (savedSellerTheme === 'light') {
+                document.documentElement.dataset.sellerTheme = 'light';
+            }
+        } catch (error) {
+            console.warn('Unable to read the saved Seller portal theme.', error);
+        }
+    </script>
 
 </head>
 
@@ -1654,7 +1679,8 @@ $initialAlertMessage =
     async function loadPage(
         page,
         pushState = true,
-        params = {}
+        params = {},
+        paginationTop = null
     ) {
 
         if (
@@ -1718,11 +1744,13 @@ $initialAlertMessage =
         );
 
 
-        contentArea.innerHTML = `
-            <div class="content-loading">
-                Loading...
-            </div>
-        `;
+        if (paginationTop === null) {
+            contentArea.innerHTML = `
+                <div class="content-loading">
+                    Loading...
+                </div>
+            `;
+        }
 
 
         try {
@@ -1840,6 +1868,18 @@ $initialAlertMessage =
                     && typeof replacement.setSelectionRange === 'function'
                 ) {
                     replacement.setSelectionRange(selectionStart, selectionEnd);
+                }
+            }
+
+            if (paginationTop !== null) {
+                const replacementPagination = contentArea.querySelector('.vnz-pagination');
+                if (replacementPagination) {
+                    const offset = replacementPagination.getBoundingClientRect().top - paginationTop;
+                    window.scrollTo({
+                        top: window.scrollY + offset,
+                        left: window.scrollX,
+                        behavior: 'auto'
+                    });
                 }
             }
 
@@ -2055,7 +2095,10 @@ $initialAlertMessage =
             loadPage(
                 targetPage,
                 true,
-                params
+                params,
+                link.closest('.vnz-pagination')
+                    ? link.closest('.vnz-pagination').getBoundingClientRect().top
+                    : null
             );
 
         }

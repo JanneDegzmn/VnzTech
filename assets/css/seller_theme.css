@@ -1,0 +1,710 @@
+html,
+body,
+.dashboard-sidebar,
+.dashboard-sidebar *,
+.dashboard-main,
+.dashboard-main *,
+#contentArea,
+#contentArea * {
+    transition:
+        color 220ms ease,
+        background-color 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+}
+
+html[data-seller-theme="light"] {
+    color-scheme: light;
+
+    --bg: #f3f6fa;
+    --panel: #ffffff;
+    --panel-2: #f7f9fc;
+    --panel-3: #edf2f7;
+    --border: #dce3eb;
+    --border-light: #c6d0dc;
+    --text: #18212b;
+    --muted: #586675;
+    --muted-2: #718091;
+    --accent: #0284c7;
+    --accent-2: #0369a1;
+    --green: #16803c;
+    --red: #c62828;
+    --yellow: #946200;
+    --purple: #7041a6;
+}
+
+.seller-theme-toggle {
+    margin-top: 8px;
+}
+
+.trade-history-chat-button {
+    display: inline-flex;
+    min-height: 38px;
+    align-items: center;
+    justify-content: center;
+    margin-top: 14px;
+    padding: 8px 13px;
+    color: #d8f3ff;
+    background: #12344b;
+    border: 1px solid #27607e;
+    border-radius: 9px;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.trade-history-chat-button:hover,
+.trade-history-chat-button:focus-visible {
+    background: #194866;
+    border-color: #43a6d0;
+}
+
+html[data-seller-theme="light"] .trade-history-chat-button {
+    color: #075985;
+    background: #e0f2fe;
+    border-color: #7dd3fc;
+}
+
+html[data-seller-theme="light"] .trade-history-chat-button:hover,
+html[data-seller-theme="light"] .trade-history-chat-button:focus-visible {
+    background: #bae6fd;
+    border-color: #38bdf8;
+}
+
+html[data-seller-theme="light"] body {
+    background:
+        radial-gradient(circle at top right, rgba(14, 165, 233, 0.07), transparent 32%),
+        var(--bg);
+    color: var(--text);
+}
+
+html[data-seller-theme="light"] .dashboard-sidebar {
+    background: #ffffff;
+    border-color: var(--border);
+    box-shadow: 3px 0 18px rgba(30, 55, 80, 0.04);
+}
+
+html[data-seller-theme="light"] .sidebar-brand,
+html[data-seller-theme="light"] .sidebar-bottom {
+    border-color: var(--border);
+}
+
+html[data-seller-theme="light"] .brand-text strong,
+html[data-seller-theme="light"] .seller-profile-header h1,
+html[data-seller-theme="light"] .dashboard-header h1,
+html[data-seller-theme="light"] .dashboard-action h2,
+html[data-seller-theme="light"] .section-heading h2,
+html[data-seller-theme="light"] .empty-state h3,
+html[data-seller-theme="light"] .seller-profile-card h2,
+html[data-seller-theme="light"] .profile-section-title,
+html[data-seller-theme="light"] #contentArea h1,
+html[data-seller-theme="light"] #contentArea h2,
+html[data-seller-theme="light"] #contentArea h3,
+html[data-seller-theme="light"] #contentArea h4,
+html[data-seller-theme="light"] #contentArea h5,
+html[data-seller-theme="light"] #contentArea h6 {
+    color: #17212b;
+}
+
+html[data-seller-theme="light"] .nav-item,
+html[data-seller-theme="light"] .logout-button {
+    color: #526171;
+}
+
+html[data-seller-theme="light"] .nav-item:hover:not(:disabled),
+html[data-seller-theme="light"] .logout-button:hover {
+    color: #17212b;
+    background: #f2f6fa;
+    border-color: var(--border);
+}
+
+html[data-seller-theme="light"] .nav-item.active {
+    color: #075985;
+    background: linear-gradient(90deg, rgba(14, 165, 233, 0.13), rgba(14, 165, 233, 0.035));
+    border-color: rgba(2, 132, 199, 0.22);
+}
+
+html[data-seller-theme="light"] .nav-item.active .nav-icon {
+    color: #0284c7;
+}
+
+html[data-seller-theme="light"] .dashboard-action,
+html[data-seller-theme="light"] .dashboard-section,
+html[data-seller-theme="light"] .stat-card,
+html[data-seller-theme="light"] .account-info-card,
+html[data-seller-theme="light"] .portal-submissions-page .profile-strip,
+html[data-seller-theme="light"] .portal-submissions-page .filter-panel,
+html[data-seller-theme="light"] .portal-submissions-page .submission-card,
+html[data-seller-theme="light"] .seller-profile-card,
+html[data-seller-theme="light"] .profile-form-section,
+html[data-seller-theme="light"] .seller-2fa-setup-step,
+html[data-seller-theme="light"] #contentArea .portal-card,
+html[data-seller-theme="light"] #contentArea .trade-history-item,
+html[data-seller-theme="light"] #contentArea .seller-offer-card,
+html[data-seller-theme="light"] #contentArea .offers-summary > *,
+html[data-seller-theme="light"] #contentArea .submission-loading-card,
+html[data-seller-theme="light"] #contentArea .submission-result-area [class*="card"],
+html[data-seller-theme="light"] #contentArea .seller-item-card,
+html[data-seller-theme="light"] #contentArea .seller-account-info-card,
+html[data-seller-theme="light"] #contentArea .seller-form-section,
+html[data-seller-theme="light"] #contentArea .seller-form-wrap,
+html[data-seller-theme="light"] #contentArea .seller-add-item,
+html[data-seller-theme="light"] #contentArea .transaction-details-modal-panel,
+html[data-seller-theme="light"] #contentArea .transaction-details-modal-header,
+html[data-seller-theme="light"] #contentArea .transaction-details-modal-body,
+html[data-seller-theme="light"] #contentArea .trade-request-modal-panel,
+html[data-seller-theme="light"] #contentArea .trade-request-option,
+html[data-seller-theme="light"] .seller-sell-modal-panel,
+html[data-seller-theme="light"] .seller-sell-modal-header {
+    background: var(--panel);
+    border-color: var(--border);
+    color: var(--text);
+}
+
+html[data-seller-theme="light"] #contentArea .trade-request-success {
+    background: #edf8f1;
+    border-color: #b8dfc7;
+    color: #245a38;
+}
+
+html[data-seller-theme="light"] #contentArea .trade-request-success h3 {
+    color: #17643a;
+}
+
+html[data-seller-theme="light"] #contentArea .trade-request-success strong {
+    color: #174d30;
+}
+
+html[data-seller-theme="light"] .seller-profile-card,
+html[data-seller-theme="light"] .portal-submissions-page .submission-card {
+    background: linear-gradient(145deg, #ffffff, #f8fafc);
+}
+
+html[data-seller-theme="light"] .account-info-card,
+html[data-seller-theme="light"] #contentArea .submission-result-area .result-item,
+html[data-seller-theme="light"] #contentArea .seller-item-header,
+html[data-seller-theme="light"] #contentArea .transaction-filter-form {
+    background: var(--panel-2);
+}
+
+html[data-seller-theme="light"] .stat-card-value,
+html[data-seller-theme="light"] .account-info-card strong,
+html[data-seller-theme="light"] .recent-amount,
+html[data-seller-theme="light"] .recent-reference,
+html[data-seller-theme="light"] .profile-info strong,
+html[data-seller-theme="light"] .portal-submissions-page .profile-strip strong,
+html[data-seller-theme="light"] .portal-submissions-page .submission-item-summary h2,
+html[data-seller-theme="light"] .portal-submissions-page .submission-financial strong,
+html[data-seller-theme="light"] .seller-offer-card h3,
+html[data-seller-theme="light"] .settings-email-address,
+html[data-seller-theme="light"] .settings-preference strong,
+html[data-seller-theme="light"] #contentArea .transaction-filter-input,
+html[data-seller-theme="light"] #contentArea .trade-history-item strong,
+html[data-seller-theme="light"] #contentArea .trade-request-option h3,
+html[data-seller-theme="light"] #contentArea .transaction-details-modal-panel strong,
+html[data-seller-theme="light"] .seller-form-intro h2,
+html[data-seller-theme="light"] .seller-form-section-title,
+html[data-seller-theme="light"] .seller-item-title,
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-intro h2,
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-section-title,
+html[data-seller-theme="light"] .seller-sell-modal .seller-item-title {
+    color: #17212b;
+}
+
+html[data-seller-theme="light"] .profile-form-group label,
+html[data-seller-theme="light"] .seller-2fa-controls label,
+html[data-seller-theme="light"] .seller-2fa-setup-step label,
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-group label {
+    color: #465565;
+}
+
+html[data-seller-theme="light"] .profile-form-group input,
+html[data-seller-theme="light"] .profile-form-group select,
+html[data-seller-theme="light"] .seller-2fa-controls input,
+html[data-seller-theme="light"] .seller-2fa-controls select,
+html[data-seller-theme="light"] .seller-2fa-setup-step input,
+html[data-seller-theme="light"] #contentArea .transaction-filter-input,
+html[data-seller-theme="light"] #contentArea .seller-form-group input,
+html[data-seller-theme="light"] #contentArea .seller-form-group select,
+html[data-seller-theme="light"] #contentArea .seller-form-group textarea,
+html[data-seller-theme="light"] #contentArea .trade-request-modal-panel input,
+html[data-seller-theme="light"] #contentArea .trade-request-modal-panel select,
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-group input,
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-group select,
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-group textarea {
+    background: #ffffff !important;
+    border-color: var(--border-light) !important;
+    color: #17212b !important;
+    color-scheme: light;
+}
+
+html[data-seller-theme="light"] .profile-form-group input:focus,
+html[data-seller-theme="light"] .profile-form-group select:focus,
+html[data-seller-theme="light"] .seller-2fa-controls input:focus,
+html[data-seller-theme="light"] .seller-2fa-controls select:focus,
+html[data-seller-theme="light"] #contentArea .transaction-filter-input:focus {
+    background: #ffffff !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12) !important;
+}
+
+html[data-seller-theme="light"] .profile-form-group input::placeholder,
+html[data-seller-theme="light"] #contentArea input::placeholder,
+html[data-seller-theme="light"] #contentArea textarea::placeholder,
+html[data-seller-theme="light"] .seller-sell-modal input::placeholder,
+html[data-seller-theme="light"] .seller-sell-modal textarea::placeholder {
+    color: #7b8794;
+    opacity: 1;
+}
+
+html[data-seller-theme="light"] .profile-form-group input[readonly] {
+    background: #f1f4f7;
+    color: #667483;
+}
+
+html[data-seller-theme="light"] .seller-mobile-menu-button {
+    background: #ffffff;
+    color: #17212b;
+    border-color: var(--border);
+    box-shadow: 0 6px 18px rgba(30, 55, 80, 0.16);
+}
+
+html[data-seller-theme="light"] .seller-sidebar-overlay {
+    background: rgba(20, 35, 50, 0.38);
+}
+
+html[data-seller-theme="light"] .seller-sell-modal,
+html[data-seller-theme="light"] .transaction-details-modal-backdrop,
+html[data-seller-theme="light"] .trade-request-modal-backdrop {
+    background: rgba(20, 35, 50, 0.42);
+}
+
+html[data-seller-theme="light"] .seller-2fa-reminder-modal {
+    background: #ffffff;
+    border-color: var(--border);
+}
+
+html[data-seller-theme="light"] .seller-2fa-reminder-modal h2,
+html[data-seller-theme="light"] .seller-2fa-reminder-choice,
+html[data-seller-theme="light"] .seller-2fa-reminder-actions button {
+    color: #17212b;
+}
+
+html[data-seller-theme="light"] .seller-2fa-manual code {
+    color: #17212b;
+}
+
+html[data-seller-theme="light"] .portal-submissions-page .submission-financial > div {
+    background: #f7f9fc;
+}
+
+html[data-seller-theme="light"] .empty-state-icon,
+html[data-seller-theme="light"] #contentArea .portal-submissions-page .empty-icon,
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-empty-icon {
+    color: #0369a1;
+    background: #e8f5fc;
+    border-color: #b6dced;
+}
+
+html[data-seller-theme="light"] .portal-submissions-page .transaction-filter-input option,
+html[data-seller-theme="light"] #contentArea select option {
+    background: #ffffff;
+    color: #17212b;
+}
+
+html[data-seller-theme="light"] .profile-form-group input[type="file"]::file-selector-button {
+    background: #eef3f8;
+    color: #344454;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-section,
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-wrap,
+html[data-seller-theme="light"] .seller-sell-modal .seller-account-info-card,
+html[data-seller-theme="light"] .seller-sell-modal .seller-item-card,
+html[data-seller-theme="light"] .seller-sell-modal .seller-add-item {
+    background: #ffffff;
+    border-color: var(--border);
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-intro p,
+html[data-seller-theme="light"] .seller-sell-modal .seller-account-info-card span,
+html[data-seller-theme="light"] .seller-sell-modal .seller-account-sync-note {
+    color: #586675;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-account-info-card strong {
+    color: #17212b;
+}
+
+html[data-seller-theme="light"] #contentArea .trade-history-page {
+    color: var(--text);
+}
+
+html[data-seller-theme="light"] #contentArea .trade-history-page .page-header-block {
+    border-color: var(--border);
+}
+
+html[data-seller-theme="light"] #contentArea .trade-history-page .page-header-block h1,
+html[data-seller-theme="light"] #contentArea .trade-history-header h2,
+html[data-seller-theme="light"] #contentArea .trade-history-total strong,
+html[data-seller-theme="light"] #contentArea .trade-history-requirements strong,
+html[data-seller-theme="light"] #contentArea .trade-history-admin-notes strong,
+html[data-seller-theme="light"] #contentArea .portal-empty-state h2,
+html[data-seller-theme="light"] #contentArea .trade-request-modal-header h2,
+html[data-seller-theme="light"] #contentArea .trade-request-option-heading h3 {
+    color: #17212b;
+}
+
+html[data-seller-theme="light"] #contentArea .trade-history-intro,
+html[data-seller-theme="light"] #contentArea .trade-history-page .page-kicker,
+html[data-seller-theme="light"] #contentArea .trade-history-reference,
+html[data-seller-theme="light"] #contentArea .trade-history-meta,
+html[data-seller-theme="light"] #contentArea .trade-history-description,
+html[data-seller-theme="light"] #contentArea .trade-history-requirements li,
+html[data-seller-theme="light"] #contentArea .trade-history-requirements span,
+html[data-seller-theme="light"] #contentArea .trade-history-requirements small,
+html[data-seller-theme="light"] #contentArea .trade-history-timeline,
+html[data-seller-theme="light"] #contentArea .trade-history-timeline strong,
+html[data-seller-theme="light"] #contentArea .trade-history-admin-notes,
+html[data-seller-theme="light"] #contentArea .portal-empty-state,
+html[data-seller-theme="light"] #contentArea .portal-empty-state p,
+html[data-seller-theme="light"] #contentArea .trade-request-option-description,
+html[data-seller-theme="light"] #contentArea .trade-request-unavailable {
+    color: #526171;
+}
+
+html[data-seller-theme="light"] #contentArea .trade-history-total,
+html[data-seller-theme="light"] #contentArea .trade-history-meta > div,
+html[data-seller-theme="light"] #contentArea .trade-history-requirements li,
+html[data-seller-theme="light"] #contentArea .portal-empty-state,
+html[data-seller-theme="light"] #contentArea .trade-request-modal-panel,
+html[data-seller-theme="light"] #contentArea .trade-request-modal-close,
+html[data-seller-theme="light"] #contentArea .trade-request-option > img,
+html[data-seller-theme="light"] #contentArea .trade-request-modal-empty {
+    background: #ffffff;
+    border-color: var(--border);
+}
+
+html[data-seller-theme="light"] #contentArea .trade-history-section,
+html[data-seller-theme="light"] #contentArea .trade-history-timeline,
+html[data-seller-theme="light"] #contentArea .trade-request-modal-header {
+    border-color: var(--border);
+}
+
+html[data-seller-theme="light"] #contentArea .trade-history-section h3,
+html[data-seller-theme="light"] #contentArea .trade-request-modal-close {
+    color: #344454;
+}
+
+html[data-seller-theme="light"] #contentArea .trade-history-admin-notes {
+    background: rgba(14, 165, 233, 0.07);
+}
+
+html[data-seller-theme="light"] #contentArea .trade-request-modal-backdrop {
+    background: rgba(20, 35, 50, 0.42);
+}
+
+html[data-seller-theme="light"] #contentArea .trade-history-image-link {
+    background: #edf2f7;
+    border-color: var(--border);
+}
+
+html[data-seller-theme="light"] .portal-submissions-page .submission-card-top,
+html[data-seller-theme="light"] .portal-submissions-page .submission-card-footer,
+html[data-seller-theme="light"] #contentArea .seller-offer-card-top,
+html[data-seller-theme="light"] #contentArea .seller-offer-card-side,
+html[data-seller-theme="light"] #contentArea .seller-offer-message,
+html[data-seller-theme="light"] #contentArea .transaction-details-modal-header,
+html[data-seller-theme="light"] #contentArea .transaction-details-modal-footer {
+    border-color: var(--border);
+}
+
+html[data-seller-theme="light"] #contentArea .portal-submissions-page .submission-card-footer,
+html[data-seller-theme="light"] #contentArea .transaction-card .submission-card-footer {
+    background: #f4f7fa;
+    border-color: var(--border);
+    color: #526171;
+}
+
+html[data-seller-theme="light"] #contentArea .vnz-pagination {
+    background: #ffffff;
+    border-color: var(--border);
+    color: #526171;
+    box-shadow: 0 4px 14px rgba(30, 55, 80, 0.04);
+}
+
+html[data-seller-theme="light"] #contentArea .vnz-pagination-count {
+    color: #586675;
+}
+
+html[data-seller-theme="light"] #contentArea .vnz-pagination-link,
+html[data-seller-theme="light"] #contentArea .vnz-pagination-disabled {
+    background: #ffffff;
+    border-color: var(--border-light);
+    color: #465565;
+}
+
+html[data-seller-theme="light"] #contentArea .vnz-pagination-link:hover {
+    background: #e8f5fc;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-seller-theme="light"] #contentArea .vnz-pagination-disabled,
+html[data-seller-theme="light"] #contentArea .vnz-pagination-ellipsis {
+    color: #718091;
+}
+
+html[data-seller-theme="light"] .portal-submissions-page .submission-date strong,
+html[data-seller-theme="light"] .portal-submissions-page .summary-meta,
+html[data-seller-theme="light"] .portal-submissions-page .footer-status-text,
+html[data-seller-theme="light"] .settings-supporting-text,
+html[data-seller-theme="light"] .settings-preference small,
+html[data-seller-theme="light"] .seller-offer-explainer,
+html[data-seller-theme="light"] .seller-offer-date,
+html[data-seller-theme="light"] .seller-offer-count,
+html[data-seller-theme="light"] .portal-submissions-page .feedback-strip p {
+    color: #586675;
+}
+
+html[data-seller-theme="light"] .settings-verification-badge.is-verified,
+html[data-seller-theme="light"] .seller-2fa-status.is-enabled,
+html[data-seller-theme="light"] .profile-message.success {
+    color: #17643a;
+}
+
+html[data-seller-theme="light"] .settings-verification-badge.is-unverified,
+html[data-seller-theme="light"] .seller-2fa-status.is-disabled,
+html[data-seller-theme="light"] .settings-inline-notice {
+    color: #805700;
+}
+
+html[data-seller-theme="light"] .settings-inline-notice {
+    background: #fff7df;
+    border-color: #ead28e;
+}
+
+html[data-seller-theme="light"] .profile-message.error {
+    color: #9b2626;
+}
+
+html[data-seller-theme="light"] .seller-2fa-disable-button {
+    color: #9b2626;
+}
+
+html[data-seller-theme="light"] .empty-state-button,
+html[data-seller-theme="light"] .portal-submissions-page .empty-button.secondary {
+    color: #075985;
+}
+
+html[data-seller-theme="light"] .portal-submissions-page .reference-block strong,
+html[data-seller-theme="light"] .portal-submissions-page .submission-financial .offer-amount {
+    color: #087443;
+}
+
+html[data-seller-theme="light"] .portal-submissions-page .submission-financial .offer-none {
+    color: #718091;
+}
+
+html[data-seller-theme="light"] .portal-submissions-page .submission-financial {
+    background: var(--border);
+}
+
+html[data-seller-theme="light"] .portal-submissions-page .feedback-strip,
+html[data-seller-theme="light"] #contentArea .seller-offer-message {
+    background: rgba(2, 132, 199,  0.055);
+    border-color: rgba(2, 132, 199, 0.16);
+}
+
+html[data-seller-theme="light"] #contentArea .filter-chip {
+    color: #526171;
+    background: #f4f7fa;
+    border-color: var(--border);
+}
+
+html[data-seller-theme="light"] #contentArea .filter-chip.active {
+    color: #075985;
+    background: rgba(14, 165, 233, 0.1);
+    border-color: rgba(2, 132, 199, 0.32);
+}
+
+html[data-seller-theme="light"] #contentArea .portal-submissions-page .empty-state,
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-empty,
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-no-results {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    box-shadow: 0 8px 24px rgba(30, 55, 80, 0.045);
+}
+
+html[data-seller-theme="light"] #contentArea .portal-submissions-page .empty-state h2,
+html[data-seller-theme="light"] #contentArea .portal-submissions-page .empty-state h3,
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-empty h2,
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-no-results strong {
+    color: #17212b;
+}
+
+html[data-seller-theme="light"] #contentArea .portal-submissions-page .empty-label,
+html[data-seller-theme="light"] #contentArea .portal-submissions-page .empty-state p,
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-empty p,
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-no-results span {
+    color: #536273;
+}
+
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-empty a {
+    color: #075985;
+}
+
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-toolbar h2 {
+    color: #17212b;
+}
+
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-search input {
+    background: #ffffff;
+    border-color: var(--border-light);
+    color: #17212b;
+}
+
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-search button {
+    background: #0284c7;
+    border-color: #0284c7;
+    color: #ffffff;
+}
+
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-filters button {
+    background: #ffffff;
+    border-color: var(--border);
+    color: #344454;
+}
+
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-filters button:hover,
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-filters button.is-selected {
+    background: #e8f5fc;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-seller-theme="light"] #contentArea .portal-offers-page .offers-submissions-link {
+    background: #ffffff;
+    border-color: var(--border-light);
+    color: #344454;
+}
+
+html[data-seller-theme="light"] #contentArea .seller-offer-action {
+    background: #ffffff;
+    border-color: var(--border-light);
+    color: #344454;
+}
+
+html[data-seller-theme="light"] #contentArea .seller-offer-action:hover {
+    background: #f2f6fa;
+}
+
+html[data-seller-theme="light"] #contentArea .seller-offer-action-primary {
+    background: #e8f5fc;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-seller-theme="light"] #contentArea .seller-offer-message p,
+html[data-seller-theme="light"] #contentArea .seller-offer-card-side > strong,
+html[data-seller-theme="light"] #contentArea .transaction-details-modal-body,
+html[data-seller-theme="light"] #contentArea .trade-request-option-content {
+    color: #344454;
+}
+
+html[data-seller-theme="light"] #contentArea .seller-offer-reference,
+html[data-seller-theme="light"] #contentArea .trade-history-reference {
+    color: #0875a8;
+}
+
+html[data-seller-theme="light"] #contentArea .transaction-details-modal-loading,
+html[data-seller-theme="light"] #contentArea .transaction-details-modal-error {
+    color: #526171;
+}
+
+html[data-seller-theme="light"] .transaction-chat {
+    --chat-bg: #f5f8fb;
+    --chat-panel: #ffffff;
+    --chat-border: rgba(71, 85, 105, 0.18);
+    --chat-text: #17212b;
+    --chat-muted: #586675;
+    --chat-own: #d9f1fb;
+    --chat-other: #e9eef3;
+}
+
+html[data-seller-theme="light"] .transaction-chat-call-button {
+    color: #344454;
+    background: #ffffff;
+}
+
+html[data-seller-theme="light"] .transaction-chat-shortcut {
+    color: #17212b;
+    background: linear-gradient(110deg, rgba(34, 184, 238, 0.09), transparent 65%), #ffffff;
+    border-color: rgba(34, 184, 238, 0.25);
+}
+
+html[data-seller-theme="light"] .transaction-chat-shortcut small {
+    color: #586675;
+}
+
+html[data-seller-theme="light"] #contentArea .status-new,
+html[data-seller-theme="light"] #contentArea .status-new_submission,
+html[data-seller-theme="light"] #contentArea .status-review,
+html[data-seller-theme="light"] #contentArea .status-under_review,
+html[data-seller-theme="light"] #contentArea .status-pending,
+html[data-seller-theme="light"] #contentArea .status-offer_pending,
+html[data-seller-theme="light"] #contentArea .status-offer_sent,
+html[data-seller-theme="light"] #contentArea .trade-status-badge.status-pending {
+    color: #805700;
+    background: #fff7df;
+    border-color: #ead28e;
+}
+
+html[data-seller-theme="light"] #contentArea .status-offer,
+html[data-seller-theme="light"] #contentArea .status-accepted,
+html[data-seller-theme="light"] #contentArea .status-completed,
+html[data-seller-theme="light"] #contentArea .status-approved,
+html[data-seller-theme="light"] #contentArea .trade-status-badge.status-approved,
+html[data-seller-theme="light"] #contentArea .trade-status-badge.status-completed {
+    color: #17643a;
+    background: #eaf8ef;
+    border-color: #b7e0c4;
+}
+
+html[data-seller-theme="light"] #contentArea .seller-offer-state-needs_response {
+    color: #075985;
+    background: #e8f5fc;
+    border-color: #b6dced;
+}
+
+html[data-seller-theme="light"] #contentArea .status-declined,
+html[data-seller-theme="light"] #contentArea .status-cancelled,
+html[data-seller-theme="light"] #contentArea .trade-status-badge.status-rejected {
+    color: #9b2626;
+    background: #fff0f0;
+    border-color: #efc3c3;
+}
+
+html[data-seller-theme="light"] #contentArea .status-default,
+html[data-seller-theme="light"] #contentArea .trade-status-badge.status-cancelled,
+html[data-seller-theme="light"] #contentArea .seller-offer-state-closed,
+html[data-seller-theme="light"] #contentArea .seller-offer-state-waiting_vnz,
+html[data-seller-theme="light"] #contentArea .seller-offer-state-other {
+    color: #485769;
+    background: #eef2f6;
+    border-color: #d2dbe4;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html,
+    body,
+    .dashboard-sidebar,
+    .dashboard-sidebar *,
+    .dashboard-main,
+    .dashboard-main *,
+    #contentArea,
+    #contentArea * {
+        transition-duration: 0.01ms;
+    }
+}

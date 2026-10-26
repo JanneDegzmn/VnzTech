@@ -159,6 +159,11 @@ function tradeRequestFormatDate(?string $date): string
                         <?php endif; ?>
 
                         <div class="trade-form-actions admin-trade-actions">
+                            <button
+                                type="button"
+                                class="trade-secondary-btn"
+                                data-open-trade-request-chat="<?= (int) $request['id'] ?>"
+                            >Chat with seller</button>
                             <?php if ((string) $request['status'] === 'PENDING'): ?>
                                 <button type="button" class="trade-primary-btn trade-request-action" data-request-id="<?= (int) $request['id'] ?>" data-status-action="approve">Approve</button>
                                 <button type="button" class="trade-secondary-btn trade-request-action" data-request-id="<?= (int) $request['id'] ?>" data-status-action="reject">Reject</button>

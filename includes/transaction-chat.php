@@ -24,7 +24,10 @@ $transactionChatConversationType = $transactionChatConversationType ?? 'transact
 $transactionChatConversationClass = $transactionChatConversationClass ?? 'private';
 $transactionChatConversationDbId = $transactionChatConversationDbId ?? 0;
 $transactionChatDisplayName = $transactionChatDisplayName ?? (string) $transactionChatReference;
-$transactionChatHasContext = $transactionChatConversationType === 'transaction'
+$transactionChatTradeRequestData = $transactionChatTradeRequestData ?? null;
+$transactionChatTradeRequirements = $transactionChatTradeRequirements ?? [];
+$transactionChatHasContext = (int) ($transactionChatId ?? 0) > 0
+    || $transactionChatConversationType === 'transaction'
     || !empty($transactionChatShowTransactionContext);
 $transactionChatGuestSubmission = $transactionChatGuestSubmission ?? false;
 $transactionChatCallsEnabled = $transactionChatActor['actor_type'] === 'seller'
@@ -135,7 +138,9 @@ foreach ($transactionChatItems as $transactionChatItem) {
             <span class="transaction-chat-eyebrow">
                 <?= $transactionChatHasContext
                     ? ($transactionChatGuestSubmission ? 'SUBMISSION MESSAGES' : 'TRANSACTION MESSAGES')
-                    : htmlspecialchars(strtoupper($transactionChatConversationType) . ' CHAT', ENT_QUOTES, 'UTF-8')
+                    : ($transactionChatConversationClass === 'trade_request'
+                        ? 'TRADE REQUEST CHAT'
+                        : htmlspecialchars(strtoupper($transactionChatConversationType) . ' CHAT', ENT_QUOTES, 'UTF-8'))
                 ?>
             </span>
             <h2><?= htmlspecialchars(
@@ -253,6 +258,78 @@ foreach ($transactionChatItems as $transactionChatItem) {
         <time data-chat-call-indicator-duration>00:00</time>
         <span class="transaction-chat-call-indicator-restore" aria-hidden="true">↗</span>
     </button>
+    <?php endif; ?>
+
+    <?php if (is_array($transactionChatTradeRequestData)): ?>
+        <?php
+        $tradeItemImagePath = (string) ($transactionChatTradeRequestData['item_image_path'] ?? '');
+        $tradeItemImageUrl = $tradeItemImagePath !== ''
+            ? '/VNZ-TECH/' . ltrim($tradeItemImagePath, '/')
+            : '/VNZ-TECH/assets/images/vnz.png';
+        ?>
+        <section class="transaction-chat-info transaction-chat-trade-info" aria-label="Trade request information">
+            <div class="transaction-chat-info-heading">
+                <span class="transaction-chat-eyebrow">TRADE INFO</span>
+                <span class="transaction-chat-info-quantity">
+                    <?= htmlspecialchars(
+                        ucwords(strtolower(str_replace('_', ' ', (string) $transactionChatTradeRequestData['request_status']))),
+                        ENT_QUOTES,
+                        'UTF-8'
+                    ) ?>
+                </span>
+            </div>
+
+            <div class="transaction-chat-info-body">
+                <img
+                    class="transaction-chat-info-photo"
+                    src="<?= htmlspecialchars($tradeItemImageUrl, ENT_QUOTES, 'UTF-8') ?>"
+                    alt="<?= htmlspecialchars((string) $transactionChatTradeRequestData['item_name'], ENT_QUOTES, 'UTF-8') ?>"
+                    loading="lazy"
+                >
+                <div class="transaction-chat-info-details">
+                    <div class="transaction-chat-info-items">
+                        <div class="transaction-chat-info-item">
+                            <span>Item: <?= htmlspecialchars((string) $transactionChatTradeRequestData['item_name'], ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
+                        <div class="transaction-chat-info-item">
+                            <span>Condition: <?= htmlspecialchars((string) $transactionChatTradeRequestData['item_condition'], ENT_QUOTES, 'UTF-8') ?></span>
+                        </div>
+                    </div>
+                    <?php if (trim((string) ($transactionChatTradeRequestData['item_description'] ?? '')) !== ''): ?>
+                        <p class="transaction-chat-trade-description"><?= nl2br(htmlspecialchars((string) $transactionChatTradeRequestData['item_description'], ENT_QUOTES, 'UTF-8')) ?></p>
+                    <?php endif; ?>
+                    <?php if ($transactionChatTradeRequirements): ?>
+                        <div class="transaction-chat-trade-requirements">
+                            <strong>Required trade items</strong>
+                            <?php foreach ($transactionChatTradeRequirements as $requirement): ?>
+                                <span>
+                                    <?= (int) $requirement['quantity'] ?> ×
+                                    <?= htmlspecialchars(
+                                        $requirement['requirement_type'] === 'scrap_board' ? 'Scrap Board' : 'Damaged Phone',
+                                        ENT_QUOTES,
+                                        'UTF-8'
+                                    ) ?>
+                                    · <?= htmlspecialchars((string) $requirement['storage'], ENT_QUOTES, 'UTF-8') ?>
+                                </span>
+                                <?php if (trim((string) ($requirement['description'] ?? '')) !== ''): ?>
+                                    <small><?= htmlspecialchars((string) $requirement['description'], ENT_QUOTES, 'UTF-8') ?></small>
+                                <?php endif; ?>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
+                    <dl class="transaction-chat-info-meta">
+                        <div>
+                            <dt>Request</dt>
+                            <dd><?= htmlspecialchars((string) $transactionChatTradeRequestData['request_reference'], ENT_QUOTES, 'UTF-8') ?></dd>
+                        </div>
+                        <div>
+                            <dt>Requested</dt>
+                            <dd><?= htmlspecialchars(date('M j, Y', strtotime((string) $transactionChatTradeRequestData['requested_at'])), ENT_QUOTES, 'UTF-8') ?></dd>
+                        </div>
+                    </dl>
+                </div>
+            </div>
+        </section>
     <?php endif; ?>
 
     <?php if ($transactionChatHasContext): ?>
@@ -441,7 +518,16 @@ foreach ($transactionChatItems as $transactionChatItem) {
         <div class="transaction-chat-attachment-preview" data-chat-attachment-preview hidden>
             <img data-chat-attachment-preview-image alt="Selected image preview" hidden>
             <video data-chat-attachment-preview-video controls playsinline preload="metadata" hidden></video>
-            <span data-chat-attachment-name></span>
+            <div class="transaction-chat-attachment-details">
+                <span data-chat-attachment-name></span>
+                <span
+                    class="transaction-chat-video-readiness"
+                    data-chat-video-readiness
+                    role="status"
+                    aria-live="polite"
+                    hidden
+                ></span>
+            </div>
             <button
                 type="button"
                 data-chat-attachment-remove
@@ -451,6 +537,7 @@ foreach ($transactionChatItems as $transactionChatItem) {
         <div class="transaction-chat-upload-progress" data-chat-upload-progress hidden>
             <span data-chat-upload-progress-bar></span>
         </div>
+        <div class="transaction-chat-upload-error" data-chat-upload-error role="status" aria-live="polite" hidden></div>
         <div class="transaction-chat-composer-footer">
             <span>
                 Up to 4,000 characters
@@ -464,6 +551,5 @@ foreach ($transactionChatItems as $transactionChatItem) {
                 <span aria-hidden="true">↗</span>
             </button>
         </div>
-        <div class="transaction-chat-upload-error" data-chat-upload-error role="status" aria-live="polite" hidden></div>
     </form>
 </section>

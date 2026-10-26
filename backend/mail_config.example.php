@@ -3,6 +3,8 @@
 /*
  * Copy this file to mail_config.local.php and replace the example values.
  * Use a Google App Password, not your regular Gmail password.
+ * Set VNZ_APP_BASE_URL on the host to the public HTTPS application URL.
+ * Local requests may use the configured base URL and local server port.
  */
 return [
     'base_url' => 'http://localhost/VNZ-TECH',
