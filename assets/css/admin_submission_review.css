@@ -1798,3 +1798,133 @@
     }
 
 }
+
+    /* Approval confirmation modal */
+    .transaction-chat-approval-modal {
+        display: none;
+        position: fixed;
+        z-index: 12000;
+        inset: 0;
+        align-items: center;
+        justify-content: center;
+        padding: 18px;
+    }
+
+    .transaction-chat-approval-modal.is-open {
+        display: flex;
+    }
+
+    .transaction-chat-approval-backdrop {
+        position: absolute;
+        inset: 0;
+        background: rgba(3, 8, 13, 0.78);
+        backdrop-filter: blur(6px);
+    }
+
+    .transaction-chat-approval-panel {
+        position: relative;
+        width: min(100%, 470px);
+        padding: 26px;
+        color: #eef4f8;
+        background:
+            radial-gradient(circle at 100% 0, rgba(34, 184, 238, 0.13), transparent 38%),
+            #111923;
+        border: 1px solid rgba(34, 184, 238, 0.24);
+        border-radius: 18px;
+        box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
+    }
+
+    .transaction-chat-approval-kicker {
+        color: #58c9ea;
+        font-size: 10px;
+        font-weight: 850;
+        letter-spacing: 1.6px;
+    }
+
+    .transaction-chat-approval-panel h2 {
+        margin: 9px 0 7px;
+        color: #f4f8fb;
+        font-size: 23px;
+    }
+
+    .transaction-chat-approval-panel > p {
+        margin: 0 0 18px;
+        color: #aab8c4;
+        font-size: 13px;
+        line-height: 1.5;
+    }
+
+    .transaction-chat-approval-details {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 9px 18px;
+        margin: 0;
+        padding: 14px;
+        background: rgba(6, 12, 18, 0.55);
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-radius: 11px;
+    }
+
+    .transaction-chat-approval-details > div {
+        min-width: 0;
+    }
+
+    .transaction-chat-approval-details dt {
+        margin-bottom: 3px;
+        color: #94a3b2;
+        font-size: 9px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    .transaction-chat-approval-details dd {
+        margin: 0;
+        color: #eef4f8;
+        font-size: 12px;
+        font-weight: 650;
+        overflow-wrap: anywhere;
+    }
+
+    .transaction-chat-approval-actions {
+        display: flex;
+        justify-content: flex-end;
+        gap: 9px;
+        margin-top: 20px;
+    }
+
+    .transaction-chat-approval-actions button {
+        min-height: 40px;
+        padding: 0 14px;
+        border-radius: 9px;
+        cursor: pointer;
+        font: inherit;
+        font-size: 12px;
+        font-weight: 800;
+    }
+
+    .transaction-chat-approval-primary {
+        color: #04131a;
+        background: linear-gradient(135deg, #53d3f4, #22b8ee);
+        border: 0;
+    }
+
+    .transaction-chat-approval-close {
+        color: #c5d0d9;
+        background: rgba(148, 163, 184, 0.08);
+        border: 1px solid rgba(148, 163, 184, 0.24);
+    }
+
+    @media (max-width: 600px) {
+        .transaction-chat-approval-panel {
+            padding: 21px;
+        }
+
+        .transaction-chat-approval-actions {
+            flex-direction: column;
+        }
+
+        .transaction-chat-approval-actions button {
+            width: 100%;
+        }
+    }

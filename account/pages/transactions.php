@@ -2,6 +2,7 @@
 
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
+require_once __DIR__ . '/../../backend/pagination.php';
 
 /*
 |--------------------------------------------------------------------------
@@ -109,6 +110,7 @@ if (!in_array($status, $allowedStatuses, true)) {
 $search = trim($_GET['search'] ?? '');
 $fromDate = trim($_GET['from'] ?? '');
 $toDate = trim($_GET['to'] ?? '');
+$pagination = vnzPaginationState(12);
 
 $allowedDateRanges = [
     'today',
@@ -267,8 +269,36 @@ if ($toDate !== '') {
     $params[] = $toDate . ' 23:59:59';
 }
 
+$countSql = "
+    SELECT COUNT(*)
+    FROM transactions t
+    INNER JOIN submissions s ON s.id = t.submission_id
+    WHERE s.user_id = ?
+";
+$countParams = [$userId];
+if ($status !== 'all') {
+    $countSql .= ' AND t.transaction_status = ?';
+    $countParams[] = $status;
+}
+if ($search !== '') {
+    $countSql .= ' AND (t.transaction_reference LIKE ? OR s.reference_number LIKE ?)';
+    array_push($countParams, $searchValue, $searchValue);
+}
+if ($fromDate !== '') {
+    $countSql .= ' AND t.created_at >= ?';
+    $countParams[] = $fromDate . ' 00:00:00';
+}
+if ($toDate !== '') {
+    $countSql .= ' AND t.created_at <= ?';
+    $countParams[] = $toDate . ' 23:59:59';
+}
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($countParams);
+$pagination = vnzPaginationClamp($pagination, (int) $countStmt->fetchColumn());
+
 $sql .= "
     ORDER BY t.id DESC
+    LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
 ";
 
 $transactionStmt = $pdo->prepare($sql);
@@ -331,7 +361,20 @@ function transactionStatusClass($status)
     return 'status-' . $status;
 }
 
-$totalTransactions = count($transactions);
+$totalTransactions = $pagination['total'];
+$paginationHtml = vnzRenderPagination(
+    $pagination,
+    array_filter([
+        'status' => $status,
+        'search' => $search,
+        'from' => $fromDate,
+        'to' => $toDate,
+        'range' => $dateRange
+    ], static fn ($value): bool => $value !== ''),
+    'transactions',
+    'seller',
+    '/VNZ-TECH/account/dashboard.php?page=transactions'
+);
 
 ?>
 
@@ -769,6 +812,8 @@ $totalTransactions = count($transactions);
                 <?php endforeach; ?>
 
             </div>
+
+            <?= $paginationHtml ?>
 
         <?php endif; ?>
 

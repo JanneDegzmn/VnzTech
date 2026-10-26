@@ -14,6 +14,7 @@ header(
 
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
+require_once __DIR__ . '/../../backend/pagination.php';
 
 
 /*
@@ -482,6 +483,7 @@ try {
     $params = [
         $userId
     ];
+    $pagination = vnzPaginationState(12);
 
 
     if (
@@ -498,8 +500,22 @@ try {
     }
 
 
+    $countSql = 'SELECT COUNT(*) FROM submissions WHERE user_id = ?';
+    $countParams = [$userId];
+    if ($filter !== 'all') {
+        $countSql .= ' AND status = ?';
+        $countParams[] = $filter;
+    }
+    $countStmt = $pdo->prepare($countSql);
+    $countStmt->execute($countParams);
+    $pagination = vnzPaginationClamp(
+        $pagination,
+        (int) $countStmt->fetchColumn()
+    );
+
     $sql .= "
         ORDER BY s.id DESC
+        LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
     ";
 
 
@@ -561,6 +577,13 @@ try {
         array_sum(
             $statusCounts
         );
+    $paginationHtml = vnzRenderPagination(
+        $pagination,
+        ['status' => $filter],
+        'submissions',
+        'seller',
+        '/VNZ-TECH/account/dashboard.php'
+    );
 
 
 } catch (
@@ -1444,6 +1467,7 @@ $firstName =
 
             </div>
 
+            <?= $paginationHtml ?>
 
         <?php endif; ?>
 

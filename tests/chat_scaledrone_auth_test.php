@@ -55,7 +55,7 @@ function chatRoomContext(
 }
 
 $sellerSellerIneligibility = new ChatHttpException(
-    'Calls are only available between one Admin and one Seller.',
+    'Calls are only available between eligible Seller accounts.',
     403
 );
 assertChatAuthorization(
@@ -73,6 +73,20 @@ assertChatAuthorization(
         new ChatHttpException('Realtime messaging is not configured.', 503)
     ),
     'Realtime configuration errors must not be treated as optional call ineligibility.'
+);
+
+$adminCallInboxRejected = false;
+try {
+    chatGetAuthorizedCallInbox([
+        'actor_type' => 'admin',
+        'actor_id' => 1
+    ]);
+} catch (ChatHttpException $exception) {
+    $adminCallInboxRejected = $exception->httpStatus === 403;
+}
+assertChatAuthorization(
+    $adminCallInboxRejected,
+    'Admin accounts must not receive call-inbox authorization.'
 );
 
 $sellerSeller = chatCreateScaledroneClientToken(
@@ -97,7 +111,7 @@ assertChatAuthorization(
     'Seller-Seller token should grant only the message room.'
 );
 
-$adminSeller = chatCreateScaledroneClientToken([
+$sellerCallRoom = chatCreateScaledroneClientToken([
     chatRoomContext(
         2,
         'private',
@@ -109,17 +123,17 @@ $adminSeller = chatCreateScaledroneClientToken([
             'room' => 'call-private-2'
         ]
     )
-], 'admin:1');
+], 'seller:2');
 assertChatAuthorization(
-    count($adminSeller['rooms']) === 1
-        && count($adminSeller['call_rooms']) === 1
-        && $adminSeller['call_rooms'][0]['room'] === 'call-private-2',
-    'Eligible Admin-Seller chat should retain its call-room grant.'
+    count($sellerCallRoom['rooms']) === 1
+        && count($sellerCallRoom['call_rooms']) === 1
+        && $sellerCallRoom['call_rooms'][0]['room'] === 'call-private-2',
+    'Eligible Seller-Seller private chat should retain its call-room grant.'
 );
-$adminSellerPermissions = decodeChatTokenPayload($adminSeller['token'])['permissions'];
-$adminCallPermission = '^' . preg_quote('call-private-2', '/') . '$';
+$sellerCallPermissions = decodeChatTokenPayload($sellerCallRoom['token'])['permissions'];
+$sellerCallPermission = '^' . preg_quote('call-private-2', '/') . '$';
 assertChatAuthorization(
-    ($adminSellerPermissions[$adminCallPermission] ?? null)
+    ($sellerCallPermissions[$sellerCallPermission] ?? null)
         === ['publish' => false, 'subscribe' => true],
     'Call-room permission should retain its existing subscribe-only policy.'
 );
@@ -171,7 +185,20 @@ $signalingSource = file_get_contents(
 assertChatAuthorization(
     is_string($signalingSource)
         && strpos($signalingSource, 'chatGetOneToOneConversationPeer($conversationId, $actor)') !== false,
-    'Call signaling must continue to enforce the Admin-Seller eligibility check.'
+    'Call signaling must continue to enforce Seller-only participant eligibility.'
+);
+$callSessionSource = file_get_contents(
+    __DIR__ . '/../backend/chat_call_sessions.php'
+);
+assertChatAuthorization(
+    is_string($callSessionSource)
+        && strpos(
+            $callSessionSource,
+            '($actor[\'actor_type\'] ?? null) !== \'seller\''
+        ) !== false
+        && strpos($callSessionSource, '$call[\'caller_type\'] !== \'seller\'') !== false
+        && strpos($callSessionSource, '$call[\'callee_type\'] !== \'seller\'') !== false,
+    'Call-session transitions must reject non-Seller actors and legacy non-Seller sessions.'
 );
 
 echo "Scaledrone chat authorization regression tests passed.\n";

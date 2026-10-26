@@ -27,19 +27,10 @@ $transactionChatDisplayName = $transactionChatDisplayName ?? (string) $transacti
 $transactionChatHasContext = $transactionChatConversationType === 'transaction'
     || !empty($transactionChatShowTransactionContext);
 $transactionChatGuestSubmission = $transactionChatGuestSubmission ?? false;
-$transactionChatCallsEnabled = !$transactionChatGuestSubmission
-    && in_array(
-        $transactionChatConversationClass,
-        ['transaction', 'claimed_submission', 'private'],
-        true
-    )
-    && in_array(
-        $transactionChatConversationType,
-        ['transaction', 'private'],
-        true
-    );
-$transactionChatGuestCallPromptEnabled = $transactionChatGuestSubmission
-    && $transactionChatActor['actor_type'] === 'guest';
+$transactionChatCallsEnabled = $transactionChatActor['actor_type'] === 'seller'
+    && !$transactionChatGuestSubmission
+    && $transactionChatConversationClass === 'private'
+    && $transactionChatConversationType === 'private';
 $transactionChatCallPeer = null;
 if ($transactionChatCallsEnabled && (int) $transactionChatConversationDbId > 0) {
     try {
@@ -130,6 +121,7 @@ foreach ($transactionChatItems as $transactionChatItem) {
     data-attachment-max-bytes="<?= chatAttachmentMaxBytes() ?>"
     data-document-max-bytes="<?= chatDocumentMaxBytes() ?>"
     data-voice-max-bytes="<?= chatVoiceMaxBytes() ?>"
+    data-video-max-bytes="<?= chatVideoMaxBytes() ?>"
     data-voice-max-duration-seconds="<?= chatVoiceMaxDurationSeconds() ?>"
     data-call-enabled="<?= $transactionChatCallsEnabled ? 'true' : 'false' ?>"
     data-call-ice-servers="<?= htmlspecialchars(
@@ -173,11 +165,11 @@ foreach ($transactionChatItems as $transactionChatItem) {
                     aria-label="Revoke guest access to this conversation"
                 >Revoke guest access</button>
             <?php endif; ?>
-            <?php if ($transactionChatCallsEnabled || $transactionChatGuestCallPromptEnabled): ?>
-                <button type="button" class="transaction-chat-call-button" data-chat-call-audio<?= $transactionChatGuestCallPromptEnabled ? '' : ' disabled' ?>>
+            <?php if ($transactionChatCallsEnabled): ?>
+                <button type="button" class="transaction-chat-call-button" data-chat-call-audio>
                     <span aria-hidden="true">☎</span> Audio call
                 </button>
-                <button type="button" class="transaction-chat-call-button" data-chat-call-video<?= $transactionChatGuestCallPromptEnabled ? '' : ' disabled' ?>>
+                <button type="button" class="transaction-chat-call-button" data-chat-call-video>
                     <span aria-hidden="true">▣</span> Video call
                 </button>
             <?php endif; ?>
@@ -187,42 +179,6 @@ foreach ($transactionChatItems as $transactionChatItem) {
             </span>
         </div>
     </header>
-
-    <?php if ($transactionChatGuestCallPromptEnabled): ?>
-    <dialog
-        class="transaction-chat-guest-call-dialog"
-        data-guest-call-dialog
-        aria-modal="true"
-        aria-labelledby="transaction-chat-guest-call-title"
-        aria-describedby="transaction-chat-guest-call-description"
-    >
-        <div class="transaction-chat-guest-call-card">
-            <button
-                type="button"
-                class="transaction-chat-guest-call-close"
-                data-guest-call-close
-                aria-label="Close call registration information"
-            >×</button>
-            <span class="transaction-chat-eyebrow">SELLER ACCOUNT REQUIRED</span>
-            <h2 id="transaction-chat-guest-call-title">Voice and video calls</h2>
-            <p id="transaction-chat-guest-call-description">
-                To use calls, create a Seller account and verify your email. Eligible existing conversations are linked to your account automatically after verification. Calls are available only in eligible Admin–Seller conversations.
-            </p>
-            <p class="transaction-chat-guest-call-note">
-                Your existing conversation and message history stay intact when linked. After verification, sign in to your Seller account to continue chatting and use eligible calls.
-            </p>
-            <div class="transaction-chat-guest-call-actions">
-                <a
-                    class="transaction-chat-guest-call-register"
-                    href="/VNZ-TECH/account/register.php"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                >Create Seller Account</a>
-                <button type="button" data-guest-call-close>Keep Chatting</button>
-            </div>
-        </div>
-    </dialog>
-    <?php endif; ?>
 
     <?php if ($transactionChatCallsEnabled): ?>
     <section
@@ -443,14 +399,14 @@ foreach ($transactionChatItems as $transactionChatItem) {
                 type="button"
                 class="transaction-chat-attachment-toggle"
                 data-chat-attachment-toggle
-                aria-label="Attach an image or PDF"
-                title="Attach an image or PDF"
+                aria-label="Attach an image, video, or PDF"
+                title="Attach an image, video, or PDF"
                 disabled
             >＋</button>
             <input
                 type="file"
                 data-chat-attachment-input
-                accept="image/jpeg,image/png,image/webp,application/pdf,.pdf"
+                accept="image/jpeg,image/png,image/webp,application/pdf,video/mp4,video/webm,.pdf,.mp4,.webm"
                 hidden
             >
             <button
@@ -484,6 +440,7 @@ foreach ($transactionChatItems as $transactionChatItem) {
         </section>
         <div class="transaction-chat-attachment-preview" data-chat-attachment-preview hidden>
             <img data-chat-attachment-preview-image alt="Selected image preview" hidden>
+            <video data-chat-attachment-preview-video controls playsinline preload="metadata" hidden></video>
             <span data-chat-attachment-name></span>
             <button
                 type="button"

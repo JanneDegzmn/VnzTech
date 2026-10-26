@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/csrf.php';
+require_once __DIR__ . '/../../backend/pagination.php';
 
 if (empty($_SESSION['user_logged_in']) || empty($_SESSION['user_id'])) {
     header('Location: /VNZ-TECH/account/login.php');
@@ -10,6 +11,10 @@ if (empty($_SESSION['user_logged_in']) || empty($_SESSION['user_id'])) {
 
 $userId = (int) $_SESSION['user_id'];
 $csrfToken = generateCsrfToken();
+$pagination = vnzPaginationState(12);
+$requestCountStmt = $pdo->prepare('SELECT COUNT(*) FROM trade_requests WHERE user_id = ?');
+$requestCountStmt->execute([$userId]);
+$pagination = vnzPaginationClamp($pagination, (int) $requestCountStmt->fetchColumn());
 $tradeRequestsStmt = $pdo->prepare("
     SELECT
         tr.id,
@@ -31,9 +36,17 @@ $tradeRequestsStmt = $pdo->prepare("
     INNER JOIN trade_items ti ON ti.id = tr.trade_item_id
     WHERE tr.user_id = ?
     ORDER BY tr.requested_at DESC, tr.id DESC
+    LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
 ");
 $tradeRequestsStmt->execute([$userId]);
 $tradeRequests = $tradeRequestsStmt->fetchAll();
+$paginationHtml = vnzRenderPagination(
+    $pagination,
+    [],
+    'trade_history',
+    'seller',
+    '/VNZ-TECH/account/dashboard.php?page=trade_history'
+);
 
 $activeTradeItemsStmt = $pdo->query("
     SELECT id, name, `condition`, description, image_path
@@ -90,8 +103,8 @@ function tradeHistoryFormatDate(?string $date): string
         </div>
         <div class="trade-history-header-actions">
             <button type="button" class="trade-history-open-modal" data-open-trade-modal>Trade</button>
-            <div class="trade-history-total" aria-label="<?= count($tradeRequests) ?> total trade requests">
-                <strong><?= count($tradeRequests) ?></strong>
+            <div class="trade-history-total" aria-label="<?= number_format($pagination['total']) ?> total trade requests">
+                <strong><?= number_format($pagination['total']) ?></strong>
                 <span>REQUESTS</span>
             </div>
         </div>
@@ -182,6 +195,7 @@ function tradeHistoryFormatDate(?string $date): string
                 </article>
             <?php endforeach; ?>
         </div>
+        <?= $paginationHtml ?>
     <?php endif; ?>
 
     <div class="trade-request-modal" data-trade-modal hidden>

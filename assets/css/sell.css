@@ -675,8 +675,8 @@ img {
     font-size:
         clamp(
             62px,
-            8.15vw,
-            118px
+            7.1vw,
+            104px
         );
 
     line-height: 0.86;
@@ -845,6 +845,13 @@ img {
 
 .hero-statement span:first-child {
     color: #3f4853;
+}
+
+@media (min-width: 761px) {
+    .hero-statement {
+        align-self: center;
+        padding-bottom: 0;
+    }
 }
 
 
@@ -1753,6 +1760,57 @@ img {
     border-radius: 9px;
 }
 
+.form-block-disclosure > .form-block-title {
+    min-height: 52px;
+    align-items: center;
+    cursor: pointer;
+    list-style: none;
+    margin-bottom: 0;
+    text-align: left;
+}
+
+.form-block-disclosure > .form-block-title::-webkit-details-marker {
+    display: none;
+}
+
+.form-block-title-copy {
+    display: block;
+    min-width: 0;
+    flex: 1;
+}
+
+.form-block-title::after {
+    width: 9px;
+    height: 9px;
+    flex: 0 0 9px;
+    margin: 0 4px 4px 12px;
+    border-right: 2px solid #7e8a97;
+    border-bottom: 2px solid #7e8a97;
+    content: "";
+    transform: rotate(45deg);
+    transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.form-block-disclosure[open] > .form-block-title {
+    margin-bottom: 23px;
+}
+
+.form-block-disclosure[open] > .form-block-title::after {
+    margin-bottom: 0;
+    transform: rotate(225deg);
+}
+
+.form-block-disclosure > .form-block-title:hover::after,
+.form-block-disclosure > .form-block-title:focus-visible::after {
+    border-color: #dfe4e8;
+}
+
+.form-block-disclosure > .form-block-title:focus-visible {
+    border-radius: 4px;
+    outline: 2px solid #737f8c;
+    outline-offset: 4px;
+}
+
 .form-block-title {
     display: flex;
 
@@ -1761,7 +1819,7 @@ img {
     margin-bottom: 23px;
 }
 
-.form-block-title > span {
+.form-block-title > span:first-child {
     width: 36px;
 
     height: 36px;
@@ -6149,5 +6207,295 @@ select {
         width: 30px;
         height: 38px;
         font-size: 30px;
+    }
+}
+
+@media (max-width: 600px) {
+    .marketing-section {
+        min-height: auto;
+        justify-content: flex-start;
+        padding: 56px var(--side-space);
+    }
+
+    .hero-section {
+        min-height: auto;
+        padding-top: 34px;
+        padding-bottom: 40px;
+    }
+
+    .hero-grid {
+        gap: 26px;
+    }
+
+    .hero-copy h1 {
+        font-size: clamp(40px, 11vw, 48px);
+        line-height: 0.96;
+        letter-spacing: -2.5px;
+    }
+
+    .hero-description,
+    .section-intro p {
+        font-size: 14px;
+        line-height: 1.65;
+    }
+
+    .hero-actions {
+        gap: 9px;
+        margin-top: 24px;
+    }
+
+    .hero-btn {
+        min-height: 48px;
+    }
+
+    .hero-meta {
+        margin-top: 18px;
+    }
+
+    .hero-statement {
+        gap: 3px;
+    }
+
+    .hero-statement span {
+        font-size: clamp(27px, 8vw, 36px);
+        letter-spacing: -1.5px;
+    }
+
+    .section-intro {
+        margin-bottom: 24px;
+    }
+
+    .section-intro h2 {
+        font-size: clamp(30px, 8.5vw, 42px);
+        line-height: 1;
+        letter-spacing: -1.8px;
+    }
+
+    .education-card {
+        padding: 19px;
+    }
+
+    .card-label {
+        margin-top: 22px;
+    }
+
+    .education-card h3 {
+        font-size: 23px;
+        line-height: 1.08;
+    }
+
+    .process-banner {
+        gap: 12px;
+        padding: 19px;
+    }
+
+    .step-card {
+        padding: 19px;
+    }
+
+    .step-card h3 {
+        margin-top: 26px;
+        font-size: 18px;
+    }
+
+    .final-cta {
+        margin-top: 24px;
+        padding: 25px 18px;
+    }
+
+    .final-cta-form {
+        width: calc(100% + 36px);
+    }
+
+    .final-cta h3 {
+        margin-bottom: 18px;
+        font-size: clamp(28px, 8vw, 38px);
+        line-height: 1;
+        letter-spacing: -1.5px;
+    }
+
+    .trade-featured-section {
+        width: calc(100% - 28px);
+        margin-bottom: 20px;
+        padding-top: 54px;
+        padding-bottom: 8px;
+    }
+
+    #scrap {
+        padding-top: 32px;
+    }
+
+    .trade-section-header {
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+
+    .trade-section-header h2 {
+        font-size: clamp(30px, 8vw, 38px);
+        line-height: 1.02;
+    }
+
+    .trade-carousel {
+        min-height: 0;
+        padding: 0 40px 48px;
+    }
+
+    .trade-carousel-stage {
+        height: 430px;
+        touch-action: pan-y;
+    }
+
+    .trade-feature-card {
+        width: 100%;
+        max-width: 390px;
+    }
+
+    .trade-feature-image {
+        height: 180px;
+        flex: 0 0 180px;
+        padding: 12px;
+    }
+
+    .trade-feature-content {
+        gap: 10px;
+        padding: 14px;
+    }
+
+    .trade-feature-name {
+        font-size: 1.45rem;
+    }
+
+    .trade-feature-requirement {
+        gap: 8px;
+        padding: 9px 10px;
+        font-size: 0.76rem;
+    }
+
+    .trade-feature-requirement strong,
+    .trade-feature-requirement span {
+        font-size: 0.74rem;
+    }
+
+    .trade-feature-request-btn {
+        width: 100%;
+        min-height: 46px;
+        padding-inline: 12px;
+        gap: 8px;
+        font-size: 9px;
+    }
+
+    .trade-carousel-arrow {
+        width: 34px;
+        height: 44px;
+        color: #aab4bf;
+        font-size: 34px;
+    }
+
+    .trade-carousel-dots {
+        bottom: 10px;
+    }
+
+    .submission-form-section {
+        width: calc(100% - 28px);
+        padding-top: 54px;
+        padding-bottom: 56px;
+    }
+
+    .submit-btn {
+        width: calc(100% - 28px);
+        min-width: 0;
+        align-self: center;
+    }
+
+    .form-section-header {
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-inline: 18px;
+    }
+
+    .form-section-header h2 {
+        max-width: 100%;
+        margin: 10px 0 8px;
+        font-size: clamp(30px, 8.5vw, 38px);
+        line-height: 1.02;
+        letter-spacing: -1.5px;
+    }
+
+    .form-section-header p {
+        font-size: 13px;
+    }
+
+    .form-section-header > div:last-child {
+        align-self: flex-end;
+    }
+
+    .form-block {
+        margin-top: 12px;
+        padding: 18px;
+    }
+
+    .form-block-title {
+        gap: 11px;
+        margin-bottom: 18px;
+    }
+
+    .form-block-title strong {
+        font-size: 16px;
+        line-height: 1.2;
+    }
+
+    .form-block-title small {
+        font-size: 11px;
+    }
+
+    .item-form-card {
+        padding: 14px;
+    }
+
+    .item-form-header {
+        align-items: flex-start;
+        gap: 8px;
+        margin-bottom: 14px;
+    }
+
+    .item-form-header > div {
+        display: grid;
+        min-width: 0;
+        gap: 5px;
+    }
+
+    .item-form-header > div > span {
+        display: block;
+        font-size: 9px;
+        line-height: 1.3;
+    }
+
+    .item-form-header h3 {
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.2;
+    }
+
+    .remove-item-btn {
+        flex: 0 0 auto;
+        padding: 7px 9px;
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 430px) {
+    .trade-carousel {
+        padding-right: 46px;
+        padding-left: 46px;
+    }
+
+    .trade-carousel-stage {
+        height: 410px;
+    }
+
+    .trade-feature-image {
+        height: 160px;
+        flex-basis: 160px;
     }
 }

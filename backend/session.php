@@ -6,14 +6,20 @@
 */
 
 if (session_status() === PHP_SESSION_NONE) {
+    $https = isset($_SERVER['HTTPS'])
+        && $_SERVER['HTTPS'] !== ''
+        && strtolower((string) $_SERVER['HTTPS']) !== 'off';
 
     session_set_cookie_params([
         'lifetime' => 0,
         'path' => '/',
-        'secure' => false, // localhost/XAMPP
+        'secure' => $https,
         'httponly' => true,
         'samesite' => 'Lax'
     ]);
+    ini_set('session.use_strict_mode', '1');
+    ini_set('session.use_only_cookies', '1');
+    ini_set('session.use_trans_sid', '0');
 
     session_start();
 }
@@ -28,7 +34,8 @@ function clearSellerSessionState(): void
         $_SESSION['user_email'],
         $_SESSION['user_name'],
         $_SESSION['seller_2fa_login_user_id'],
-        $_SESSION['seller_2fa_login_started_at']
+        $_SESSION['seller_2fa_login_started_at'],
+        $_SESSION['remember_seller_after_2fa']
     );
 }
 
@@ -43,6 +50,7 @@ function clearAdminSessionState(): void
         $_SESSION['admin_last_name'],
         $_SESSION['admin_email'],
         $_SESSION['admin_2fa_pending_id'],
-        $_SESSION['admin_2fa_pending_at']
+        $_SESSION['admin_2fa_pending_at'],
+        $_SESSION['remember_admin_after_2fa']
     );
 }

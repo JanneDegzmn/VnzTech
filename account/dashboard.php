@@ -232,14 +232,14 @@ $initialAlertMessage =
     >
     <link
         rel="stylesheet"
-        href="/VNZ-TECH/assets/css/transaction_chat.css?v=20261013-guest-calls"
+        href="/VNZ-TECH/assets/css/transaction_chat.css?v=<?= filemtime(__DIR__ . '/../assets/css/transaction_chat.css') ?>"
     >
     <script
-        src="/VNZ-TECH/assets/js/transaction-chat.js?v=20261014-call-media-feedback"
+        src="/VNZ-TECH/assets/js/transaction-chat.js?v=<?= filemtime(__DIR__ . '/../assets/js/transaction-chat.js') ?>"
         defer
     ></script>
     <script
-        src="/VNZ-TECH/assets/js/floating-messages.js?v=20261014-call-media-feedback"
+        src="/VNZ-TECH/assets/js/floating-messages.js?v=<?= filemtime(__DIR__ . '/../assets/js/floating-messages.js') ?>"
         defer
     ></script>
 
@@ -1668,6 +1668,18 @@ $initialAlertMessage =
 
         const requestId =
             ++activePageRequestId;
+        const focusedElement = contentArea.contains(document.activeElement)
+            ? document.activeElement
+            : null;
+        const focusedElementId = focusedElement?.id || '';
+        const selectionStart = focusedElement
+            && typeof focusedElement.selectionStart === 'number'
+            ? focusedElement.selectionStart
+            : null;
+        const selectionEnd = focusedElement
+            && typeof focusedElement.selectionEnd === 'number'
+            ? focusedElement.selectionEnd
+            : null;
 
 
         if (contentAnimationTimer) {
@@ -1817,6 +1829,19 @@ $initialAlertMessage =
             executeScripts(
                 contentArea
             );
+
+            if (focusedElementId) {
+                const replacement = document.getElementById(focusedElementId);
+                replacement?.focus({preventScroll: true});
+                if (
+                    replacement
+                    && selectionStart !== null
+                    && selectionEnd !== null
+                    && typeof replacement.setSelectionRange === 'function'
+                ) {
+                    replacement.setSelectionRange(selectionStart, selectionEnd);
+                }
+            }
 
 
             if (

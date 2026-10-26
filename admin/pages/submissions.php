@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/auth.php';
+require_once __DIR__ . '/../../backend/pagination.php';
 
 requireAdminLogin();
 
@@ -45,6 +46,7 @@ if (!hasPermission('view_submissions')) {
 $search = trim($_GET['search'] ?? '');
 $statusFilter = trim($_GET['status'] ?? '');
 $itemTypeFilter = trim($_GET['item_type'] ?? '');
+$pagination = vnzPaginationState(12);
 
 
 /*
@@ -170,6 +172,8 @@ $sql = "
 
 
 $params = [];
+$countSql = 'SELECT COUNT(*) FROM submissions s WHERE 1 = 1';
+$countParams = [];
 
 
 /*
@@ -193,6 +197,14 @@ if ($search !== '') {
     $params[] = $searchValue;
     $params[] = $searchValue;
     $params[] = $searchValue;
+    $countSql .= "
+        AND (
+            s.reference_number LIKE ?
+            OR s.seller_name LIKE ?
+            OR s.seller_mobile LIKE ?
+        )
+    ";
+    array_push($countParams, $searchValue, $searchValue, $searchValue);
 }
 
 
@@ -212,6 +224,8 @@ if (
     ";
 
     $params[] = $statusFilter;
+    $countSql .= ' AND s.status = ?';
+    $countParams[] = $statusFilter;
 }
 
 
@@ -236,8 +250,20 @@ if (
     ";
 
     $params[] = $itemTypeFilter;
+    $countSql .= "
+        AND EXISTS (
+            SELECT 1
+            FROM submission_items filter_items
+            WHERE filter_items.submission_id = s.id
+            AND filter_items.item_type = ?
+        )
+    ";
+    $countParams[] = $itemTypeFilter;
 }
 
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($countParams);
+$pagination = vnzPaginationClamp($pagination, (int) $countStmt->fetchColumn());
 
 /*
 |--------------------------------------------------------------------------
@@ -262,6 +288,8 @@ $sql .= "
 
     ORDER BY s.created_at DESC
 ";
+$sql .= ' LIMIT ' . $pagination['per_page']
+    . ' OFFSET ' . $pagination['offset'];
 
 
 /*
@@ -274,6 +302,17 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 
 $submissions = $stmt->fetchAll();
+$paginationHtml = vnzRenderPagination(
+    $pagination,
+    array_filter([
+        'search' => $search,
+        'status' => $statusFilter,
+        'item_type' => $itemTypeFilter
+    ], static fn ($value): bool => $value !== ''),
+    'submissions',
+    'admin',
+    '/VNZ-TECH/admin/dashboard.php'
+);
 
 
 /*
@@ -530,6 +569,11 @@ function submissionDate(string $date): string
          SUBMISSIONS TABLE
     ====================================================== -->
 
+    <?php if ($pagination['last_page'] > 1): ?>
+        <?= $paginationHtml ?>
+    <?php endif; ?>
+
+
     <div class="submissions-card">
 
 
@@ -542,9 +586,8 @@ function submissionDate(string $date): string
                 </h2>
 
                 <span id="submissionVisibleCount">
-                    Showing
-                    <?= number_format(count($submissions)) ?>
-                    submission<?= count($submissions) !== 1 ? 's' : '' ?>
+                    <?= number_format($pagination['total']) ?>
+                    submission<?= $pagination['total'] !== 1 ? 's' : '' ?> total
                 </span>
 
             </div>
@@ -849,8 +892,6 @@ function submissionDate(string $date): string
 
             </div>
 
-
-
             <!-- =================================================
                  NO FILTER MATCH
             ================================================== -->
@@ -902,110 +943,17 @@ function submissionDate(string $date): string
     const clearButton =
         document.getElementById('clearSubmissionFilters');
 
-    const visibleCount =
-        document.getElementById('submissionVisibleCount');
-
-    const filteredEmpty =
-        document.getElementById('filteredSubmissionEmpty');
-
-    const rows =
-        Array.from(
-            document.querySelectorAll('.submission-row')
-        );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Apply Filters
-    |--------------------------------------------------------------------------
-    */
-
+    let searchTimer = null;
     function applyFilters() {
-
-        const search =
-            searchInput
-                ? searchInput.value
-                    .trim()
-                    .toLowerCase()
-                : '';
-
-        const selectedStatus =
-            statusFilter
-                ? statusFilter.value
-                : '';
-
-        const selectedItemType =
-            itemTypeFilter
-                ? itemTypeFilter.value
-                : '';
-
-        let visibleRows = 0;
-
-
-        rows.forEach(function (row) {
-
-            const rowSearch =
-                row.dataset.search || '';
-
-            const rowStatus =
-                row.dataset.status || '';
-
-            const rowItemType =
-                row.dataset.itemType || '';
-
-
-            const matchesSearch =
-                search === ''
-                || rowSearch.includes(search);
-
-
-            const matchesStatus =
-                selectedStatus === ''
-                || rowStatus === selectedStatus;
-
-
-            const matchesItemType =
-                selectedItemType === ''
-                || rowItemType.includes(selectedItemType);
-
-
-            const show =
-                matchesSearch
-                && matchesStatus
-                && matchesItemType;
-
-
-            row.style.display =
-                show ? '' : 'none';
-
-
-            if (show) {
-                visibleRows++;
-            }
-
-        });
-
-
-        if (visibleCount) {
-
-            visibleCount.textContent =
-                'Showing '
-                + visibleRows.toLocaleString()
-                + ' submission'
-                + (visibleRows !== 1 ? 's' : '');
-
-        }
-
-
-        if (filteredEmpty) {
-
-            filteredEmpty.style.display =
-                rows.length > 0 && visibleRows === 0
-                    ? 'block'
-                    : 'none';
-
-        }
-
+        window.clearTimeout(searchTimer);
+        searchTimer = window.setTimeout(() => {
+            window.loadAdminPage?.('submissions', {
+                search: searchInput?.value.trim() || '',
+                status: statusFilter?.value || '',
+                item_type: itemTypeFilter?.value || '',
+                list_page: 1
+            });
+        }, 250);
     }
 
 

@@ -138,6 +138,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ) {
             $_SESSION['seller_2fa_login_user_id'] = (int) $user['id'];
             $_SESSION['seller_2fa_login_started_at'] = time();
+            $_SESSION['remember_seller_after_2fa'] =
+                ($_POST['remember'] ?? '') === '1';
             $challengeRedirect = '/VNZ-TECH/account/login.php?two_factor=1';
 
             if (isAjaxRequest()) {
@@ -159,6 +161,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_SESSION['user_id'] = (int) $user['id'];
         $_SESSION['user_email'] = $user['email'];
         $_SESSION['user_name'] = $user['full_name'];
+        if (($_POST['remember'] ?? '') === '1') {
+            vnzIssueRememberLoginToken($pdo, 'seller', (int) $user['id']);
+        } else {
+            vnzRevokeRememberLoginCookie($pdo);
+        }
         chatRegisterPresenceSession('seller', (int) $user['id']);
         chatLogAuthenticationTiming('seller_login', $chatAuthenticationStartedAt);
         if (

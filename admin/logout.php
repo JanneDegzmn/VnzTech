@@ -4,6 +4,7 @@ require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/admin_activity.php';
 require_once __DIR__ . '/../backend/chat_presence_store.php';
+require_once __DIR__ . '/../backend/remember_login.php';
 
 $chatAuthenticationStartedAt = microtime(true);
 
@@ -16,6 +17,7 @@ if (isset($_SESSION['admin_id'])) {
     }
     logAdminActivity($adminId, 'auth.logout', 'Admin signed out.');
 }
+vnzRevokeRememberLoginCookie($pdo);
 chatLogAuthenticationTiming('admin_logout', $chatAuthenticationStartedAt);
 
 

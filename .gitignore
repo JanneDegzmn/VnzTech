@@ -16,6 +16,7 @@ node_modules/
 /vendor/
 
 # Local mail credentials
+/backend/database.local.php
 /backend/mail_config.local.php
 /backend/scaledrone_config.local.php
 

@@ -129,6 +129,12 @@ try {
     $_SESSION['user_id'] = (int) $user['id'];
     $_SESSION['user_email'] = $user['email'];
     $_SESSION['user_name'] = $user['full_name'];
+    if (!empty($_SESSION['remember_seller_after_2fa'])) {
+        vnzIssueRememberLoginToken($pdo, 'seller', (int) $user['id']);
+    } else {
+        vnzRevokeRememberLoginCookie($pdo);
+    }
+    unset($_SESSION['remember_seller_after_2fa']);
     chatRegisterPresenceSession('seller', (int) $user['id']);
     chatLogAuthenticationTiming('seller_2fa_login', $chatAuthenticationStartedAt);
     header('Location: /VNZ-TECH/account/dashboard.php');

@@ -137,8 +137,11 @@ function chatScaledroneCallInboxRoomName(
 
 function chatGetAuthorizedCallInbox(array $actor): array
 {
-    if ($actor['actor_type'] === 'guest') {
-        throw new ChatHttpException('Calls are unavailable for guest conversations.', 403);
+    if ($actor['actor_type'] !== 'seller') {
+        throw new ChatHttpException(
+            'Calls are only available between eligible Seller accounts.',
+            403
+        );
     }
 
     $config = chatScaledroneConfig();
@@ -228,7 +231,7 @@ function chatIsOptionalCallRoomIneligibility(
             [
                 'Calls are only available in one-to-one conversations.',
                 'Calls are unavailable for guest-submission conversations.',
-                'Calls are only available between one Admin and one Seller.',
+                'Calls are only available between eligible Seller accounts.',
                 'Calls are unavailable because this transaction conversation does not match its current seller and responsible Admin.'
             ],
             true
@@ -395,6 +398,7 @@ function chatPublishCallEvent(
     error_log(
         '[call-signal-timing] '
         . json_encode([
+            'timestampUtc' => gmdate('Y-m-d\TH:i:s\Z'),
             'stage' => 'publish-authorization',
             'event' => $event['event'] ?? null,
             'correlationId' => $event['call_id'] ?? null,
@@ -494,6 +498,11 @@ function chatScaledronePublishToRoom(array $roomContext, array $payload): string
         );
         curl_close($curl);
 
+        $publishResult = $responseBody === false || $curlErrorNumber !== 0
+            ? 'transport_error'
+            : ($httpStatus < 200 || $httpStatus >= 300
+                ? 'provider_http_error'
+                : 'published');
         if (
             isset($payload['event'], $payload['call_id'])
             && is_string($payload['event'])
@@ -503,12 +512,14 @@ function chatScaledronePublishToRoom(array $roomContext, array $payload): string
             error_log(
                 '[call-signal-timing] '
                 . json_encode([
+                    'timestampUtc' => gmdate('Y-m-d\TH:i:s\Z'),
                     'stage' => 'scaledrone-publish',
                     'event' => $payload['event'],
                     'correlationId' => $payload['call_id'],
                     'durationMs' => $publishDurationMs,
                     'httpStatus' => $httpStatus,
-                    'transportError' => $curlErrorNumber !== 0
+                    'transportError' => $curlErrorNumber !== 0,
+                    'result' => $publishResult
                 ], JSON_UNESCAPED_SLASHES)
             );
         }

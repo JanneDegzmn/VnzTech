@@ -273,7 +273,7 @@
             }
         };
         const appendCallActions = (row, conversation) => {
-            if (!conversation.call_eligible) {
+            if (root.dataset.actorType !== 'seller' || !conversation.call_eligible) {
                 return;
             }
             const actions = document.createElement('span');
@@ -554,6 +554,16 @@
         windows.forEach((windowElement, index) => {
             windowElement.hidden = index < windows.length - visibleLimit;
         });
+        root.classList.toggle(
+            'is-mobile-chat-open',
+            window.innerWidth <= 700
+                && windows.some(windowElement => (
+                    !windowElement.hidden
+                    && !windowElement.classList.contains('is-minimized')
+                    && !windowElement.classList.contains('is-closing')
+                    && !windowElement.classList.contains('is-call-active')
+                ))
+        );
     }
 
     function preserveCallOwners(root, container) {
@@ -706,6 +716,9 @@
     }
 
     async function requestCall(root, conversationId, mode) {
+        if (root.dataset.actorType !== 'seller') {
+            throw new Error('Calls are only available between eligible Seller accounts.');
+        }
         if (!Number.isInteger(conversationId) || conversationId <= 0 || !['audio', 'video'].includes(mode)) {
             throw new Error('The selected call destination is invalid.');
         }
@@ -727,9 +740,13 @@
     async function handleIncomingCallInvite(root, payload) {
         const conversationId = Number(payload?.conversation_id);
         if (
+            root.dataset.actorType !== 'seller'
+            ||
             payload?.event !== 'call.invite'
             || !Number.isInteger(conversationId)
             || conversationId <= 0
+            || payload.actor_type !== 'seller'
+            || payload.to_actor_type !== 'seller'
             || payload.to_actor_type !== root.dataset.actorType
             || Number(payload.to_actor_id) !== Number(root.dataset.actorId)
             || (
@@ -752,6 +769,9 @@
     }
 
     function initializeCallInbox(root) {
+        if (root.dataset.actorType !== 'seller') {
+            return;
+        }
         const channelId = root.dataset.channelId || '';
         let incomingQueue = Promise.resolve();
         if (!channelId || !window.VNZTransactionChat?.acquireCallInbox) {
@@ -987,6 +1007,10 @@
             }
             existing.classList.remove('is-minimized');
             existing.classList.remove('is-closing');
+            if (existing.classList.contains('is-call-active')) {
+                existing.classList.remove('is-call-active');
+                existing.classList.add('is-call-chat-visible');
+            }
             existing.hidden = false;
             existing.querySelector('[data-chat-input]')?.focus();
             updateWindowVisibility(root);
@@ -1077,6 +1101,7 @@
         backButton.className = 'floating-chat-workspace-back';
         backButton.dataset.chatWorkspaceBack = '';
         backButton.setAttribute('aria-label', 'Back to conversations');
+        backButton.title = 'Back to conversations';
         backButton.textContent = '‹';
         sidebar.append(sidebarHeader, sidebarList);
         body.className = 'floating-chat-window-body';
@@ -1090,6 +1115,7 @@
         await loadConversationWindow(root, windowElement, details);
         windowElement.classList.remove('is-opening');
         windowElement.classList.add('is-open');
+        updateWindowVisibility(root);
     }
 
     async function openWorkspaceConversation(root, windowElement, button) {
@@ -1125,6 +1151,7 @@
             targetType,
             targetId
         });
+        windowElement.classList.remove('is-workspace-list-open');
         const sidebar = windowElement.querySelector('[data-workspace-conversation-list]');
         sidebar.querySelectorAll('[data-workspace-conversation]').forEach(item => {
             item.classList.toggle(
@@ -1423,8 +1450,32 @@
 
             const workspaceBack = event.target.closest('[data-chat-workspace-back]');
             if (workspaceBack) {
-                workspaceBack.closest('[data-floating-chat-window]')
-                    ?.classList.remove('is-mobile-chat-open');
+                const windowElement = workspaceBack.closest('[data-floating-chat-window]');
+                if (!windowElement) {
+                    return;
+                }
+
+                windowElement.classList.remove('is-maximized');
+                windowElement.classList.add('is-workspace-list-open');
+                windowElement.classList.remove('is-minimized', 'is-mobile-chat-open');
+                const maximize = windowElement.querySelector('[data-chat-maximize]');
+                maximize?.setAttribute('aria-pressed', 'false');
+                maximize?.setAttribute('aria-label', 'Maximize chat');
+                if (maximize) {
+                    maximize.title = 'Maximize chat';
+                    maximize.textContent = '□';
+                }
+                windowElement.querySelector('[data-chat-minimize]')
+                    ?.setAttribute('aria-label', 'Minimize chat');
+                updateWindowVisibility(root);
+                refreshWorkspaceSidebar(root, windowElement).catch(error => {
+                    const list = windowElement.querySelector('[data-workspace-conversation-list]');
+                    list.replaceChildren();
+                    const message = document.createElement('p');
+                    message.className = 'floating-chat-window-error';
+                    message.textContent = error.message || 'Unable to load conversations.';
+                    list.append(message);
+                });
                 return;
             }
 
@@ -1438,6 +1489,7 @@
                     chatCloseTimers.set(windowElement, window.setTimeout(() => {
                         windowElement.remove();
                         chatCloseTimers.delete(windowElement);
+                        updateWindowVisibility(root);
                     }, 160));
                 }
                 refreshUnread(root);
@@ -1452,6 +1504,7 @@
                     maximizeButton.textContent = '□';
                 }
                 windowElement?.classList.toggle('is-minimized');
+                updateWindowVisibility(root);
                 minimize.setAttribute(
                     'aria-label',
                     windowElement?.classList.contains('is-minimized')

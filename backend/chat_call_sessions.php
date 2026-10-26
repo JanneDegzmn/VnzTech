@@ -9,6 +9,15 @@ function chatCallParticipantMatches(
         && (int) $call[$prefix . '_id'] === (int) $actor['actor_id'];
 }
 
+function chatCallDiagnosticState(array $call): array
+{
+    return [
+        'status' => (string) $call['status'],
+        'callerAcknowledged' => $call['caller_connected_at'] !== null,
+        'calleeAcknowledged' => $call['callee_connected_at'] !== null
+    ];
+}
+
 function chatCallSummaryContent(array $call, string $status): string
 {
     $label = $call['call_mode'] === 'video' ? 'Video call' : 'Voice call';
@@ -40,6 +49,16 @@ function chatPersistCallEvent(
     array $event
 ): array {
     global $pdo;
+
+    if (
+        ($actor['actor_type'] ?? null) !== 'seller'
+        || ($peer['actor_type'] ?? null) !== 'seller'
+    ) {
+        throw new ChatHttpException(
+            'Calls are only available between eligible Seller accounts.',
+            403
+        );
+    }
 
     $pdo->beginTransaction();
     try {
@@ -86,6 +105,8 @@ function chatPersistCallEvent(
         if (
             !$call
             || (int) $call['conversation_id'] !== $conversationId
+            || $call['caller_type'] !== 'seller'
+            || $call['callee_type'] !== 'seller'
             || !(
                 chatCallParticipantMatches($call, 'caller', $actor)
                 && chatCallParticipantMatches($call, 'callee', $peer)
@@ -107,11 +128,16 @@ function chatPersistCallEvent(
                 return [
                     'duplicate' => true,
                     'relay' => true,
-                    'summary_message' => null
+                    'summary_message' => null,
+                    'diagnostic_state' => chatCallDiagnosticState($call)
                 ];
             }
             $pdo->commit();
-            return ['duplicate' => false, 'summary_message' => null];
+            return [
+                'duplicate' => false,
+                'summary_message' => null,
+                'diagnostic_state' => chatCallDiagnosticState($call)
+            ];
         }
 
         if (in_array($call['status'], [
@@ -136,7 +162,8 @@ function chatPersistCallEvent(
             return [
                 'duplicate' => true,
                 'relay' => true,
-                'summary_message' => null
+                'summary_message' => null,
+                'diagnostic_state' => chatCallDiagnosticState($call)
             ];
         }
 
@@ -155,7 +182,8 @@ function chatPersistCallEvent(
                     return [
                         'duplicate' => true,
                         'relay' => true,
-                        'summary_message' => null
+                        'summary_message' => null,
+                        'diagnostic_state' => chatCallDiagnosticState($call)
                     ];
                 }
                 if ($status === 'ringing') {
@@ -165,6 +193,7 @@ function chatPersistCallEvent(
                             accepted_at = CURRENT_TIMESTAMP(6)
                         WHERE call_id = ?
                     ")->execute([$event['call_id']]);
+                    $call['status'] = 'accepted';
                 }
                 break;
 
@@ -186,6 +215,8 @@ function chatPersistCallEvent(
                 ");
                 $connectedStmt->execute([$event['call_id']]);
                 $connected = $connectedStmt->fetch(PDO::FETCH_ASSOC);
+                $call['caller_connected_at'] = $connected['caller_connected_at'];
+                $call['callee_connected_at'] = $connected['callee_connected_at'];
                 if ($connected['caller_connected_at'] !== null
                     && $connected['callee_connected_at'] !== null) {
                     $pdo->prepare("
@@ -197,6 +228,7 @@ function chatPersistCallEvent(
                             )
                         WHERE call_id = ?
                     ")->execute([$event['call_id']]);
+                    $call['status'] = 'connected';
                 }
                 break;
 
@@ -343,7 +375,8 @@ function chatPersistCallEvent(
         return [
             'duplicate' => false,
             'relay' => true,
-            'summary_message' => $summaryMessage
+            'summary_message' => $summaryMessage,
+            'diagnostic_state' => chatCallDiagnosticState($call)
         ];
     } catch (Throwable $error) {
         if ($pdo->inTransaction()) {

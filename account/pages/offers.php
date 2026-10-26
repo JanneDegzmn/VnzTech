@@ -6,6 +6,7 @@ header('Expires: 0');
 
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
+require_once __DIR__ . '/../../backend/pagination.php';
 
 if (empty($_SESSION['user_logged_in']) || empty($_SESSION['user_id'])) {
     http_response_code(401);
@@ -21,6 +22,13 @@ if (empty($_SESSION['user_logged_in']) || empty($_SESSION['user_id'])) {
 }
 
 $userId = (int) $_SESSION['user_id'];
+$offerStates = ['all', 'needs_response', 'waiting_vnz', 'closed', 'other'];
+$offerStateFilter = trim((string) ($_GET['offer_state'] ?? 'all'));
+if (!in_array($offerStateFilter, $offerStates, true)) {
+    $offerStateFilter = 'all';
+}
+$offerSearch = trim((string) ($_GET['offer_search'] ?? ''));
+$pagination = vnzPaginationState(12);
 
 if ($userId <= 0) {
     http_response_code(401);
@@ -81,6 +89,39 @@ try {
         exit;
     }
 
+    $whereSql = "
+        WHERE s.user_id = ?
+          AND EXISTS (SELECT 1 FROM offers offer_exists WHERE offer_exists.submission_id = s.id)
+    ";
+    $queryParams = [$userId];
+    if ($offerSearch !== '') {
+        $whereSql .= "
+            AND (
+                s.reference_number LIKE ?
+                OR EXISTS (
+                    SELECT 1
+                    FROM submission_items search_item
+                    WHERE search_item.submission_id = s.id
+                      AND CONCAT_WS(' ', search_item.item_type, search_item.brand, search_item.model) LIKE ?
+                )
+            )
+        ";
+        $searchValue = '%' . $offerSearch . '%';
+        array_push($queryParams, $searchValue, $searchValue);
+    }
+    $stateSql = match ($offerStateFilter) {
+        'needs_response' => " AND s.status = 'offer_sent' AND (SELECT sender_type FROM offers WHERE submission_id = s.id ORDER BY id DESC LIMIT 1) = 'admin'",
+        'waiting_vnz' => " AND s.status = 'offer_sent' AND (SELECT sender_type FROM offers WHERE submission_id = s.id ORDER BY id DESC LIMIT 1) = 'seller'",
+        'closed' => " AND s.status IN ('accepted', 'declined', 'cancelled', 'completed')",
+        'other' => " AND s.status NOT IN ('offer_sent', 'accepted', 'declined', 'cancelled', 'completed')",
+        default => ''
+    };
+    $whereSql .= $stateSql;
+
+    $countStmt = $pdo->prepare('SELECT COUNT(*) FROM submissions s ' . $whereSql);
+    $countStmt->execute($queryParams);
+    $pagination = vnzPaginationClamp($pagination, (int) $countStmt->fetchColumn());
+
     $offersStmt = $pdo->prepare("
         SELECT
             s.id AS submission_id,
@@ -128,11 +169,59 @@ try {
                 ORDER BY latest_offer.id DESC
                 LIMIT 1
             )
-        WHERE s.user_id = ?
+        {$whereSql}
         ORDER BY o.id DESC
+        LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
     ");
-    $offersStmt->execute([$userId]);
+    $offersStmt->execute($queryParams);
     $offers = $offersStmt->fetchAll();
+
+    $stateSummaryStmt = $pdo->prepare("
+        SELECT
+            SUM(CASE WHEN submission_status = 'offer_sent' AND latest_sender = 'admin' THEN 1 ELSE 0 END) AS needs_response,
+            SUM(CASE WHEN submission_status = 'offer_sent' AND latest_sender = 'seller' THEN 1 ELSE 0 END) AS waiting_vnz,
+            SUM(CASE WHEN submission_status IN ('accepted', 'declined', 'cancelled', 'completed') THEN 1 ELSE 0 END) AS closed,
+            SUM(CASE WHEN submission_status NOT IN ('offer_sent', 'accepted', 'declined', 'cancelled', 'completed') THEN 1 ELSE 0 END) AS other
+        FROM (
+            SELECT
+                s.status AS submission_status,
+                (
+                    SELECT latest_offer.sender_type
+                    FROM offers latest_offer
+                    WHERE latest_offer.submission_id = s.id
+                    ORDER BY latest_offer.id DESC
+                    LIMIT 1
+                ) AS latest_sender
+            FROM submissions s
+            WHERE s.user_id = ?
+              AND EXISTS (
+                  SELECT 1 FROM offers offer_exists
+                  WHERE offer_exists.submission_id = s.id
+              )
+        ) offer_states
+    ");
+    $stateSummaryStmt->execute([$userId]);
+    $counts = array_map(
+        'intval',
+        $stateSummaryStmt->fetch(PDO::FETCH_ASSOC) ?: []
+    );
+    $counts += [
+        'needs_response' => 0,
+        'waiting_vnz' => 0,
+        'closed' => 0,
+        'other' => 0
+    ];
+    $totalOffers = array_sum($counts);
+    $paginationHtml = vnzRenderPagination(
+        $pagination,
+        array_filter([
+            'offer_state' => $offerStateFilter,
+            'offer_search' => $offerSearch
+        ], static fn ($value): bool => $value !== '' && $value !== 'all'),
+        'offers',
+        'seller',
+        '/VNZ-TECH/account/dashboard.php?page=offers'
+    );
 } catch (Throwable $e) {
     error_log('Seller offers page error: ' . $e->getMessage());
     http_response_code(500);
@@ -146,13 +235,6 @@ try {
 
     exit;
 }
-
-$counts = [
-    'needs_response' => 0,
-    'waiting_vnz' => 0,
-    'closed' => 0,
-    'other' => 0
-];
 
 foreach ($offers as &$offer) {
     $submissionStatus = strtolower((string) $offer['submission_status']);
@@ -168,7 +250,6 @@ foreach ($offers as &$offer) {
         $offer['negotiation_state'] = 'other';
     }
 
-    $counts[$offer['negotiation_state']]++;
 }
 unset($offer);
 
@@ -222,7 +303,7 @@ $stateDescriptions = [
         </article>
         <article class="offers-summary-card">
             <span>TOTAL OFFERS</span>
-            <strong><?= number_format(count($offers)) ?></strong>
+            <strong><?= number_format($totalOffers) ?></strong>
             <small>Submissions with an offer</small>
         </article>
     </div>
@@ -232,17 +313,19 @@ $stateDescriptions = [
             <h2>Your negotiations</h2>
             <p>Each card shows the latest offer. Open a submission to see its full history and available actions.</p>
         </div>
-        <label class="offers-search">
-            <input type="search" data-offers-search aria-label="Search offers" placeholder="Search by reference or item">
-        </label>
+        <form class="offers-search" data-offers-search-form>
+            <input id="offers-search-field" type="search" name="offer_search" data-offers-search aria-label="Search offers" placeholder="Search by reference or item" value="<?= sellerOfferEscape($offerSearch) ?>">
+            <input type="hidden" name="offer_state" value="<?= sellerOfferEscape($offerStateFilter) ?>">
+            <button type="submit">Search</button>
+        </form>
     </div>
 
     <div class="offers-filters" role="group" aria-label="Filter offers">
-        <button type="button" class="is-selected" data-offer-filter="all" aria-pressed="true">All (<?= number_format(count($offers)) ?>)</button>
-        <button type="button" data-offer-filter="needs_response" aria-pressed="false">Needs your response (<?= number_format($counts['needs_response']) ?>)</button>
-        <button type="button" data-offer-filter="waiting_vnz" aria-pressed="false">Waiting for VNZ TECH (<?= number_format($counts['waiting_vnz']) ?>)</button>
-        <button type="button" data-offer-filter="closed" aria-pressed="false">Closed (<?= number_format($counts['closed']) ?>)</button>
-        <button type="button" data-offer-filter="other" aria-pressed="false">Under review (<?= number_format($counts['other']) ?>)</button>
+        <button type="button" class="<?= $offerStateFilter === 'all' ? 'is-selected' : '' ?>" data-offer-filter="all" aria-pressed="<?= $offerStateFilter === 'all' ? 'true' : 'false' ?>">All (<?= number_format($totalOffers) ?>)</button>
+        <button type="button" class="<?= $offerStateFilter === 'needs_response' ? 'is-selected' : '' ?>" data-offer-filter="needs_response" aria-pressed="<?= $offerStateFilter === 'needs_response' ? 'true' : 'false' ?>">Needs your response (<?= number_format($counts['needs_response']) ?>)</button>
+        <button type="button" class="<?= $offerStateFilter === 'waiting_vnz' ? 'is-selected' : '' ?>" data-offer-filter="waiting_vnz" aria-pressed="<?= $offerStateFilter === 'waiting_vnz' ? 'true' : 'false' ?>">Waiting for VNZ TECH (<?= number_format($counts['waiting_vnz']) ?>)</button>
+        <button type="button" class="<?= $offerStateFilter === 'closed' ? 'is-selected' : '' ?>" data-offer-filter="closed" aria-pressed="<?= $offerStateFilter === 'closed' ? 'true' : 'false' ?>">Closed (<?= number_format($counts['closed']) ?>)</button>
+        <button type="button" class="<?= $offerStateFilter === 'other' ? 'is-selected' : '' ?>" data-offer-filter="other" aria-pressed="<?= $offerStateFilter === 'other' ? 'true' : 'false' ?>">Under review (<?= number_format($counts['other']) ?>)</button>
     </div>
 
     <?php if (empty($offers)): ?>
@@ -320,6 +403,7 @@ $stateDescriptions = [
                 <span>Try a different reference or item name.</span>
             </div>
         </div>
+        <?= $paginationHtml ?>
     <?php endif; ?>
 </section>
 
@@ -331,48 +415,28 @@ $stateDescriptions = [
         return;
     }
 
-    const cards = Array.from(page.querySelectorAll('[data-offer-card]'));
     const searchInput = page.querySelector('[data-offers-search]');
-    const emptyMessage = page.querySelector('[data-offers-empty]');
+    const searchForm = page.querySelector('[data-offers-search-form]');
     const filters = Array.from(page.querySelectorAll('[data-offer-filter]'));
-    let activeFilter = 'all';
-
-    function updateOffers() {
-        const search = searchInput ? searchInput.value.trim().toLowerCase() : '';
-        let visibleCount = 0;
-
-        cards.forEach((card) => {
-            const matchesFilter =
-                activeFilter === 'all' || card.dataset.state === activeFilter;
-            const matchesSearch =
-                !search || (card.dataset.search || '').includes(search);
-            const visible = matchesFilter && matchesSearch;
-
-            card.hidden = !visible;
-            visibleCount += visible ? 1 : 0;
-        });
-
-        if (emptyMessage) {
-            emptyMessage.hidden = visibleCount > 0;
-        }
-    }
 
     filters.forEach((filter) => {
         filter.addEventListener('click', () => {
-            activeFilter = filter.dataset.offerFilter || 'all';
-
-            filters.forEach((button) => {
-                const selected = button === filter;
-                button.classList.toggle('is-selected', selected);
-                button.setAttribute('aria-pressed', selected ? 'true' : 'false');
+            window.loadSellerPage('offers', true, {
+                offer_state: filter.dataset.offerFilter || 'all',
+                offer_search: searchInput ? searchInput.value.trim() : ''
             });
-
-            updateOffers();
         });
     });
 
-    if (searchInput) {
-        searchInput.addEventListener('input', updateOffers);
+    if (searchForm) {
+        searchForm.addEventListener('submit', (event) => {
+            event.preventDefault();
+            const formData = new FormData(searchForm);
+            window.loadSellerPage('offers', true, {
+                offer_state: formData.get('offer_state') || 'all',
+                offer_search: formData.get('offer_search') || ''
+            });
+        });
     }
 })();
 </script>

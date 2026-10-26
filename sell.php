@@ -407,16 +407,12 @@ $openFormRequested =
                 </span>
 
                 <h1>
-                    YOUR BROKEN PHONE
-                    <span>STILL HAS VALUE.</span>
+                    BROKEN PHONE?
+                    <span>BAKA PERA PA ’YAN.</span>
                 </h1>
 
                 <p class="hero-description">
-                Ang mga sirang phone, kahit hindi na umaandar, 
-                ay maaari pa ring bilhin bilang scrap. Tumatanggap 
-                kami ng iba't ibang uri ng defective phones, 
-                kabilang ang mga may cracked screens, dead units, 
-                water damage, at iba pang hardware issues.
+                    We buy broken and defective phones and recover value from their boards and components.
                 </p>
 
 
@@ -427,9 +423,7 @@ $openFormRequested =
                         class="hero-btn hero-btn-primary"
                         data-open-form="phone"
                     >
-                        <span>
-                            SELL A PHONE
-                        </span>
+                        <span>SELL YOUR BROKEN PHONE</span>
 
                         <b>→</b>
                     </button>
@@ -438,9 +432,9 @@ $openFormRequested =
                     <button
                         type="button"
                         class="hero-btn hero-btn-secondary"
-                        data-open-form="scrap"
+                        id="openRatesBtnHero"
                     >
-                        SELL SCRAP
+                        CHECK BUYING RATES
                     </button>
 
                     
@@ -870,6 +864,7 @@ $openFormRequested =
             action="/VNZ-TECH/backend/submit_submission.php"
             method="POST"
             enctype="multipart/form-data"
+            novalidate
         >
 
             <!--
@@ -891,15 +886,15 @@ $openFormRequested =
                  SELLER
             ================================================== -->
 
-            <div class="form-block">
+            <details class="form-block form-block-disclosure">
 
-                <div class="form-block-title">
+                <summary class="form-block-title">
 
                     <span>
                         01
                     </span>
 
-                    <div>
+                    <span class="form-block-title-copy">
 
                         <strong>
                             Seller Information
@@ -909,10 +904,9 @@ $openFormRequested =
                             Tell us who is submitting the item.
                         </small>
 
-                    </div>
+                    </span>
 
-                </div>
-
+                </summary>
 
                 <div class="form-grid">
 
@@ -1045,22 +1039,22 @@ $openFormRequested =
 
                 </div>
 
-            </div>
+            </details>
 
 
             <!-- =================================================
                  ITEMS
             ================================================== -->
 
-            <div class="form-block">
+            <details class="form-block form-block-disclosure">
 
-                <div class="form-block-title">
+                <summary class="form-block-title">
 
                     <span>
                         02
                     </span>
 
-                    <div>
+                    <span class="form-block-title-copy">
 
                         <strong>
                             Item Details
@@ -1070,10 +1064,9 @@ $openFormRequested =
                             Add every phone or board you want us to review.
                         </small>
 
-                    </div>
+                    </span>
 
-                </div>
-
+                </summary>
 
                 <div id="itemsContainer"></div>
 
@@ -1086,53 +1079,7 @@ $openFormRequested =
                     + Add Another Item
                 </button>
 
-            </div>
-
-
-            <!-- =================================================
-                 SELLER NOTES
-            ================================================== -->
-
-            <div class="form-block">
-
-                <div class="form-block-title">
-
-                    <span>
-                        03
-                    </span>
-
-                    <div>
-
-                        <strong>
-                            Additional Information
-                        </strong>
-
-                        <small>
-                            Optional notes about your items.
-                        </small>
-
-                    </div>
-
-                </div>
-
-
-                <div class="form-group">
-
-                    <label for="seller_notes">
-                        Seller Notes
-                    </label>
-
-                    <textarea
-                        id="seller_notes"
-                        name="seller_notes"
-                        rows="5"
-                        maxlength="1500"
-                        placeholder="Repair history, missing parts, source of the items, etc."
-                    ></textarea>
-
-                </div>
-
-            </div>
+            </details>
 
 
             <div class="form-disclaimer">
@@ -1447,7 +1394,7 @@ $openFormRequested =
                     ?>
                     <article class="trade-feature-card <?= $featurePosition ?>" data-trade-slide="<?= (int) $featureIndex ?>" aria-hidden="<?= $featureIndex === 0 ? 'false' : 'true' ?>">
                         <button type="button" class="trade-image-trigger trade-feature-image" data-image-preview aria-label="View larger image of <?= htmlspecialchars($featureItem['name'], ENT_QUOTES, 'UTF-8') ?>">
-                            <img src="<?= htmlspecialchars($featureImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($featureItem['name'], ENT_QUOTES, 'UTF-8') ?>" onerror="this.src='/VNZ-TECH/assets/images/vnz.png';">
+                            <img src="<?= htmlspecialchars($featureImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($featureItem['name'], ENT_QUOTES, 'UTF-8') ?>" loading="lazy" decoding="async" onerror="this.src='/VNZ-TECH/assets/images/vnz.png';">
                         </button>
 
                         <div class="trade-feature-content">
@@ -1502,6 +1449,8 @@ $openFormRequested =
                 const nextButton = carousel.querySelector('[data-trade-next]');
                 const positionClasses = ['is-prev', 'is-active', 'is-next', 'is-hidden'];
                 let activeIndex = 0;
+                let swipeStart = null;
+                let suppressSwipeClick = false;
 
                 function renderCarousel() {
                     const count = cards.length;
@@ -1552,6 +1501,43 @@ $openFormRequested =
                         moveCarousel(1);
                     }
                 });
+
+                const carouselStage = carousel.querySelector('.trade-carousel-stage');
+                carouselStage?.addEventListener('pointerdown', function (event) {
+                    if (event.pointerType === 'mouse' && event.button !== 0) {
+                        return;
+                    }
+                    swipeStart = { x: event.clientX, y: event.clientY };
+                });
+                carouselStage?.addEventListener('pointerup', function (event) {
+                    if (!swipeStart) {
+                        return;
+                    }
+                    const deltaX = event.clientX - swipeStart.x;
+                    const deltaY = event.clientY - swipeStart.y;
+                    swipeStart = null;
+
+                    if (Math.abs(deltaX) < 44 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+                        return;
+                    }
+
+                    moveCarousel(deltaX < 0 ? 1 : -1);
+                    suppressSwipeClick = true;
+                    window.setTimeout(function () {
+                        suppressSwipeClick = false;
+                    }, 0);
+                });
+                carouselStage?.addEventListener('pointercancel', function () {
+                    swipeStart = null;
+                });
+                carousel.addEventListener('click', function (event) {
+                    if (!suppressSwipeClick) {
+                        return;
+                    }
+                    event.preventDefault();
+                    event.stopPropagation();
+                    suppressSwipeClick = false;
+                }, true);
 
                 renderCarousel();
             })();
@@ -1612,7 +1598,7 @@ $openFormRequested =
                             ?>
                             <article class="trade-modal-card-item">
                                 <button type="button" class="trade-image-trigger trade-modal-image-trigger" data-image-preview aria-label="View larger image of <?= htmlspecialchars($tradeItem['name'], ENT_QUOTES, 'UTF-8') ?>">
-                                    <img src="<?= htmlspecialchars($tradeImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($tradeItem['name'], ENT_QUOTES, 'UTF-8') ?>" onerror="this.src='/VNZ-TECH/assets/images/vnz.png';">
+                                    <img src="<?= htmlspecialchars($tradeImage, ENT_QUOTES, 'UTF-8') ?>" alt="<?= htmlspecialchars($tradeItem['name'], ENT_QUOTES, 'UTF-8') ?>" loading="lazy" decoding="async" onerror="this.src='/VNZ-TECH/assets/images/vnz.png';">
                                 </button>
                                 <div class="trade-modal-card-content">
                                     <div class="trade-modal-card-top">
@@ -1970,6 +1956,9 @@ $openFormRequested =
         const openRatesBtnNav =
             document.getElementById('openRatesBtnNav');
 
+        const openRatesBtnHero =
+            document.getElementById('openRatesBtnHero');
+
         const openRatesBtnForm =
             document.getElementById('openRatesBtnForm');
 
@@ -2110,6 +2099,10 @@ $openFormRequested =
 
         if (openRatesBtnNav) {
             openRatesBtnNav.addEventListener('click', openRatesModal);
+        }
+
+        if (openRatesBtnHero) {
+            openRatesBtnHero.addEventListener('click', openRatesModal);
         }
 
         if (openRatesBtnForm) {
@@ -2358,8 +2351,7 @@ $openFormRequested =
                 {
                     method: 'GET',
                     credentials: 'same-origin',
-                    cache: 'no-store',
-                    headers: {'X-Requested-With': 'XMLHttpRequest'}
+                    cache: 'no-store'
                 }
             );
             const html = await response.text();
@@ -2554,15 +2546,25 @@ $openFormRequested =
             trackSubmissionMessage.hidden = false;
         }
 
+        async function readTrackingResponse(response) {
+            const responseText = await response.text();
+            let data;
+            try {
+                data = JSON.parse(responseText);
+            } catch {
+                throw new Error(
+                    `The tracking service returned a webpage instead of data (HTTP ${response.status}). Please refresh and try again.`
+                );
+            }
+            return data;
+        }
+
         async function refreshTrackedSubmission() {
             const response = await fetch('/VNZ-TECH/backend/track_submission.php', {
                 method: 'POST',
-                body: new FormData(trackSubmissionForm),
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
+                body: new FormData(trackSubmissionForm)
             });
-            const data = await response.json();
+            const data = await readTrackingResponse(response);
             if (!response.ok || !data.success) {
                 throw new Error(data.message || 'Unable to refresh this submission.');
             }
@@ -2819,13 +2821,10 @@ $openFormRequested =
             try {
                 const response = await fetch('/VNZ-TECH/backend/track_submission.php', {
                     method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
+                    body: formData
                 });
 
-                const data = await response.json();
+                const data = await readTrackingResponse(response);
 
                 if (!response.ok || !data.success) {
                     throw new Error(data.message || 'Unable to track this submission.');
@@ -2862,6 +2861,59 @@ const addItemBtn =
 
 const form =
     document.getElementById('sellerSubmissionForm');
+
+form?.querySelectorAll('details.form-block-disclosure').forEach(function (disclosure) {
+    disclosure.addEventListener('toggle', function () {
+        if (!disclosure.open) {
+            return;
+        }
+
+        form.querySelectorAll('details.form-block-disclosure[open]').forEach(function (openDisclosure) {
+            if (openDisclosure !== disclosure) {
+                openDisclosure.open = false;
+            }
+        });
+    });
+});
+
+form?.addEventListener('submit', function (event) {
+    const invalidControl = form.querySelector(':invalid');
+    if (invalidControl) {
+        event.preventDefault();
+        const disclosure = invalidControl.closest('details.form-block-disclosure');
+        disclosure?.setAttribute('open', '');
+        if (
+            invalidControl instanceof HTMLInputElement
+            || invalidControl instanceof HTMLSelectElement
+            || invalidControl instanceof HTMLTextAreaElement
+        ) {
+            invalidControl.reportValidity();
+        }
+        return;
+    }
+
+    const missingPhotoInput = Array.from(
+        form.querySelectorAll('[data-photo-input]')
+    ).find(function (input) {
+        return !input.files || input.files.length === 0;
+    });
+
+    if (!missingPhotoInput) {
+        return;
+    }
+
+    event.preventDefault();
+    missingPhotoInput.closest('details.form-block-disclosure').open = true;
+    missingPhotoInput.closest('.photo-upload-block')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
+    });
+    window.VNZDialog.alert({
+        title: 'Photos Required',
+        message: 'Please add at least one photo for every item.',
+        confirmLabel: 'Close'
+    });
+}, true);
 
 const formSection =
     document.getElementById('submissionFormSection');
@@ -3273,23 +3325,6 @@ function addItem() {
                 </div>
 
 
-                <div class="form-group full-width">
-
-                    <label>
-                        Issue Details
-                        <small>Optional</small>
-                    </label>
-
-                    <textarea
-                        name="items[${index}][issue_details]"
-                        rows="3"
-                        maxlength="1000"
-                        placeholder="Describe the issue or what happened to the phone..."
-                    ></textarea>
-
-                </div>
-
-
                 <div class="form-group">
 
                     <label>
@@ -3513,7 +3548,6 @@ function addItem() {
                     name="photos[${index}][]"
                     accept="image/jpeg,image/png,image/webp"
                     multiple
-                    required
                     data-photo-input
                 >
 
@@ -3915,6 +3949,10 @@ if (addItemBtn && form && itemsContainer) {
     form.addEventListener(
         'submit',
         function(event) {
+
+        if (event.defaultPrevented) {
+            return;
+        }
 
         const cards =
             itemsContainer.querySelectorAll(

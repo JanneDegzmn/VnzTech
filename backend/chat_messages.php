@@ -56,10 +56,11 @@ function chatMessageReplyPayload(PDO $pdo, int $conversationId, int $messageId, 
     $content = (string) ($reply['content'] ?? '');
     if (!empty($reply['deleted_at'])) {
         $content = 'This message was deleted';
-    } elseif ($content === '' && in_array($reply['message_type'] ?? '', ['image', 'file', 'voice'], true)) {
+    } elseif ($content === '' && in_array($reply['message_type'] ?? '', ['image', 'file', 'voice', 'video'], true)) {
         $content = match ($reply['message_type']) {
             'file' => 'PDF document',
             'voice' => 'Voice message',
+            'video' => 'Video',
             default => 'Image'
         };
     }
@@ -346,7 +347,7 @@ function chatNormalizeMessagePayload(
                 (string) $message['attachment_path'],
                 PATHINFO_EXTENSION
             ));
-        if (in_array($attachmentExtension, ['jpg', 'png', 'webp', 'pdf', 'ogg', 'webm'], true)) {
+        if (in_array($attachmentExtension, ['jpg', 'png', 'webp', 'pdf', 'ogg', 'webm', 'mp4'], true)) {
             $attachmentName = chatSanitizeAttachmentName(
                 (string) ($message['attachment_name'] ?? ''),
                 $attachmentExtension
@@ -369,12 +370,12 @@ function chatNormalizeMessagePayload(
         'content' => !empty($message['deleted_at'])
             ? 'This message was deleted'
             : (
-                $message['message_type'] === 'voice'
+                in_array($message['message_type'], ['voice', 'video'], true)
                 && trim((string) ($message['content'] ?? '')) === ''
-                    ? 'Voice message'
+                    ? ($message['message_type'] === 'voice' ? 'Voice message' : 'Video')
                     : (string) ($message['content'] ?? '')
             ),
-        'attachment_url' => in_array($message['message_type'], ['image', 'file', 'voice'], true)
+        'attachment_url' => in_array($message['message_type'], ['image', 'file', 'voice', 'video'], true)
             && empty($message['deleted_at'])
             && !empty($message['attachment_path'])
                 ? '/VNZ-TECH/backend/chat_attachment.php?message_id='
@@ -662,7 +663,7 @@ try {
 
         $messageType = strtolower(trim($messageTypeInput));
 
-        if (!in_array($messageType, ['text', 'image', 'file', 'voice'], true)) {
+        if (!in_array($messageType, ['text', 'image', 'file', 'voice', 'video'], true)) {
             throw new ChatHttpException(
                 'Unsupported message type.',
                 422
@@ -679,7 +680,7 @@ try {
         $hasAttachment = is_array($attachmentFile)
             && ($attachmentFile['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_NO_FILE;
         if (
-            (in_array($messageType, ['image', 'file', 'voice'], true)) !== $hasAttachment
+            (in_array($messageType, ['image', 'file', 'voice', 'video'], true)) !== $hasAttachment
         ) {
             throw new ChatHttpException(
                 'Select an attachment that matches the selected message type.',
@@ -754,7 +755,8 @@ try {
             ? match ($messageType) {
                 'image' => chatStoreImageAttachment($attachmentFile),
                 'file' => chatStorePdfAttachment($attachmentFile),
-                'voice' => chatStoreVoiceAttachment($attachmentFile)
+                'voice' => chatStoreVoiceAttachment($attachmentFile),
+                'video' => chatStoreVideoAttachment($attachmentFile)
             }
             : null;
 

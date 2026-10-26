@@ -13,6 +13,7 @@ register_shutdown_function(static function () use (
         (hrtime(true) - $callSignalRequestStartedAt) / 1_000_000,
         2
     );
+    $callSignalTiming['timestampUtc'] = gmdate('Y-m-d\TH:i:s\Z');
     $callSignalTiming['httpStatus'] = http_response_code();
     error_log(
         '[call-signal-timing] '
@@ -176,6 +177,8 @@ try {
         (hrtime(true) - $stageStartedAt) / 1_000_000,
         2
     );
+    $callSignalTiming['persistedCallState'] =
+        $callResult['diagnostic_state'] ?? null;
     if ($callResult['duplicate']) {
         if (chatCallSignalShouldPublishDuplicate($callResult)) {
             $stageStartedAt = hrtime(true);

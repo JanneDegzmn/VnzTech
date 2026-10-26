@@ -209,7 +209,9 @@ function handleTradeImageUpload($file, ?string $existingImagePath = null): ?stri
     return 'uploads/trade_items/' . $randomName;
 }
 
-requireAdminLogin();
+if (!isAdminLoggedIn()) {
+    jsonError('Admin session is missing or expired. Please log in again.', 401);
+}
 
 $currentAdmin = getCurrentAdmin();
 

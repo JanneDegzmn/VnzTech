@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/csrf.php';
+require_once __DIR__ . '/../backend/remember_login.php';
 
 $token = (string) ($_GET['token'] ?? $_POST['token'] ?? '');
 $validTokenFormat = preg_match('/\A[a-f0-9]{64}\z/', $token) === 1;
@@ -70,6 +71,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $message = 'This reset link is invalid or expired. Request a new link to continue.';
                         $isError = true;
                     } else {
+                        vnzRevokeRememberLoginTokens(
+                            $pdo,
+                            'seller',
+                            (int) $reset['user_id']
+                        );
                         $usedStmt = $pdo->prepare("
                             UPDATE seller_password_reset_attempts
                             SET used_at = NOW(), token_hash = NULL

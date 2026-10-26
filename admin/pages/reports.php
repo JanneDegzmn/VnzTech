@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/auth.php';
 require_once __DIR__ . '/../../backend/csrf.php';
+require_once __DIR__ . '/../../backend/pagination.php';
 
 requireAdminLogin();
 
@@ -103,6 +104,20 @@ $transactionCountStmt = $pdo->prepare("
 ");
 $transactionCountStmt->execute([$startAt, $endBefore]);
 $totalTransactions = (int) $transactionCountStmt->fetchColumn();
+$pagination = vnzPaginationClamp(
+    vnzPaginationState(12),
+    $totalTransactions
+);
+$paginationHtml = vnzRenderPagination(
+    $pagination,
+    [
+        'date_from' => $dateFrom,
+        'date_to' => $dateTo
+    ],
+    'reports',
+    'admin',
+    '/VNZ-TECH/admin/dashboard.php'
+);
 
 $completedValueStmt = $pdo->prepare("
         SELECT COALESCE(SUM(final_amount), 0)
@@ -169,7 +184,9 @@ if (($_GET['format'] ?? '') === 'csv') {
     exit;
 }
 
-$transactionStmt = $pdo->prepare($transactionSql . ' LIMIT 100');
+$transactionStmt = $pdo->prepare(
+    $transactionSql . " LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}"
+);
 $transactionStmt->execute([$startAt, $endBefore]);
 $transactions = $transactionStmt->fetchAll();
 
@@ -270,6 +287,9 @@ $statusLabels = [
                 </p>
             </div>
         </div>
+        <?php if ($pagination['last_page'] > 1): ?>
+            <?= $paginationHtml ?>
+        <?php endif; ?>
 
         <?php if (!$transactions): ?>
             <div class="operations-empty">No transactions in this date range.</div>

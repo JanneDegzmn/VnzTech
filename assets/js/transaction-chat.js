@@ -283,7 +283,7 @@
             signal: signal || undefined
         });
         if (typeof onResponse === 'function') {
-            onResponse(response.status);
+            onResponse(response);
         }
 
         return readJsonResponse(response);
@@ -519,7 +519,7 @@
                 room.callRoomName = authorizedCallRoomNames.get(conversationId) || null;
                 if (room.callRoomName && !room.callSubscription) {
                     await subscribeRoom(room.callRoomName, room, true).catch(error => {
-                        console.warn('Conversation call signaling subscription failed:', error.message);
+                        console.warn('Conversation call signaling subscription failed.');
                         room.callbacks.forEach(callbacks => {
                             callbacks.onCallState?.(false, error);
                         });
@@ -1014,6 +1014,16 @@
             attachmentImage.loading = 'lazy';
             attachmentButton.append(attachmentImage);
         }
+        if (message.message_type === 'video' && message.attachment_url && !message.deleted_at) {
+            const video = document.createElement('video');
+            video.className = 'transaction-chat-video-attachment';
+            video.controls = true;
+            video.playsInline = true;
+            video.preload = 'metadata';
+            video.src = message.attachment_url;
+            video.setAttribute('aria-label', 'Video attachment');
+            attachmentButton = video;
+        }
         if (message.message_type === 'file' && message.attachment_url && !message.deleted_at) {
             const documentCard = document.createElement('section');
             documentCard.className = 'transaction-chat-document';
@@ -1415,6 +1425,11 @@
         const csrfToken = widget.dataset.csrfToken || '';
         const imageMaxBytes = Number(widget.dataset.attachmentMaxBytes) || 5 * 1024 * 1024;
         const documentMaxBytes = Number(widget.dataset.documentMaxBytes) || 10 * 1024 * 1024;
+        const configuredVideoMaxBytes = Number(widget.dataset.videoMaxBytes);
+        const videoMaxBytes = Number.isSafeInteger(configuredVideoMaxBytes)
+            && configuredVideoMaxBytes >= 0
+            ? configuredVideoMaxBytes
+            : 0;
         const voiceMaxBytes = Number(widget.dataset.voiceMaxBytes) || 5 * 1024 * 1024;
         const voiceMaxDurationSeconds = Number(widget.dataset.voiceMaxDurationSeconds) || 120;
         const callsEnabled = widget.dataset.callEnabled === 'true';
@@ -1546,10 +1561,6 @@
         const voiceSend = widget.querySelector('[data-chat-voice-send]');
         const audioCallButton = widget.querySelector('[data-chat-call-audio]');
         const videoCallButton = widget.querySelector('[data-chat-call-video]');
-        const guestCallDialog = widget.querySelector('[data-guest-call-dialog]');
-        const guestCallCloseButtons = widget.querySelectorAll('[data-guest-call-close]');
-        const isGuestCallPrompt = currentActorType === 'guest'
-            && widget.dataset.guestSubmissionChat === 'true';
         const callPanel = widget.querySelector('[data-chat-call-panel]');
         const callDragHandle = widget.querySelector('[data-chat-call-drag-handle]');
         const callAvatar = widget.querySelector('[data-chat-call-avatar]');
@@ -1579,6 +1590,7 @@
         const callEndButton = widget.querySelector('[data-chat-call-end]');
         const attachmentPreview = widget.querySelector('[data-chat-attachment-preview]');
         const attachmentPreviewImage = widget.querySelector('[data-chat-attachment-preview-image]');
+        const attachmentPreviewVideo = widget.querySelector('[data-chat-attachment-preview-video]');
         const attachmentName = widget.querySelector('[data-chat-attachment-name]');
         const attachmentRemove = widget.querySelector('[data-chat-attachment-remove]');
         const uploadProgress = widget.querySelector('[data-chat-upload-progress]');
@@ -1957,6 +1969,10 @@
             attachmentPreview.hidden = true;
             attachmentPreviewImage.removeAttribute('src');
             attachmentPreviewImage.hidden = true;
+            attachmentPreviewVideo.pause();
+            attachmentPreviewVideo.removeAttribute('src');
+            attachmentPreviewVideo.load();
+            attachmentPreviewVideo.hidden = true;
             attachmentName.textContent = '';
             attachmentName.removeAttribute('title');
             if (selectedImagePreviewUrl) {
@@ -2316,11 +2332,23 @@
             call.connectedAttempts++;
             sendCallSignal(call, 'call.connected').then(() => {
                 call.connectedAcknowledged = true;
+                logVideoCallDiagnostic(call, 'client-connected-acknowledgment', null, {
+                    outcome: 'accepted',
+                    attempts: call.connectedAttempts
+                });
                 if (callConnectedTimer !== null) {
                     clearTimeout(callConnectedTimer);
                     callConnectedTimer = null;
                 }
             }).catch(() => {
+                logVideoCallDiagnostic(call, 'client-connected-acknowledgment', null, {
+                    outcome: currentCall !== call
+                        ? 'stopped'
+                        : call.connectedAttempts < 3
+                            ? 'retrying'
+                            : 'exhausted',
+                    attempts: call.connectedAttempts
+                });
                 if (currentCall === call && call.connectedAttempts < 3) {
                     callConnectedTimer = setTimeout(() => {
                         callConnectedTimer = null;
@@ -2638,6 +2666,27 @@
             callPanel.hidden = !call || call.minimized === true;
             callPanel.classList.toggle('is-video', call?.mode === 'video');
             callPanel.classList.toggle('is-active-window', call?.state === 'active');
+            callPanel.classList.toggle('is-incoming', call?.state === 'incoming');
+            widget.classList.toggle('is-call-connected', call?.state === 'active');
+            const floatingWindow = widget.closest('[data-floating-chat-window]')
+                || Array.from(document.querySelectorAll('[data-floating-chat-window]'))
+                    .find(windowElement => (
+                        Number(windowElement.dataset.conversationId) === actualConversationId
+                    ));
+            const callActive = call?.state === 'active';
+            const chatManuallyOpened = floatingWindow?.classList.contains('is-call-chat-visible');
+            floatingWindow?.classList.toggle(
+                'is-call-active',
+                callActive && !chatManuallyOpened
+            );
+            if (!callActive) {
+                floatingWindow?.classList.remove('is-call-chat-visible');
+            }
+            if (callActive && window.innerWidth <= 700) {
+                floatingWindow?.classList.remove('is-mobile-chat-open');
+                floatingWindow?.closest('.floating-messages-root')
+                    ?.classList.remove('is-mobile-chat-open');
+            }
             callPanel.setAttribute(
                 'aria-modal',
                 String(Boolean(call && call.state !== 'active'))
@@ -2753,6 +2802,7 @@
                 call.connection.ontrack = null;
                 call.connection.onconnectionstatechange = null;
                 call.connection.oniceconnectionstatechange = null;
+                call.connection.onicegatheringstatechange = null;
                 call.connection.close();
                 call.connection = null;
             }
@@ -2819,7 +2869,7 @@
         }
 
         function logVideoCallDiagnostic(call, stage, error = null, details = {}) {
-            if (call?.mode !== 'video') {
+            if (!call) {
                 return;
             }
             const connection = call.connection;
@@ -2827,6 +2877,7 @@
             const diagnostic = {
                 stage,
                 correlationId: call.id,
+                timestampUtc: new Date().toISOString(),
                 monotonicMs: Math.round(monotonicMs),
                 elapsedMs: Number.isFinite(call.startedAt)
                     ? Math.round(monotonicMs - call.startedAt)
@@ -2844,20 +2895,38 @@
                 ...details
             };
             if (error) {
-                diagnostic.errorName = typeof error.name === 'string'
-                    ? error.name.slice(0, 64)
-                    : 'Error';
-                diagnostic.errorMessage = typeof error.message === 'string'
-                    ? error.message.replace(/[\r\n\t]+/g, ' ').slice(0, 160)
-                    : 'Unknown error';
+                diagnostic.errorCategory = callDiagnosticErrorCategory(error);
                 if (Number.isInteger(error.status)) {
                     diagnostic.httpStatus = error.status;
-                    diagnostic.errorCode = `HTTP_${error.status}`;
                 }
             }
             console.warn(
                 '[chat-video-call-timing] ' + JSON.stringify(diagnostic)
             );
+        }
+
+        function callDiagnosticErrorCategory(error) {
+            if (Number.isInteger(error?.status)) {
+                return `http_${error.status}`;
+            }
+            if (
+                [
+                    'NotAllowedError',
+                    'PermissionDeniedError',
+                    'NotFoundError',
+                    'DevicesNotFoundError',
+                    'NotReadableError',
+                    'TrackStartError',
+                    'AbortError',
+                    'InvalidStateError',
+                    'OperationError',
+                    'TypeError',
+                    'NetworkError'
+                ].includes(error?.name)
+            ) {
+                return error.name;
+            }
+            return 'other';
         }
 
         function callTimingNow() {
@@ -2892,6 +2961,7 @@
                 call.iceRequests.add(iceController);
             }
             const requestStartedAt = callTimingNow();
+            let responseCategory = null;
             logVideoCallDiagnostic(call, 'signal-request-start', null, {event});
             return postForm('/VNZ-TECH/backend/chat_call_signal.php', {
                 conversation_id: String(actualConversationId),
@@ -2899,11 +2969,17 @@
                 call_event: event,
                 csrf_token: csrfToken,
                 ...fields
-            }, iceController?.signal, httpStatus => {
+            }, iceController?.signal, response => {
+                const contentType = response.headers.get('content-type') || '';
+                responseCategory = /(?:application\/json|\+json)(?:\s*;|$)/i.test(contentType)
+                    ? 'json'
+                    : 'non_json';
                 logVideoCallDiagnostic(call, 'signal-request-response', null, {
                     event,
                     durationMs: Math.round(callTimingNow() - requestStartedAt),
-                    httpStatus
+                    endpoint: '/VNZ-TECH/backend/chat_call_signal.php',
+                    httpStatus: response.status,
+                    responseCategory
                 });
             }).then(result => {
                 if (event !== 'call.ice') {
@@ -2915,7 +2991,14 @@
                     event,
                     durationMs: Math.round(callTimingNow() - requestStartedAt),
                     httpStatus: Number.isInteger(error.status) ? error.status : null,
-                    errorName: typeof error.name === 'string' ? error.name : 'Error'
+                    endpoint: '/VNZ-TECH/backend/chat_call_signal.php',
+                    errorCategory: Number.isInteger(error.status)
+                        ? `http_${error.status}`
+                        : error.name === 'AbortError'
+                            ? 'aborted'
+                            : responseCategory
+                                ? `invalid_${responseCategory}_response`
+                                : 'network_error'
                 });
                 if (iceController?.signal.aborted && error.name === 'AbortError') {
                     logVideoCallDiagnostic(call, 'ice-request-aborted', null, {event});
@@ -2977,9 +3060,20 @@
             if (call?.terminal) {
                 logVideoCallDiagnostic(call, 'duplicate-termination-ignored', null, {
                     terminationSource,
-                    reason: typeof outcome === 'string' ? outcome.slice(0, 120) : null
+                    reasonCategory: outcome
+                        ? (/failed|unavailable|lost|could not connect/i.test(outcome)
+                            ? 'failure'
+                            : 'ended')
+                        : null
                 });
                 return;
+            }
+            if (
+                call?.connection
+                && !call.icePairDiagnosticAttempted
+                && ['connecting', 'active'].includes(call.state)
+            ) {
+                void captureSelectedIcePair(call, call.connection, 'terminal');
             }
             if (call) {
                 call.finishStartedAt = callTimingNow();
@@ -2998,7 +3092,11 @@
                 call.terminal = true;
             }
             logVideoCallDiagnostic(call, 'finish', null, {
-                reason: typeof outcome === 'string' ? outcome.slice(0, 120) : null,
+                reasonCategory: outcome
+                    ? (/failed|unavailable|lost|could not connect/i.test(outcome)
+                        ? 'failure'
+                        : 'ended')
+                    : null,
                 signalEvent,
                 cleanupStage: call?.diagnosticStage || 'unspecified'
             });
@@ -3142,6 +3240,11 @@
                     });
                 }
             };
+            connection.onicegatheringstatechange = () => {
+                logVideoCallDiagnostic(call, 'ice-gathering-state-change', null, {
+                    state: connection.iceGatheringState
+                });
+            };
             connection.ontrack = event => {
                 if (currentCall !== call) {
                     return;
@@ -3158,6 +3261,10 @@
                 }
                 const remoteMedia = call.mode === 'video' ? remoteVideo : remoteAudio;
                 remoteMedia.srcObject = call.remoteStream;
+                logVideoCallDiagnostic(call, 'remote-media-attached', null, {
+                    trackKind: event.track.kind,
+                    attached: remoteMedia.srcObject === call.remoteStream
+                });
                 if (event.track.kind === 'video') {
                     event.track.onunmute = () => {
                         if (currentCall === call) {
@@ -3177,7 +3284,14 @@
                     callVideoPlaceholder.hidden = event.track.readyState === 'live'
                         && !event.track.muted;
                 }
-                remoteMedia.play().catch(() => {
+                remoteMedia.play().then(() => {
+                    logVideoCallDiagnostic(call, 'remote-media-playback', null, {
+                        outcome: 'playing'
+                    });
+                }).catch(error => {
+                    logVideoCallDiagnostic(call, 'remote-media-playback', error, {
+                        outcome: 'blocked_or_failed'
+                    });
                     call.statusText = 'Connected. Tap the call media to start playback.';
                     callStatus.textContent = call.statusText;
                 });
@@ -3189,6 +3303,8 @@
                 const state = connection.connectionState;
                 logVideoCallDiagnostic(call, 'connection-state-change', null, {state});
                 if (state === 'connected') {
+                    const newlyConnected = call.state !== 'active';
+                    void captureSelectedIcePair(call, connection, 'connected');
                     const toneStopStartedAt = callTimingNow();
                     stopCallTone();
                     logVideoCallDiagnostic(call, 'connected-tone-stopped', null, {
@@ -3203,6 +3319,9 @@
                         callUnansweredTimer = null;
                     }
                     call.state = 'active';
+                    if (newlyConnected && window.innerWidth <= 700) {
+                        call.minimized = true;
+                    }
                     if (callDurationTimer === null) {
                         callDurationStartedAt = Date.now();
                         callDurationTimer = setInterval(() => {
@@ -3231,6 +3350,7 @@
                         }, 15000);
                     }
                 } else if (state === 'failed' || state === 'closed') {
+                    void captureSelectedIcePair(call, connection, state);
                     finishCall(
                         'Call failed because a media connection could not be established.',
                         'call.failed',
@@ -3244,6 +3364,9 @@
                     state: connection.iceConnectionState,
                     gatheringState: connection.iceGatheringState
                 });
+                if (connection.iceConnectionState === 'failed') {
+                    void captureSelectedIcePair(call, connection, 'ice_failed');
+                }
                 updateConnectionState();
             };
             call.localStream.getTracks().forEach(track => {
@@ -3256,12 +3379,87 @@
                 localVideo.srcObject = call.localStream;
                 callVideoPlaceholder.hidden = false;
             }
+            logVideoCallDiagnostic(call, 'local-media-attached', null, {
+                audioTrackCount: call.localStream.getAudioTracks().length,
+                videoTrackCount: call.localStream.getVideoTracks().length,
+                attached: call.localStream.getTracks().every(track => (
+                    connection.getSenders().some(sender => sender.track === track)
+                )),
+                localPreviewAttached: call.mode === 'video'
+                    ? localVideo.srcObject === call.localStream
+                    : null
+            });
             logVideoCallDiagnostic(call, 'peer-configuration-complete', null, {
                 durationMs: Math.round(callTimingNow() - call.peerSetupStartedAt)
             });
         }
 
+        async function captureSelectedIcePair(call, connection, trigger) {
+            if (call.icePairDiagnosticAttempted) {
+                return;
+            }
+            call.icePairDiagnosticAttempted = true;
+            const details = {trigger};
+            if (typeof connection?.getStats !== 'function') {
+                logVideoCallDiagnostic(call, 'selected-ice-pair', null, {
+                    ...details,
+                    outcome: 'unsupported'
+                });
+                return;
+            }
+
+            try {
+                const report = await connection.getStats();
+                const stats = Array.from(report.values());
+                const byId = new Map(stats.map(stat => [stat.id, stat]));
+                const transport = stats.find(stat => (
+                    stat.type === 'transport' && stat.selectedCandidatePairId
+                ));
+                const pair = transport
+                    ? byId.get(transport.selectedCandidatePairId)
+                    : stats.find(stat => (
+                        stat.type === 'candidate-pair'
+                        && (
+                            stat.selected === true
+                            || (stat.nominated === true && stat.state === 'succeeded')
+                        )
+                    ));
+                if (!pair || pair.type !== 'candidate-pair') {
+                    logVideoCallDiagnostic(call, 'selected-ice-pair', null, {
+                        ...details,
+                        outcome: 'incomplete'
+                    });
+                    return;
+                }
+
+                const localCandidate = byId.get(pair.localCandidateId);
+                const remoteCandidate = byId.get(pair.remoteCandidateId);
+                const candidateType = candidate => (
+                    ['host', 'srflx', 'relay'].includes(candidate?.candidateType)
+                        ? candidate.candidateType
+                        : 'unknown'
+                );
+                logVideoCallDiagnostic(call, 'selected-ice-pair', null, {
+                    ...details,
+                    outcome: localCandidate && remoteCandidate ? 'available' : 'incomplete',
+                    state: ['succeeded', 'in-progress', 'failed'].includes(pair.state)
+                        ? pair.state
+                        : 'unknown',
+                    localType: candidateType(localCandidate),
+                    remoteType: candidateType(remoteCandidate)
+                });
+            } catch (error) {
+                logVideoCallDiagnostic(call, 'selected-ice-pair', error, {
+                    ...details,
+                    outcome: 'unavailable'
+                });
+            }
+        }
+
         async function startCall(mode) {
+            if (currentActorType !== 'seller') {
+                return;
+            }
             if (voiceRecorderBlocksCall()) {
                 showVoiceRecorderCallBlock();
                 return;
@@ -3300,6 +3498,7 @@
                 cameraEnabled: mode === 'video',
                 connectedAttempts: 0,
                 connectedAcknowledged: false,
+                callSignalReadyState: callSignalReady,
                 widget,
                 conversationId: actualConversationId,
                 statusText: `Starting ${mode === 'video' ? 'video' : 'voice'} call…`,
@@ -3391,7 +3590,8 @@
         async function acceptCall() {
             const call = currentCall;
             if (
-                !call
+                currentActorType !== 'seller'
+                || !call
                 || (call.state !== 'incoming' && call.mediaRetryAvailable !== true)
                 || call.mediaSetupInProgress === true
             ) {
@@ -3563,12 +3763,17 @@
         }
 
         async function handleCallEvent(payload) {
-            if (!widget.hasAttribute('data-call-controller-only')) {
+            if (
+                currentActorType !== 'seller'
+                || !widget.hasAttribute('data-call-controller-only')
+            ) {
                 return;
             }
             if (
                 !payload
                 || Number(payload.conversation_id) !== actualConversationId
+                || payload.actor_type !== 'seller'
+                || payload.to_actor_type !== 'seller'
                 || payload.to_actor_type !== currentActorType
                 || Number(payload.to_actor_id) !== currentActorId
                 || (
@@ -3621,6 +3826,7 @@
                     cameraEnabled: payload.mode === 'video',
                     connectedAttempts: 0,
                     connectedAcknowledged: false,
+                    callSignalReadyState: callSignalReady,
                     widget,
                     conversationId: actualConversationId,
                     statusText: `Incoming ${payload.mode === 'video' ? 'video' : 'voice'} call`,
@@ -3871,26 +4077,41 @@
 
             const extension = file.name.split('.').pop().toLowerCase();
             const isPdf = file.type === 'application/pdf' || extension === 'pdf';
+            const videoTypes = ['video/mp4', 'video/webm'];
+            const isVideo = videoTypes.includes(file.type)
+                || (!file.type && ['mp4', 'webm'].includes(extension));
             const allowedImageTypes = ['image/jpeg', 'image/png', 'image/webp'];
             const allowedImageExtensions = ['jpg', 'jpeg', 'png', 'webp'];
             const isImage = allowedImageTypes.includes(file.type)
                 || (!file.type && allowedImageExtensions.includes(extension));
-            if (!isPdf && !isImage) {
+            if (!isPdf && !isImage && !isVideo) {
                 clearSelectedImage();
-                setAttachmentError('Choose a JPEG, PNG, WebP image, or PDF document.');
+                setAttachmentError('Choose a JPEG, PNG, WebP image, MP4 or WebM video, or PDF document.');
                 return;
             }
-            if (isImage && file.type && !allowedImageTypes.includes(file.type)) {
+            if (
+                (isImage && file.type && !allowedImageTypes.includes(file.type))
+                || (isVideo && file.type && !videoTypes.includes(file.type))
+            ) {
                 clearSelectedImage();
                 setAttachmentError('The selected file type does not match an allowed attachment.');
                 return;
             }
 
-            const maxBytes = isPdf ? documentMaxBytes : imageMaxBytes;
+            const maxBytes = isPdf
+                ? documentMaxBytes
+                : isVideo
+                    ? videoMaxBytes
+                    : imageMaxBytes;
+            if (isVideo && maxBytes < 1) {
+                clearSelectedImage();
+                setAttachmentError('Video uploads are unavailable on this server.');
+                return;
+            }
             if (file.size < 1 || file.size > maxBytes) {
                 clearSelectedImage();
                 setAttachmentError(
-                    `${isPdf ? 'PDF files' : 'Images'} must be no larger than ${(maxBytes / 1024 / 1024).toFixed(1)} MB.`
+                    `${isPdf ? 'PDF files' : isVideo ? 'Videos' : 'Images'} must be no larger than ${(maxBytes / 1024 / 1024).toFixed(1)} MB.`
                 );
                 return;
             }
@@ -3904,8 +4125,13 @@
             } else {
                 attachmentName.classList.remove('is-pdf');
                 selectedImagePreviewUrl = URL.createObjectURL(file);
-                attachmentPreviewImage.src = selectedImagePreviewUrl;
-                attachmentPreviewImage.hidden = false;
+                if (isVideo) {
+                    attachmentPreviewVideo.src = selectedImagePreviewUrl;
+                    attachmentPreviewVideo.hidden = false;
+                } else {
+                    attachmentPreviewImage.src = selectedImagePreviewUrl;
+                    attachmentPreviewImage.hidden = false;
+                }
             }
             attachmentPreview.hidden = false;
             uploadProgress.hidden = true;
@@ -4130,10 +4356,7 @@
             }
         }, {signal: widgetEventController.signal});
         const requestCallOrShowRegistration = mode => {
-            if (isGuestCallPrompt) {
-                if (guestCallDialog && !guestCallDialog.open) {
-                    guestCallDialog.showModal();
-                }
+            if (currentActorType !== 'seller') {
                 return;
             }
             if (widget.hasAttribute('data-call-controller-only')) {
@@ -4152,18 +4375,6 @@
         }, {signal: widgetEventController.signal});
         videoCallButton?.addEventListener('click', () => {
             requestCallOrShowRegistration('video');
-        }, {signal: widgetEventController.signal});
-        guestCallCloseButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                if (guestCallDialog?.open) {
-                    guestCallDialog.close();
-                }
-            }, {signal: widgetEventController.signal});
-        });
-        guestCallDialog?.addEventListener('click', event => {
-            if (event.target === guestCallDialog) {
-                guestCallDialog.close();
-            }
         }, {signal: widgetEventController.signal});
         callAcceptButton?.addEventListener('click', acceptCall, {
             signal: widgetEventController.signal
@@ -4598,6 +4809,23 @@
                             if (!callsEnabled) {
                                 return;
                             }
+                            if (
+                                currentCall
+                                && currentCall.callSignalReadyState !== ready
+                            ) {
+                                currentCall.callSignalReadyState = ready;
+                                logVideoCallDiagnostic(
+                                    currentCall,
+                                    'call-room-readiness-change',
+                                    null,
+                                    {
+                                        ready,
+                                        errorCategory: error
+                                            ? callDiagnosticErrorCategory(error)
+                                            : null
+                                    }
+                                );
+                            }
                             callSignalReady = ready;
                             callUnavailableReason = ready
                                 ? ''
@@ -4734,7 +4962,10 @@
                     : attachmentFile.type === 'application/pdf'
                         || attachmentFile.name.toLowerCase().endsWith('.pdf')
                         ? 'Uploading PDF…'
-                        : 'Uploading image…');
+                        : attachmentFile.type.startsWith('video/')
+                            || /\.(?:mp4|webm)$/i.test(attachmentFile.name)
+                            ? 'Uploading video…'
+                            : 'Uploading image…');
             } else {
                 uploadProgress.hidden = true;
                 setStatus(isBookMeCommand ? 'Sending Lalamove booking details…' : 'Sending message…');
@@ -4750,6 +4981,9 @@
                             : attachmentFile.type === 'application/pdf'
                                 || attachmentFile.name.toLowerCase().endsWith('.pdf')
                                 ? 'file'
+                                : attachmentFile.type.startsWith('video/')
+                                    || /\.(?:mp4|webm)$/i.test(attachmentFile.name)
+                                    ? 'video'
                                 : 'image'
                         : 'text',
                     csrf_token: csrfToken
@@ -4772,7 +5006,7 @@
                         attachmentFile,
                         percent => {
                             uploadProgressBar.style.width = `${percent}%`;
-                            setStatus(`Uploading ${hasVoiceRecording ? 'voice message' : 'attachment'}… ${percent}%`);
+                            setStatus(`Uploading ${hasVoiceRecording ? 'voice message' : attachmentFile.type.startsWith('video/') ? 'video' : 'attachment'}… ${percent}%`);
                         }
                     )
                     : await postForm('/VNZ-TECH/backend/chat_messages.php', payload);
@@ -4801,7 +5035,11 @@
                         setStatus(hasAttachment
                             ? (data.message.message_type === 'voice'
                                 ? 'Voice message sent.'
-                                : data.message.message_type === 'file' ? 'PDF sent.' : 'Image sent.')
+                                : data.message.message_type === 'file'
+                                    ? 'PDF sent.'
+                                    : data.message.message_type === 'video'
+                                        ? 'Video sent.'
+                                        : 'Image sent.')
                             : 'Message sent.');
                     } else {
                         setStatus(

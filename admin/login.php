@@ -207,6 +207,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         WHERE login_hash = ? AND ip_address = ?
                     ");
                     $clearAttempts->execute([$loginHash, $ipAddress]);
+                    vnzRevokeRememberLoginTokens(
+                        $pdo,
+                        'admin',
+                        (int) $admin['id']
+                    );
                     logAdminActivity(
                         (int) $admin['id'],
                         'security.password_reset',
@@ -331,6 +336,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['admin_first_name'] = $admin['first_name'];
                     $_SESSION['admin_last_name'] = $admin['last_name'];
                     $_SESSION['admin_email'] = $admin['email'];
+                    if (!empty($_SESSION['remember_admin_after_2fa'])) {
+                        vnzIssueRememberLoginToken($pdo, 'admin', (int) $admin['id']);
+                    } else {
+                        vnzRevokeRememberLoginCookie($pdo);
+                    }
+                    unset($_SESSION['remember_admin_after_2fa']);
                     chatLogAuthenticationTiming('admin_2fa_login', $chatAuthenticationStartedAt);
                     header('Location: /VNZ-TECH/admin/dashboard.php');
                     exit;
@@ -388,6 +399,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['admin_2fa_pending_id'] = (int) $admin['id'];
                 $_SESSION['admin_2fa_pending_at'] = time();
                 $_SESSION['admin_2fa_attempts'] = 0;
+                $_SESSION['remember_admin_after_2fa'] =
+                    ($_POST['remember'] ?? '') === '1';
                 $pendingAdminId = (int) $admin['id'];
                 $twoFactorChallenge = true;
                 logAdminActivity((int) $admin['id'], 'auth.2fa_challenge_started', 'Password accepted; authenticator code required.');
@@ -402,6 +415,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $_SESSION['admin_first_name'] = $admin['first_name'];
                 $_SESSION['admin_last_name'] = $admin['last_name'];
                 $_SESSION['admin_email'] = $admin['email'];
+                if (($_POST['remember'] ?? '') === '1') {
+                    vnzIssueRememberLoginToken($pdo, 'admin', (int) $admin['id']);
+                } else {
+                    vnzRevokeRememberLoginCookie($pdo);
+                }
                 logAdminActivity((int) $admin['id'], 'auth.login', 'Admin signed in.');
                 chatLogAuthenticationTiming('admin_login', $chatAuthenticationStartedAt);
                 if (
@@ -681,6 +699,12 @@ if ($successMessage) {
                 >
 
 
+            </div>
+            <div class="login-forgot-password">
+                <label>
+                    <input type="checkbox" name="remember" value="1">
+                    Remember me on this device
+                </label>
             </div>
             <div class="login-forgot-password">
                 <a href="/VNZ-TECH/admin/login.php?forgot_password=1">Forgot password?</a>

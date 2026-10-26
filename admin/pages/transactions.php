@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/auth.php';
+require_once __DIR__ . '/../../backend/pagination.php';
 
 requireAdminLogin();
 
@@ -59,6 +60,7 @@ if (!hasPermission('view_submissions')) {
 
 $search = trim($_GET['search'] ?? '');
 $statusFilter = trim($_GET['status'] ?? '');
+$pagination = vnzPaginationState(12);
 
 
 /*
@@ -117,6 +119,13 @@ $sql = "
 ";
 
 $params = [];
+$countSql = "
+    SELECT COUNT(*)
+    FROM transactions t
+    LEFT JOIN submissions s ON s.id = t.submission_id
+    WHERE 1 = 1
+";
+$countParams = [];
 
 
 /*
@@ -142,6 +151,21 @@ if ($search !== '') {
     $params[] = $searchValue;
     $params[] = $searchValue;
     $params[] = $searchValue;
+    $countSql .= "
+        AND (
+            t.transaction_reference LIKE ?
+            OR s.reference_number LIKE ?
+            OR s.seller_name LIKE ?
+            OR s.seller_mobile LIKE ?
+        )
+    ";
+    array_push(
+        $countParams,
+        $searchValue,
+        $searchValue,
+        $searchValue,
+        $searchValue
+    );
 }
 
 
@@ -161,7 +185,13 @@ if (
     ";
 
     $params[] = $statusFilter;
+    $countSql .= ' AND t.transaction_status = ?';
+    $countParams[] = $statusFilter;
 }
+
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($countParams);
+$pagination = vnzPaginationClamp($pagination, (int) $countStmt->fetchColumn());
 
 
 /*
@@ -172,6 +202,7 @@ if (
 
 $sql .= "
     ORDER BY t.created_at DESC
+    LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
 ";
 
 
@@ -185,6 +216,16 @@ $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 
 $transactions = $stmt->fetchAll();
+$paginationHtml = vnzRenderPagination(
+    $pagination,
+    array_filter([
+        'search' => $search,
+        'status' => $statusFilter
+    ], static fn ($value): bool => $value !== ''),
+    'transactions',
+    'admin',
+    '/VNZ-TECH/admin/dashboard.php'
+);
 
 
 /*
@@ -267,7 +308,7 @@ function transactionDate(string $date): string
 |--------------------------------------------------------------------------
 */
 
-$totalTransactions = count($transactions);
+$totalTransactions = $pagination['total'];
 
 ?>
 
@@ -278,7 +319,7 @@ $totalTransactions = count($transactions);
 
 <link
     rel="stylesheet"
-    href="/VNZ-TECH/assets/css/transaction_review.css"
+    href="/VNZ-TECH/assets/css/transaction_review.css?v=<?= filemtime(__DIR__ . '/../../assets/css/transaction_review.css') ?>"
 >
 
 
@@ -383,6 +424,10 @@ $totalTransactions = count($transactions);
     </div>
 
 
+    <?php if ($pagination['last_page'] > 1): ?>
+        <?= $paginationHtml ?>
+    <?php endif; ?>
+
 
     <!-- =====================================================
          TRANSACTIONS TABLE
@@ -401,9 +446,8 @@ $totalTransactions = count($transactions);
 
                 <span id="transactionVisibleCount">
 
-                    Showing
                     <?= number_format($totalTransactions) ?>
-                    transaction<?= $totalTransactions !== 1 ? 's' : '' ?>
+                    transaction<?= $totalTransactions !== 1 ? 's' : '' ?> total
 
                 </span>
 
@@ -737,8 +781,6 @@ $totalTransactions = count($transactions);
 
             </div>
 
-
-
             <!-- =================================================
                  FILTERED EMPTY
             ================================================== -->
@@ -891,114 +933,16 @@ $totalTransactions = count($transactions);
             'clearTransactionFilters'
         );
 
-    const visibleCount =
-        document.getElementById(
-            'transactionVisibleCount'
-        );
-
-    const filteredEmpty =
-        document.getElementById(
-            'filteredTransactionEmpty'
-        );
-
-    const rows =
-        Array.from(
-            document.querySelectorAll(
-                '.transaction-row'
-            )
-        );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | FILTERS
-    |--------------------------------------------------------------------------
-    */
-
+    let filterTimer = null;
     function applyTransactionFilters() {
-
-        const search =
-            searchInput
-                ? searchInput.value
-                    .trim()
-                    .toLowerCase()
-                : '';
-
-        const selectedStatus =
-            statusFilter
-                ? statusFilter.value
-                : '';
-
-        let visibleRows = 0;
-
-
-        rows.forEach(function (row) {
-
-            const rowSearch =
-                row.dataset.search || '';
-
-            const rowStatus =
-                row.dataset.status || '';
-
-
-            const matchesSearch =
-                search === ''
-                ||
-                rowSearch.includes(search);
-
-
-            const matchesStatus =
-                selectedStatus === ''
-                ||
-                rowStatus === selectedStatus;
-
-
-            const show =
-                matchesSearch
-                &&
-                matchesStatus;
-
-
-            row.style.display =
-                show ? '' : 'none';
-
-
-            if (show) {
-                visibleRows++;
-            }
-
-        });
-
-
-        if (visibleCount) {
-
-            visibleCount.textContent =
-                'Showing '
-                +
-                visibleRows.toLocaleString()
-                +
-                ' transaction'
-                +
-                (
-                    visibleRows !== 1
-                        ? 's'
-                        : ''
-                );
-
-        }
-
-
-        if (filteredEmpty) {
-
-            filteredEmpty.style.display =
-                rows.length > 0
-                &&
-                visibleRows === 0
-                    ? 'block'
-                    : 'none';
-
-        }
-
+        window.clearTimeout(filterTimer);
+        filterTimer = window.setTimeout(() => {
+            window.loadAdminPage?.('transactions', {
+                search: searchInput?.value.trim() || '',
+                status: statusFilter?.value || '',
+                list_page: 1
+            });
+        }, 250);
     }
 
 

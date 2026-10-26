@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/auth.php';
+require_once __DIR__ . '/../../backend/pagination.php';
 
 requireAdminLogin();
 
@@ -44,6 +45,7 @@ if (!hasPermission('view_submissions')) {
 
 $search = trim($_GET['search'] ?? '');
 $negotiationFilter = trim($_GET['negotiation'] ?? '');
+$pagination = vnzPaginationState(12);
 
 
 /*
@@ -156,6 +158,8 @@ $sql = "
 
 
 $params = [];
+$countConditions = '';
+$countParams = [];
 
 
 /*
@@ -179,7 +183,58 @@ if ($search !== '') {
     $params[] = $searchValue;
     $params[] = $searchValue;
     $params[] = $searchValue;
+    $countConditions .= "
+        AND (
+            s.reference_number LIKE ?
+            OR s.seller_name LIKE ?
+            OR s.seller_mobile LIKE ?
+        )
+    ";
+    array_push($countParams, $searchValue, $searchValue, $searchValue);
 }
+
+if (
+    $negotiationFilter !== ''
+    && in_array($negotiationFilter, $allowedNegotiationStates, true)
+) {
+    $stateCondition = match ($negotiationFilter) {
+        'needs_response' => " AND s.status = 'offer_sent' AND (SELECT o.sender_type FROM offers o WHERE o.submission_id = s.id ORDER BY o.id DESC LIMIT 1) = 'seller'",
+        'waiting_seller' => " AND s.status = 'offer_sent' AND (SELECT o.sender_type FROM offers o WHERE o.submission_id = s.id ORDER BY o.id DESC LIMIT 1) = 'admin'",
+        'accepted' => " AND s.status = 'accepted'",
+        'declined' => " AND s.status = 'declined'"
+    };
+    $sql .= $stateCondition;
+    $countConditions .= $stateCondition;
+}
+
+$countStmt = $pdo->prepare("
+    SELECT COUNT(*)
+    FROM submissions s
+    WHERE EXISTS (
+        SELECT 1 FROM offers o
+        WHERE o.submission_id = s.id
+    )
+    {$countConditions}
+");
+$countStmt->execute($countParams);
+$pagination = vnzPaginationClamp($pagination, (int) $countStmt->fetchColumn());
+
+$needsResponseStmt = $pdo->query("
+    SELECT COUNT(*)
+    FROM submissions s
+    WHERE s.status = 'offer_sent'
+      AND EXISTS (
+          SELECT 1 FROM offers o
+          WHERE o.submission_id = s.id
+            AND o.sender_type = 'seller'
+            AND o.id = (
+                SELECT MAX(latest.id)
+                FROM offers latest
+                WHERE latest.submission_id = s.id
+            )
+      )
+");
+$globalNeedsResponseCount = (int) $needsResponseStmt->fetchColumn();
 
 
 /*
@@ -195,6 +250,7 @@ if ($search !== '') {
 
 $sql .= "
     ORDER BY s.updated_at DESC
+    LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
 ";
 
 
@@ -254,37 +310,23 @@ unset($row);
 |--------------------------------------------------------------------------
 */
 
-if (
-    $negotiationFilter !== ''
-    && in_array($negotiationFilter, $allowedNegotiationStates, true)
-) {
-
-    $offerSubmissions = array_values(
-        array_filter(
-            $offerSubmissions,
-            static function ($row) use ($negotiationFilter) {
-                return $row['negotiation_state'] === $negotiationFilter;
-            }
-        )
-    );
-
-}
-
-
 /*
 |--------------------------------------------------------------------------
 | Counts (for the summary card + filter option counts)
 |--------------------------------------------------------------------------
 */
 
-$needsResponseCount = 0;
-
-foreach ($offerSubmissions as $row) {
-    if ($row['negotiation_state'] === 'needs_response') {
-        $needsResponseCount++;
-    }
-}
-
+$needsResponseCount = $globalNeedsResponseCount;
+$paginationHtml = vnzRenderPagination(
+    $pagination,
+    array_filter([
+        'search' => $search,
+        'negotiation' => $negotiationFilter
+    ], static fn ($value): bool => $value !== ''),
+    'offers',
+    'admin',
+    '/VNZ-TECH/admin/dashboard.php'
+);
 
 /*
 |--------------------------------------------------------------------------
@@ -565,6 +607,11 @@ function offerSubmissionDate($date): string
          OFFERS TABLE
     ====================================================== -->
 
+    <?php if ($pagination['last_page'] > 1): ?>
+        <?= $paginationHtml ?>
+    <?php endif; ?>
+
+
     <div class="submissions-card">
 
 
@@ -577,9 +624,8 @@ function offerSubmissionDate($date): string
                 </h2>
 
                 <span id="offerVisibleCount">
-                    Showing
-                    <?= number_format(count($offerSubmissions)) ?>
-                    offer<?= count($offerSubmissions) !== 1 ? 's' : '' ?>
+                    Showing <?= number_format($pagination['total']) ?>
+                    offer<?= $pagination['total'] !== 1 ? 's' : '' ?>
                 </span>
 
             </div>
@@ -861,8 +907,6 @@ function offerSubmissionDate($date): string
 
             </div>
 
-
-
             <!-- =================================================
                  NO FILTER MATCH
             ================================================== -->
@@ -911,156 +955,45 @@ function offerSubmissionDate($date): string
     const clearButton =
         document.getElementById('clearOfferFilters');
 
-    const visibleCount =
-        document.getElementById('offerVisibleCount');
+    let searchTimer = null;
 
-    const filteredEmpty =
-        document.getElementById('filteredOfferEmpty');
-
-    const rows =
-        Array.from(
-            document.querySelectorAll('.submission-row')
-        );
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Apply Filters
-    |--------------------------------------------------------------------------
-    */
-
-    function applyFilters() {
-
-        const search =
-            searchInput
-                ? searchInput.value
-                    .trim()
-                    .toLowerCase()
-                : '';
-
-        const selectedNegotiation =
-            negotiationFilter
-                ? negotiationFilter.value
-                : '';
-
-        let visibleRows = 0;
-
-
-        rows.forEach(function (row) {
-
-            const rowSearch =
-                row.dataset.search || '';
-
-            const rowNegotiation =
-                row.dataset.negotiation || '';
-
-
-            const matchesSearch =
-                search === ''
-                || rowSearch.includes(search);
-
-
-            const matchesNegotiation =
-                selectedNegotiation === ''
-                || rowNegotiation === selectedNegotiation;
-
-
-            const show =
-                matchesSearch
-                && matchesNegotiation;
-
-
-            row.style.display =
-                show ? '' : 'none';
-
-
-            if (show) {
-                visibleRows++;
-            }
-
+    function loadFilteredOffers() {
+        window.loadAdminPage('offers', {
+            search: searchInput ? searchInput.value.trim() : '',
+            negotiation: negotiationFilter ? negotiationFilter.value : ''
         });
-
-
-        if (visibleCount) {
-
-            visibleCount.textContent =
-                'Showing '
-                + visibleRows.toLocaleString()
-                + ' offer'
-                + (visibleRows !== 1 ? 's' : '');
-
-        }
-
-
-        if (filteredEmpty) {
-
-            filteredEmpty.style.display =
-                rows.length > 0 && visibleRows === 0
-                    ? 'block'
-                    : 'none';
-
-        }
-
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Search
-    |--------------------------------------------------------------------------
-    */
 
     if (searchInput) {
-
         searchInput.addEventListener(
             'input',
-            applyFilters
+            function () {
+                window.clearTimeout(searchTimer);
+                searchTimer = window.setTimeout(loadFilteredOffers, 400);
+            }
         );
-
     }
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Negotiation Filter
-    |--------------------------------------------------------------------------
-    */
 
     if (negotiationFilter) {
-
         negotiationFilter.addEventListener(
             'change',
-            applyFilters
+            loadFilteredOffers
         );
-
     }
 
-
-    /*
-    |--------------------------------------------------------------------------
-    | Clear Filters
-    |--------------------------------------------------------------------------
-    */
-
     if (clearButton) {
-
         clearButton.addEventListener(
             'click',
             function () {
-
                 if (searchInput) {
                     searchInput.value = '';
                 }
-
                 if (negotiationFilter) {
                     negotiationFilter.value = '';
                 }
-
-                applyFilters();
-
+                loadFilteredOffers();
             }
         );
-
     }
 
 

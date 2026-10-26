@@ -19,10 +19,34 @@ if (!defined('VNZ_TECH_DB_CONNECTED')) {
 |--------------------------------------------------------------------------
 */
 
-$db_host = 'localhost';
-$db_name = 'vnz_tech';
-$db_user = 'root';
-$db_pass = '';
+$dbConfig = [
+    'host' => 'localhost',
+    'name' => 'vnz_tech',
+    'user' => 'root',
+    'pass' => ''
+];
+
+$localConfigPath = __DIR__ . '/database.local.php';
+if (is_file($localConfigPath)) {
+    $localConfig = require $localConfigPath;
+
+    if (!is_array($localConfig)) {
+        die("Database configuration is invalid. Please contact the administrator.");
+    }
+
+    $dbConfig = array_merge($dbConfig, $localConfig);
+}
+
+foreach (['host', 'name', 'user', 'pass'] as $key) {
+    if (!isset($dbConfig[$key]) || !is_string($dbConfig[$key])) {
+        die("Database configuration is invalid. Please contact the administrator.");
+    }
+}
+
+$db_host = $dbConfig['host'];
+$db_name = $dbConfig['name'];
+$db_user = $dbConfig['user'];
+$db_pass = $dbConfig['pass'];
 
 /*
 |--------------------------------------------------------------------------
@@ -49,3 +73,7 @@ try {
     die("Database connection failed. Please contact the administrator.");
 
 }
+
+require_once __DIR__ . '/session.php';
+require_once __DIR__ . '/remember_login.php';
+vnzRestoreRememberedLogin($pdo);

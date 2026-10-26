@@ -219,6 +219,55 @@
     letter-spacing: 0.2px;
 }
 
+.transaction-chat-shortcut {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 24px 0;
+    padding: 17px 20px;
+    color: #1e293b;
+    background: linear-gradient(135deg, #ffffff, #f1f7fb);
+    border: 1px solid #d7e3eb;
+    border-radius: 12px;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease;
+}
+
+.transaction-chat-shortcut:hover {
+    border-color: #7dd3fc;
+    box-shadow: 0 5px 16px rgba(14, 116, 144, 0.1);
+    transform: translateY(-1px);
+}
+
+.transaction-chat-shortcut:focus-visible {
+    outline: 2px solid #0284c7;
+    outline-offset: 3px;
+}
+
+.transaction-chat-shortcut > span:first-child {
+    display: grid;
+    gap: 4px;
+}
+
+.transaction-chat-shortcut strong {
+    font-size: 14px;
+}
+
+.transaction-chat-shortcut small {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.transaction-chat-shortcut > span:last-child {
+    flex: 0 0 auto;
+    color: #0284c7;
+    font-size: 21px;
+}
+
 /* ERROR */
 
 .transaction-review-error {

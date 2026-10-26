@@ -60,6 +60,55 @@ function chatVoiceMaxDurationSeconds(): int
     return $limit;
 }
 
+function chatIniSizeLimitBytes(string $directive, bool $zeroMeansUnlimited): ?int
+{
+    $configured = ini_get($directive);
+    if (
+        $configured === false
+        || preg_match('/\A([0-9]+)\s*([KMG]?)\z/i', trim($configured), $matches) !== 1
+    ) {
+        throw new RuntimeException('Invalid PHP upload size configuration.');
+    }
+
+    $size = (int) $matches[1];
+    if ($size === 0 && $zeroMeansUnlimited) {
+        return null;
+    }
+
+    $multiplier = match (strtoupper($matches[2])) {
+        'K' => 1024,
+        'M' => 1024 * 1024,
+        'G' => 1024 * 1024 * 1024,
+        default => 1
+    };
+
+    return $size > intdiv(PHP_INT_MAX, $multiplier)
+        ? PHP_INT_MAX
+        : $size * $multiplier;
+}
+
+function chatVideoMaxBytes(): int
+{
+    $configured = getenv('CHAT_VIDEO_MAX_BYTES');
+    if ($configured === false || $configured === '') {
+        $limit = 50 * 1024 * 1024;
+    } else {
+        $limit = filter_var($configured, FILTER_VALIDATE_INT);
+        if ($limit === false || $limit < 1 || $limit > 200 * 1024 * 1024) {
+            throw new RuntimeException('Invalid chat video size configuration.');
+        }
+    }
+
+    $uploadLimit = chatIniSizeLimitBytes('upload_max_filesize', false);
+    $postLimit = chatIniSizeLimitBytes('post_max_size', true);
+    $limit = min($limit, $uploadLimit ?? PHP_INT_MAX);
+    if ($postLimit !== null) {
+        $limit = min($limit, max(0, $postLimit - 1024 * 1024));
+    }
+
+    return $limit;
+}
+
 function chatSanitizeAttachmentName(string $name, string $extension): string
 {
     $name = str_replace('\\', '/', $name);
@@ -67,7 +116,7 @@ function chatSanitizeAttachmentName(string $name, string $extension): string
     $name = preg_replace('/[\x00-\x1F\x7F]/u', '', $name) ?? '';
     $name = preg_replace('/[^\pL\pN._ -]+/u', '_', $name) ?? '';
     $name = trim($name, " .\t\n\r\0\x0B");
-    $name = preg_replace('/\.(?:jpe?g|png|webp|pdf|ogg|webm)\z/i', '', $name) ?? $name;
+    $name = preg_replace('/\.(?:jpe?g|png|webp|pdf|ogg|webm|mp4)\z/i', '', $name) ?? $name;
     $name = trim(mb_substr($name, 0, 180, 'UTF-8'), " .");
 
     return ($name !== '' ? $name : 'attachment') . '.' . $extension;
@@ -97,6 +146,92 @@ function chatAttachmentStorageDirectory(): string
     }
 
     return $resolved;
+}
+
+function chatStoreVideoAttachment(array $file): array
+{
+    if (!isset($file['error']) || !is_int($file['error'])) {
+        throw new ChatHttpException('The selected video upload is invalid.', 422);
+    }
+    if ($file['error'] !== UPLOAD_ERR_OK) {
+        $message = $file['error'] === UPLOAD_ERR_INI_SIZE
+            || $file['error'] === UPLOAD_ERR_FORM_SIZE
+            ? 'The video exceeds the upload size limit.'
+            : 'The video could not be uploaded. Please try again.';
+        throw new ChatHttpException($message, 422);
+    }
+
+    $temporaryPath = $file['tmp_name'] ?? null;
+    if (
+        !is_string($temporaryPath)
+        || $temporaryPath === ''
+        || !is_uploaded_file($temporaryPath)
+    ) {
+        throw new ChatHttpException('The selected video upload is invalid.', 422);
+    }
+
+    $size = filesize($temporaryPath);
+    $maxBytes = chatVideoMaxBytes();
+    if ($size === false || $size < 1 || $size > $maxBytes) {
+        throw new ChatHttpException(
+            'Videos must be no larger than '
+                . number_format($maxBytes / 1024 / 1024, 1)
+                . ' MB.',
+            422
+        );
+    }
+    if (!class_exists('finfo')) {
+        throw new ChatHttpException(
+            'Video uploads are unavailable on this server.',
+            503
+        );
+    }
+
+    $mimeType = (new finfo(FILEINFO_MIME_TYPE))->file($temporaryPath);
+    $handle = fopen($temporaryPath, 'rb');
+    if ($handle === false) {
+        throw new ChatHttpException('The selected video upload is invalid.', 422);
+    }
+    $header = fread($handle, 16);
+    fclose($handle);
+    if (!is_string($header)) {
+        throw new ChatHttpException('The selected video upload is invalid.', 422);
+    }
+
+    $extension = null;
+    if (
+        $mimeType === 'video/mp4'
+        && strlen($header) >= 12
+        && substr($header, 4, 4) === 'ftyp'
+    ) {
+        $extension = 'mp4';
+    } elseif (
+        $mimeType === 'video/webm'
+        && str_starts_with($header, "\x1A\x45\xDF\xA3")
+    ) {
+        $extension = 'webm';
+    }
+    if ($extension === null) {
+        throw new ChatHttpException('Choose a valid MP4 or WebM video.', 422);
+    }
+
+    $directory = chatAttachmentStorageDirectory();
+    $storedName = bin2hex(random_bytes(16)) . '.' . $extension;
+    $storedPath = $directory . DIRECTORY_SEPARATOR . $storedName;
+    if (!move_uploaded_file($temporaryPath, $storedPath)) {
+        throw new RuntimeException('Unable to save the uploaded video.');
+    }
+    chmod($storedPath, 0640);
+
+    return [
+        'path' => $storedName,
+        'absolute_path' => $storedPath,
+        'name' => chatSanitizeAttachmentName(
+            (string) ($file['name'] ?? ''),
+            $extension
+        ),
+        'size' => (int) $size
+    ];
 }
 
 function chatStoreImageAttachment(array $file): array

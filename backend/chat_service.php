@@ -1763,70 +1763,10 @@ function chatGetOneToOneConversationPeer(
         throw new ChatHttpException('Unauthorized.', 403);
     }
 
-    if (
-        count($participants) !== 2
-        || count(array_unique(array_column($participants, 'actor_type'))) !== 2
-        || !in_array('admin', array_column($participants, 'actor_type'), true)
-        || !in_array('seller', array_column($participants, 'actor_type'), true)
-    ) {
-        throw new ChatHttpException('Calls are only available between one Admin and one Seller.', 403);
-    }
-
-    $participantsByType = [];
-    foreach ($participants as $participant) {
-        $participantsByType[$participant['actor_type']] = chatValidateActorIdentity(
-            (string) $participant['actor_type'],
-            (int) $participant['actor_id']
-        );
-    }
-
-    if (
-        in_array(
-            $conversation['conversation_class'] ?? $conversation['conversation_type'],
-            ['transaction', 'claimed_submission'],
-            true
-        )
-        && (
-            (int) $participantsByType['seller']['actor_id']
-                !== (int) $conversation['seller_id']
-            || (int) $participantsByType['admin']['actor_id']
-                !== (int) $conversation['responsible_admin_id']
-        )
-    ) {
-        throw new ChatHttpException(
-            'Calls are unavailable because this transaction conversation does not match its current seller and responsible Admin.',
-            403
-        );
-    }
-
-    $peer = null;
-    foreach ($participantsByType as $participantType => $identity) {
-        if (
-            $participantType === $actor['actor_type']
-            && (int) $identity['actor_id'] === (int) $actor['actor_id']
-        ) {
-            continue;
-        }
-        $peer = [
-            'actor_type' => $identity['actor_type'],
-            'actor_id' => $identity['actor_id'],
-            'display_name' => chatParticipantDisplayNameForViewer(
-                $actor,
-                $identity['actor_type'],
-                $identity['display_name']
-            ),
-            'profile_picture' => $identity['profile_picture'] ?? ''
-        ];
-    }
-
-    if ($peer === null) {
-        throw new ChatHttpException('Unauthorized.', 403);
-    }
-
-    return [
-        'conversation' => $conversation,
-        'peer' => $peer
-    ];
+    throw new ChatHttpException(
+        'Calls are only available between eligible Seller accounts.',
+        403
+    );
 }
 
 function chatWebRtcIceServers(): array

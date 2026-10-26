@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/auth.php';
 require_once __DIR__ . '/../../backend/csrf.php';
+require_once __DIR__ . '/../../backend/pagination.php';
 
 requireAdminLogin();
 
@@ -23,6 +24,10 @@ if (!hasPermission('manage_settings')) {
 
 $currentAdmin = getCurrentAdmin();
 $csrfToken = generateCsrfToken();
+$activityPagination = vnzPaginationClamp(
+    vnzPaginationState(12),
+    (int) $pdo->query('SELECT COUNT(*) FROM admin_activity_logs')->fetchColumn()
+);
 $activityStmt = $pdo->query("
     SELECT
         l.action,
@@ -35,9 +40,16 @@ $activityStmt = $pdo->query("
     FROM admin_activity_logs l
     LEFT JOIN admins a ON a.id = l.admin_id
     ORDER BY l.created_at DESC, l.id DESC
-    LIMIT 50
+    LIMIT {$activityPagination['per_page']} OFFSET {$activityPagination['offset']}
 ");
 $recentActivity = $activityStmt->fetchAll();
+$activityPaginationHtml = vnzRenderPagination(
+    $activityPagination,
+    [],
+    'settings',
+    'admin',
+    '/VNZ-TECH/admin/dashboard.php'
+);
 
 ?>
 
@@ -188,6 +200,10 @@ $recentActivity = $activityStmt->fetchAll();
         <section class="operations-settings-card admin-activity-card">
             <h2>Recent admin activity</h2>
             <p>Latest sign-ins and security or settings changes across admin accounts.</p>
+
+            <?php if ($activityPagination['last_page'] > 1): ?>
+                <?= $activityPaginationHtml ?>
+            <?php endif; ?>
 
             <?php if (!$recentActivity): ?>
                 <div class="admin-activity-empty">No admin activity has been recorded yet.</div>

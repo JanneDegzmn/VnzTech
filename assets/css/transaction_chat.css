@@ -8,12 +8,30 @@
     border-radius: 14px;
 }
 
+.transaction-chat-video-attachment {
+    display: block;
+    width: min(100%, 520px);
+    max-height: min(60vh, 360px);
+    margin: 5px 0;
+    background: #080d12;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 9px;
+}
+
 .floating-chat-window-title {
     display: flex;
     min-width: 0;
     flex: 1 1 auto;
     flex-direction: column;
     gap: 2px;
+}
+
+.transaction-chat-attachment-preview video {
+    width: min(160px, 35vw);
+    max-height: 110px;
+    flex: 0 0 auto;
+    background: #080d12;
+    border-radius: 5px;
 }
 
 .floating-chat-window-title > strong {
@@ -378,7 +396,7 @@
     flex: 1 1 auto;
     flex-direction: column;
     justify-content: center;
-    gap: 12px;
+    gap: 9px;
     text-align: center;
 }
 
@@ -731,7 +749,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
     margin-bottom: 12px;
 }
 
@@ -796,21 +814,18 @@
     font-size: 12px;
 }
 
-.transaction-chat-info-meta,
-.transaction-chat-approval-details {
+.transaction-chat-info-meta {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px 18px;
     margin: 0;
 }
 
-.transaction-chat-info-meta > div,
-.transaction-chat-approval-details > div {
+.transaction-chat-info-meta > div {
     min-width: 0;
 }
 
-.transaction-chat-info-meta dt,
-.transaction-chat-approval-details dt {
+.transaction-chat-info-meta dt {
     margin-bottom: 3px;
     color: var(--chat-muted, #94a3b2);
     font-size: 9px;
@@ -819,147 +834,12 @@
     text-transform: uppercase;
 }
 
-.transaction-chat-info-meta dd,
-.transaction-chat-approval-details dd {
+.transaction-chat-info-meta dd {
     margin: 0;
     color: var(--chat-text, #eef4f8);
     font-size: 12px;
     font-weight: 650;
     overflow-wrap: anywhere;
-}
-
-.transaction-chat-approval-modal {
-    display: none;
-    position: fixed;
-    z-index: 12000;
-    inset: 0;
-    align-items: center;
-    justify-content: center;
-    padding: 18px;
-}
-
-.transaction-chat-approval-modal.is-open {
-    display: flex;
-}
-
-.transaction-chat-approval-backdrop {
-    position: absolute;
-    inset: 0;
-    background: rgba(3, 8, 13, 0.78);
-    backdrop-filter: blur(6px);
-}
-
-.transaction-chat-approval-panel {
-    position: relative;
-    width: min(100%, 470px);
-    padding: 26px;
-    color: #eef4f8;
-    background:
-        radial-gradient(circle at 100% 0, rgba(34, 184, 238, 0.13), transparent 38%),
-        #111923;
-    border: 1px solid rgba(34, 184, 238, 0.24);
-    border-radius: 18px;
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
-}
-
-.transaction-chat-approval-kicker {
-    color: #58c9ea;
-    font-size: 10px;
-    font-weight: 850;
-    letter-spacing: 1.6px;
-}
-
-.transaction-chat-approval-panel h2 {
-    margin: 9px 0 7px;
-    color: #f4f8fb;
-    font-size: 23px;
-}
-
-.transaction-chat-approval-panel > p {
-    margin: 0 0 18px;
-    color: #aab8c4;
-    font-size: 13px;
-    line-height: 1.5;
-}
-
-.transaction-chat-approval-details {
-    padding: 14px;
-    background: rgba(6, 12, 18, 0.55);
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    border-radius: 11px;
-}
-
-.transaction-chat-approval-actions {
-    display: flex;
-    justify-content: flex-end;
-    gap: 9px;
-    margin-top: 20px;
-}
-
-.transaction-chat-approval-actions button {
-    min-height: 40px;
-    padding: 0 14px;
-    border-radius: 9px;
-    cursor: pointer;
-    font: inherit;
-    font-size: 12px;
-    font-weight: 800;
-}
-
-.transaction-chat-approval-primary {
-    color: #04131a;
-    background: linear-gradient(135deg, #53d3f4, #22b8ee);
-    border: 0;
-}
-
-.transaction-chat-approval-close {
-    color: #c5d0d9;
-    background: rgba(148, 163, 184, 0.08);
-    border: 1px solid var(--chat-border);
-}
-
-.transaction-chat-shortcut {
-    display: flex;
-    width: 100%;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    margin: 24px 0;
-    padding: 17px 20px;
-    color: #eff8fc;
-    background:
-        linear-gradient(110deg, rgba(34, 184, 238, 0.11), transparent 65%),
-        #101923;
-    border: 1px solid rgba(34, 184, 238, 0.24);
-    border-radius: 13px;
-    font: inherit;
-    text-align: left;
-    cursor: pointer;
-    transition: border-color 0.15s ease, transform 0.15s ease;
-}
-
-.transaction-chat-shortcut:hover {
-    border-color: rgba(34, 184, 238, 0.55);
-    transform: translateY(-1px);
-}
-
-.transaction-chat-shortcut > span:first-child {
-    display: grid;
-    gap: 4px;
-}
-
-.transaction-chat-shortcut strong {
-    font-size: 14px;
-}
-
-.transaction-chat-shortcut small {
-    color: #9eacb8;
-    font-size: 12px;
-}
-
-.transaction-chat-shortcut > span:last-child {
-    color: #61d2f2;
-    font-size: 21px;
 }
 
 .floating-messages-root {
@@ -969,17 +849,17 @@
 
 .floating-messages-launcher {
     position: fixed;
-    right: 24px;
-    bottom: 22px;
+    right: 20px;
+    bottom: 18px;
     z-index: 11002;
     display: grid;
-    width: 58px;
-    height: 58px;
+    width: 54px;
+    height: 54px;
     place-items: center;
     color: #06151c;
     background: linear-gradient(145deg, #62dbf5, #16a9dc);
     border: 1px solid rgba(177, 242, 255, 0.52);
-    border-radius: 19px;
+    border-radius: 17px;
     box-shadow:
         0 10px 28px rgba(0, 0, 0, 0.36),
         0 0 0 1px rgba(34, 184, 238, 0.16);
@@ -1049,12 +929,12 @@
 
 .floating-messages-panel {
     position: fixed;
-    right: 24px;
-    bottom: 92px;
+    right: 20px;
+    bottom: 82px;
     z-index: 11001;
     display: flex;
-    width: min(360px, calc(100vw - 28px));
-    max-height: min(520px, calc(100dvh - 120px));
+    width: min(340px, calc(100vw - 28px));
+    max-height: min(480px, calc(100dvh - 106px));
     flex-direction: column;
     overflow: hidden;
     color: #eef4f8;
@@ -1068,8 +948,8 @@
 
 .floating-messages-categories {
     position: fixed;
-    right: 29px;
-    bottom: 92px;
+    right: 25px;
+    bottom: 82px;
     z-index: 11001;
     display: flex;
     align-items: center;
@@ -1081,9 +961,9 @@
 .floating-messages-category {
     position: relative;
     display: grid;
-    width: 48px;
-    height: 48px;
-    flex: 0 0 48px;
+    width: 44px;
+    height: 44px;
+    flex: 0 0 44px;
     place-items: center;
     color: #d6e5ed;
     background: linear-gradient(145deg, #1b2935, #111b25);
@@ -1103,39 +983,39 @@
 }
 
 .floating-messages-category[data-message-category="global"] {
-    --closed-offset: 137px;
+    --closed-offset: 120px;
     --open-delay: 0ms;
     --close-delay: 160ms;
 }
 
 .floating-messages-category[data-message-category="private"] {
-    --closed-offset: 77px;
+    --closed-offset: 67px;
     --open-delay: 80ms;
     --close-delay: 80ms;
 }
 
 .floating-messages-category[data-message-category="contacts"] {
-    --closed-offset: 17px;
+    --closed-offset: 14px;
     --open-delay: 160ms;
     --close-delay: 0ms;
 }
 
 .floating-messages-category[data-message-category="guest-sellers"] {
-    --closed-offset: 17px;
+    --closed-offset: 14px;
     --open-delay: 240ms;
     --close-delay: 0ms;
 }
 
 .floating-messages-root[data-actor-type="admin"] .floating-messages-category[data-message-category="global"] {
-    --closed-offset: 197px;
+    --closed-offset: 173px;
 }
 
 .floating-messages-root[data-actor-type="admin"] .floating-messages-category[data-message-category="private"] {
-    --closed-offset: 137px;
+    --closed-offset: 120px;
 }
 
 .floating-messages-root[data-actor-type="admin"] .floating-messages-category[data-message-category="contacts"] {
-    --closed-offset: 77px;
+    --closed-offset: 67px;
     --open-delay: 160ms;
     --close-delay: 80ms;
 }
@@ -1236,7 +1116,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 12px;
-    padding: 15px 16px;
+    padding: 12px 14px;
     background:
         linear-gradient(110deg, rgba(34, 184, 238, 0.11), transparent 75%),
         #111923;
@@ -1302,10 +1182,10 @@
     display: grid;
     grid-template-columns: 36px minmax(0, 1fr);
     grid-template-rows: auto auto;
-    min-height: 69px;
-    column-gap: 10px;
-    row-gap: 4px;
-    padding: 10px 52px 10px 10px;
+    min-height: 64px;
+    column-gap: 9px;
+    row-gap: 3px;
+    padding: 8px 48px 8px 9px;
     color: #97a7b4;
     background: transparent;
     border: 1px solid transparent;
@@ -1463,8 +1343,8 @@
 
 .floating-messages-unavailable {
     position: fixed;
-    right: 22px;
-    bottom: 22px;
+    right: 20px;
+    bottom: 18px;
     z-index: 11000;
     max-width: min(340px, calc(100vw - 44px));
     padding: 11px 14px;
@@ -1477,11 +1357,11 @@
 
 .floating-chat-windows {
     position: fixed;
-    right: 22px;
-    bottom: 91px;
+    right: 20px;
+    bottom: 82px;
     z-index: 10999;
     display: flex;
-    max-width: calc(100vw - 118px);
+    max-width: calc(100vw - 106px);
     align-items: flex-end;
     flex-direction: row-reverse;
     gap: 12px;
@@ -1490,8 +1370,8 @@
 
 .floating-chat-window {
     display: flex;
-    width: min(385px, calc(100vw - 44px));
-    height: min(570px, calc(100dvh - 116px));
+    width: min(360px, calc(100vw - 44px));
+    height: min(520px, calc(100dvh - 106px));
     max-width: 100%;
     min-width: 0;
     min-height: 0;
@@ -2768,13 +2648,13 @@
     .floating-messages-categories {
         right: 19px;
         bottom: 86px;
-        gap: 10px;
+        gap: 9px;
     }
 
     .floating-messages-category {
-        width: 48px;
-        height: 48px;
-        flex-basis: 48px;
+        width: 44px;
+        height: 44px;
+        flex-basis: 44px;
     }
 
     .floating-chat-windows {
@@ -2902,18 +2782,6 @@
 
     .transaction-chat-info-meta dd {
         font-size: 11px;
-    }
-
-    .transaction-chat-approval-panel {
-        padding: 21px;
-    }
-
-    .transaction-chat-approval-actions {
-        flex-direction: column;
-    }
-
-    .transaction-chat-approval-actions button {
-        width: 100%;
     }
 
     .transaction-chat-status {
@@ -3551,6 +3419,12 @@
 }
 
 @media (max-width: 700px) {
+    .floating-messages-root.is-mobile-chat-open .floating-messages-launcher,
+    .floating-messages-root.is-mobile-chat-open .floating-messages-categories {
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     .floating-chat-window.is-maximized {
         inset: 0;
         grid-template-columns: minmax(0, 1fr);
@@ -3583,6 +3457,81 @@
 
     .floating-chat-window.is-maximized .floating-chat-bubble {
         max-width: 88%;
+    }
+
+    .transaction-chat.is-call-connected > :not([data-chat-call-panel]):not([data-chat-call-indicator]) {
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .transaction-chat.is-call-connected > [data-chat-call-panel],
+    .transaction-chat.is-call-connected > [data-chat-call-indicator] {
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .floating-chat-window.is-call-active {
+        visibility: hidden;
+        pointer-events: none;
+    }
+
+    .floating-chat-window.is-call-active [data-chat-call-panel] {
+        visibility: visible;
+        pointer-events: auto;
+    }
+
+    .transaction-chat-call-panel.is-active-window {
+        inset: 0;
+        width: 100vw;
+        height: 100dvh;
+        min-width: 0;
+        min-height: 0;
+        max-width: none;
+        max-height: none;
+        transform: none;
+        padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+        overflow: auto;
+        background: #071019;
+    }
+
+    .transaction-chat-call-panel.is-active-window .transaction-chat-call-card {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        border-radius: 0;
+    }
+
+    .transaction-chat-call-panel:not(.is-active-window).is-incoming {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        width: 100vw;
+        height: 100dvh;
+        min-width: 0;
+        min-height: 0;
+        max-width: none;
+        max-height: none;
+        padding: max(20px, env(safe-area-inset-top)) 20px max(20px, env(safe-area-inset-bottom));
+        border-radius: 0;
+        place-items: stretch;
+        overflow: auto;
+        background: #071019;
+        backdrop-filter: none;
+    }
+
+    .transaction-chat-call-panel:not(.is-active-window).is-incoming .transaction-chat-call-card {
+        width: 100%;
+        height: 100%;
+        max-height: none;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
+    .transaction-chat-call-panel:not(.is-active-window).is-incoming .transaction-chat-call-body {
+        justify-content: center;
+        gap: 22px;
+        padding: 24px;
     }
 }
 
@@ -4418,4 +4367,16 @@
 .transaction-chat-typing-dots,
 .transaction-chat-typing-dot {
     flex: 0 0 auto;
+}
+
+.floating-chat-window-actions .floating-chat-workspace-back {
+    display: grid;
+}
+
+.floating-chat-window.is-workspace-list-open .floating-chat-workspace-sidebar {
+    display: flex;
+}
+
+.floating-chat-window.is-workspace-list-open .floating-chat-window-body {
+    display: none;
 }

@@ -3,6 +3,7 @@ require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/auth.php';
 require_once __DIR__ . '/../../backend/csrf.php';
+require_once __DIR__ . '/../../backend/pagination.php';
 
 requireAdminLogin();
 
@@ -13,6 +14,9 @@ if (!hasPermission('manage_trades')) {
 }
 
 $csrfToken = generateCsrfToken();
+$pagination = vnzPaginationState(12);
+$requestCount = (int) $pdo->query('SELECT COUNT(*) FROM trade_requests')->fetchColumn();
+$pagination = vnzPaginationClamp($pagination, $requestCount);
 $tradeRequestsStmt = $pdo->prepare("
     SELECT
         tr.id,
@@ -35,9 +39,17 @@ $tradeRequestsStmt = $pdo->prepare("
     INNER JOIN users u ON u.id = tr.user_id
     INNER JOIN trade_items ti ON ti.id = tr.trade_item_id
     ORDER BY tr.requested_at DESC, tr.id DESC
+    LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
 ");
 $tradeRequestsStmt->execute();
 $tradeRequests = $tradeRequestsStmt->fetchAll();
+$paginationHtml = vnzRenderPagination(
+    $pagination,
+    [],
+    'trade_requests',
+    'admin',
+    '/VNZ-TECH/admin/dashboard.php'
+);
 
 function tradeRequestStatusLabel(string $status): string
 {
@@ -67,6 +79,9 @@ function tradeRequestFormatDate(?string $date): string
             <p>Review requests and verify the customer’s scrap in person.</p>
         </div>
     </div>
+
+    <?php if ($pagination['last_page'] > 1): ?>
+    <?php endif; ?>
 
     <?php if (empty($tradeRequests)): ?>
         <div class="trade-empty-state">No trade requests have been submitted yet.</div>
@@ -156,6 +171,7 @@ function tradeRequestFormatDate(?string $date): string
                 </article>
             <?php endforeach; ?>
         </div>
+        <?= $paginationHtml ?>
     <?php endif; ?>
 </div>
 

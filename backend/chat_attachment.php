@@ -41,7 +41,7 @@ try {
            AND p.actor_type = ?
            AND p.actor_id = ?
         WHERE m.id = ?
-          AND m.message_type IN ('image', 'file', 'voice')
+          AND m.message_type IN ('image', 'file', 'voice', 'video')
           AND m.deleted_at IS NULL
         LIMIT 1
     ");
@@ -66,6 +66,7 @@ try {
         'image' => preg_match('/\A[a-f0-9]{32}\.(?:jpg|png|webp)\z/', $storedName) === 1,
         'file' => preg_match('/\A[a-f0-9]{32}\.pdf\z/', $storedName) === 1,
         'voice' => preg_match('/\A[a-f0-9]{32}\.(?:ogg|webm)\z/', $storedName) === 1,
+        'video' => preg_match('/\A[a-f0-9]{32}\.(?:mp4|webm)\z/', $storedName) === 1,
         default => false
     };
     if (!$validStoredName) {
@@ -91,6 +92,10 @@ try {
         'webp' => 'image/webp',
         'pdf' => 'application/pdf'
     ];
+    if ($attachment['message_type'] === 'video') {
+        $mimeTypeByExtension['mp4'] = 'video/mp4';
+        $mimeTypeByExtension['webm'] = 'video/webm';
+    }
     if ($attachment['message_type'] === 'voice') {
         $mimeTypeByExtension['ogg'] = 'audio/ogg';
         $mimeTypeByExtension['webm'] = 'audio/webm';
@@ -111,6 +116,14 @@ try {
         && $mimeType === 'application/ogg'
     ) {
         $detectedMimeType = 'audio/ogg';
+    }
+    if (
+        $attachment['message_type'] === 'video'
+        && $extension === 'mp4'
+        && $mimeType !== 'video/mp4'
+    ) {
+        chatAttachmentErrorResponse(404);
+        exit;
     }
     if (
         !isset($mimeTypeByExtension[$extension])
@@ -136,6 +149,8 @@ try {
     } elseif ($attachment['message_type'] === 'image') {
         header('Content-Disposition: inline; filename="chat-image-' . $messageId . '.' . $extension . '"');
         header("Content-Security-Policy: default-src 'none'; sandbox");
+    } elseif ($attachment['message_type'] === 'video') {
+        header('Content-Disposition: inline; filename="chat-video-' . $messageId . '.' . $extension . '"');
     } else {
         header('Content-Disposition: inline; filename="voice-message-' . $messageId . '.' . $extension . '"');
     }
@@ -145,13 +160,14 @@ try {
         chatAttachmentErrorResponse(404);
         exit;
     }
-    if ($attachment['message_type'] === 'voice') {
+    $supportsRanges = in_array($attachment['message_type'], ['voice', 'video'], true);
+    if ($supportsRanges) {
         header('Accept-Ranges: bytes');
     }
     $start = 0;
     $end = $fileSize - 1;
     $rangeHeader = $_SERVER['HTTP_RANGE'] ?? '';
-    if ($attachment['message_type'] === 'voice' && $rangeHeader !== '') {
+    if ($supportsRanges && $rangeHeader !== '') {
         if (
             preg_match('/\Abytes=(\d*)-(\d*)\z/', $rangeHeader, $matches) !== 1
             || ($matches[1] === '' && $matches[2] === '')
