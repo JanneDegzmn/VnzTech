@@ -7,3 +7,4 @@
     </div>
 </div>
 <script src="/VNZ-TECH/assets/js/loader.js" defer></script>
+<script src="/VNZ-TECH/assets/js/password-visibility.js?v=<?= filemtime(__DIR__ . '/../assets/js/password-visibility.js') ?>" defer></script>

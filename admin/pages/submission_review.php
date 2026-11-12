@@ -514,14 +514,17 @@ foreach ($items as $item) {
 
         <div class="summary-card">
 
-            <div class="summary-icon">
-                📦
+            <div class="summary-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="m4 7 8-4 8 4v10l-8 4-8-4V7Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                    <path d="m4 7 8 4 8-4M12 11v10" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                </svg>
             </div>
 
             <div>
 
                 <span>
-                    ITEMS
+                    Items
                 </span>
 
                 <strong>
@@ -535,14 +538,17 @@ foreach ($items as $item) {
 
         <div class="summary-card">
 
-            <div class="summary-icon">
-                🔢
+            <div class="summary-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M8 5h12M8 12h12M8 19h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+                    <path d="M3.5 5h.01M3.5 12h.01M3.5 19h.01" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                </svg>
             </div>
 
             <div>
 
                 <span>
-                    TOTAL QUANTITY
+                    Total quantity
                 </span>
 
                 <strong>
@@ -558,14 +564,14 @@ foreach ($items as $item) {
 
         <div class="summary-card">
 
-            <div class="summary-icon">
-                💰
+            <div class="summary-icon" aria-hidden="true">
+                ₱
             </div>
 
             <div>
 
                 <span>
-                    SELLER ASKING
+                    Seller asking
                 </span>
 
                 <strong>
@@ -581,14 +587,17 @@ foreach ($items as $item) {
 
         <div class="summary-card">
 
-            <div class="summary-icon">
-                🏷️
+            <div class="summary-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M20 13 13 20l-9-9V4h7l9 9Z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>
+                    <circle cx="8" cy="8" r="1.2" fill="currentColor"/>
+                </svg>
             </div>
 
             <div>
 
                 <span>
-                    SELLING METHOD
+                    Selling method
                 </span>
 
                 <strong>
@@ -1497,8 +1506,7 @@ foreach ($items as $item) {
             </strong>
 
             <span>
-                ACCEPT uses the seller's total asking price exactly.
-                COUNTER OFFER opens the VNZ TECH offer form.
+                Accepting matches the seller's total asking price. A counter offer lets you set VNZ TECH's price.
             </span>
 
         </div>
@@ -1511,7 +1519,7 @@ foreach ($items as $item) {
                 data-submission-response="decline"
                 data-submission-id="<?= (int) $submission['id'] ?>"
             >
-                DECLINE
+                Decline
             </button>
 
             <button
@@ -1520,9 +1528,8 @@ foreach ($items as $item) {
                 data-submission-response="accept"
                 data-submission-id="<?= (int) $submission['id'] ?>"
             >
-                ACCEPT
+                Accept
                 <?= peso($totalAskingPrice) ?>
-                →
             </button>
 
             <?php if ($canSendOffer && $showOfferForm): ?>
@@ -1533,7 +1540,7 @@ foreach ($items as $item) {
                     aria-controls="adminOfferPanel"
                     aria-expanded="false"
                 >
-                    COUNTER OFFER
+                    Counter offer
                 </button>
             <?php endif; ?>
 
@@ -2087,7 +2094,7 @@ foreach ($items as $item) {
 
                             <?= $latestIsSeller
                                 ? 'VNZ TECH RESPONSE'
-                                : 'VNZ TECH ACTION'
+                                : 'VNZ TECH OFFER'
                             ?>
 
                         </span>
@@ -2156,12 +2163,7 @@ foreach ($items as $item) {
                                 for="offer_amount"
                             >
 
-                                VNZ TECH
-                                <?= $latestIsSeller
-                                    ? 'COUNTER'
-                                    : 'OFFER'
-                                ?>
-                                AMOUNT
+                                <?= $latestIsSeller ? 'Counter offer amount' : 'Offer amount' ?>
 
                             </label>
 
@@ -2204,8 +2206,7 @@ foreach ($items as $item) {
                                 for="offer_feedback"
                             >
 
-                                FEEDBACK /
-                                MESSAGE TO SELLER
+                                Message to seller
 
                             </label>
 
@@ -2231,19 +2232,15 @@ foreach ($items as $item) {
                         "
                     >
 
-                        <span>
-                            ⚠
+                        <span class="offer-warning-mark" aria-hidden="true">
+                            i
                         </span>
 
 
                         <p>
 
-                            Make sure the submitted photos,
-                            item condition, quantity, and
-                            asking price have been reviewed
-                            before sending the offer.
-                            The final amount should reflect
-                            VNZ TECH's verified buying valuation.
+                            Review the photos, item condition, quantity, and asking price before sending.
+                            Base the offer on VNZ TECH's verified buying valuation.
 
                         </p>
 
@@ -2269,10 +2266,6 @@ foreach ($items as $item) {
                             type="submit"
                             class="primary-button"
                         >
-
-                            <span>
-                                ↗
-                            </span>
 
                             <?= $latestIsSeller
                                 ? 'Send Counter Offer'
@@ -2300,8 +2293,10 @@ foreach ($items as $item) {
             "
         >
 
-            <div class="restricted-icon">
-                🔒
+            <div class="restricted-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none">
+                    <path d="M7 10V7a5 5 0 0 1 10 0v3m-10 0h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2Zm5 4v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
             </div>
 
 

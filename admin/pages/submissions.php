@@ -104,6 +104,24 @@ $sql = "
         s.created_at,
         s.updated_at,
 
+        (
+            SELECT COUNT(*)
+            FROM offers pending_offer
+            WHERE pending_offer.submission_id = s.id
+              AND pending_offer.id = (
+                  SELECT MAX(latest_offer.id)
+                  FROM offers latest_offer
+                  WHERE latest_offer.submission_id = s.id
+              )
+              AND pending_offer.sender_type = 'seller'
+              AND LOWER(TRIM(pending_offer.status)) IN (
+                  'sent',
+                  'offer_sent',
+                  'pending',
+                  'active'
+              )
+        ) AS pending_counter_offer_count,
+
         COUNT(si.id) AS item_count,
 
         COALESCE(
@@ -870,7 +888,7 @@ function submissionDate(string $date): string
 
                             <!-- ACTION -->
 
-                            <td>
+                            <td class="submission-action-cell">
 
                                 <button
                                     type="button"
@@ -879,6 +897,25 @@ function submissionDate(string $date): string
                                 >
                                     VIEW
                                 </button>
+
+                                <?php
+                                $pendingCounterOfferCount = (int) (
+                                    $submission['pending_counter_offer_count']
+                                    ?? 0
+                                );
+                                ?>
+
+                                <?php if ($pendingCounterOfferCount > 0): ?>
+
+                                    <span
+                                        class="submission-counter-offer-badge"
+                                        title="<?= $pendingCounterOfferCount ?> seller counter-offer<?= $pendingCounterOfferCount === 1 ? '' : 's' ?> awaiting review"
+                                        aria-label="<?= $pendingCounterOfferCount ?> seller counter-offer<?= $pendingCounterOfferCount === 1 ? '' : 's' ?> awaiting review"
+                                    >
+                                        <?= number_format($pendingCounterOfferCount) ?>
+                                    </span>
+
+                                <?php endif; ?>
 
                             </td>
 

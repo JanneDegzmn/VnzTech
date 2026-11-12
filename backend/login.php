@@ -229,6 +229,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/seller_login.css?v=20261006-seller-2fa"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/password_visibility.css?v=<?= filemtime(__DIR__ . '/../assets/css/password_visibility.css') ?>"
+    >
 </head>
 
 <body>
@@ -525,5 +529,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
 </script>
 
+<script src="/VNZ-TECH/assets/js/password-visibility.js?v=<?= filemtime(__DIR__ . '/../assets/js/password-visibility.js') ?>" defer></script>
 </body>
 </html>

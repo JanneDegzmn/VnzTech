@@ -561,6 +561,30 @@
    VIEW BUTTON
 ========================================================= */
 
+.submission-action-cell {
+    position: relative;
+}
+
+.submission-counter-offer-badge {
+    position: absolute;
+    top: 5px;
+    right: 7px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border: 1px solid #f04438;
+    border-radius: 999px;
+    background: #d92d20;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 800;
+    line-height: 1;
+    box-sizing: border-box;
+}
+
 .view-submission-button {
     height: 31px;
     padding: 0 13px;

@@ -18,7 +18,9 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit;
 }
 
-if (!isAdminLoggedIn() || !getCurrentAdmin()) {
+$currentAdmin = getCurrentAdmin();
+
+if (!isAdminLoggedIn() || !$currentAdmin) {
     http_response_code(401);
 
     echo json_encode([
@@ -28,6 +30,8 @@ if (!isAdminLoggedIn() || !getCurrentAdmin()) {
 
     exit;
 }
+
+$adminId = (int) $currentAdmin['id'];
 
 if (!hasPermission('manage_offers')) {
     http_response_code(403);
@@ -455,7 +459,7 @@ try {
                 NULL,
                 'pending',
                 'pending',
-                NULL,
+                ?,
                 NULL,
                 NOW(),
                 NOW(),
@@ -467,7 +471,8 @@ try {
             (int) $submissionId,
             $data['offer_id'],
             $transactionReference,
-            $data['offer_amount']
+            $data['offer_amount'],
+            $adminId
         ]);
         $transactionId = (int) $pdo->lastInsertId();
     }

@@ -220,6 +220,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/setup_super_admin.css"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/password_visibility.css?v=<?= filemtime(__DIR__ . '/../assets/css/password_visibility.css') ?>"
+    >
 
 </head>
 
@@ -380,6 +384,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php endif; ?>
 
 </div>
+
+<script src="/VNZ-TECH/assets/js/password-visibility.js?v=<?= filemtime(__DIR__ . '/../assets/js/password-visibility.js') ?>" defer></script>
 
 </body>
 

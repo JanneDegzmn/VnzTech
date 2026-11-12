@@ -1,7 +1,4 @@
-/* =========================================================
-   VNZ TECH — ADMIN SUBMISSION REVIEW
-   Dark / Industrial / Premium
-========================================================= */
+/* VNZ TECH admin submission review */
 
 .submission-review-page {
     width: 100%;
@@ -59,10 +56,10 @@
 
 .reference-label,
 .section-kicker {
-    color: #667085;
+    color: #8291a0;
     font-size: 10px;
-    font-weight: 900;
-    letter-spacing: 1.7px;
+    font-weight: 750;
+    letter-spacing: 1.1px;
 }
 
 .reference-block h1 {
@@ -70,7 +67,7 @@
     color: #ffffff;
     font-size: clamp(28px, 4vw, 42px);
     line-height: 1;
-    font-weight: 900;
+    font-weight: 800;
     letter-spacing: -1.5px;
 }
 
@@ -186,25 +183,32 @@
     display: grid;
     place-items: center;
     flex-shrink: 0;
-    background: #181f28;
-    border: 1px solid #27313d;
-    border-radius: 8px;
-    font-size: 17px;
+    color: #38bdf8;
+    background: rgba(14, 165, 233, 0.08);
+    border: 1px solid rgba(14, 165, 233, 0.18);
+    border-radius: 9px;
+    font-size: 18px;
+    font-weight: 700;
+}
+
+.summary-icon svg {
+    width: 19px;
+    height: 19px;
 }
 
 .summary-card span {
     display: block;
     margin-bottom: 4px;
-    color: #687383;
-    font-size: 9px;
-    font-weight: 900;
-    letter-spacing: 1px;
+    color: #84919d;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.4px;
 }
 
 .summary-card strong {
-    color: #ffffff;
+    color: #eef2f6;
     font-size: 17px;
-    font-weight: 900;
+    font-weight: 750;
 }
 
 
@@ -215,9 +219,9 @@
 .review-card {
     margin-top: 18px;
     padding: 24px;
-    background: #11161d;
-    border: 1px solid #202833;
-    border-radius: 10px;
+    background: #10161d;
+    border: 1px solid #27323d;
+    border-radius: 12px;
 }
 
 .section-header {
@@ -231,8 +235,8 @@
 .section-header h2 {
     margin: 4px 0 0;
     color: #ffffff;
-    font-size: 19px;
-    font-weight: 900;
+    font-size: 18px;
+    font-weight: 750;
     letter-spacing: -0.3px;
 }
 
@@ -673,25 +677,16 @@
 ========================================================= */
 
 .negotiation-amount {
-    margin-top: 28px;
-
-    color: #ffffff;
-
-    font-size: clamp(
-        52px,
-        6vw,
-        76px
-    );
-
-    line-height: .84;
-
-    font-weight: 950;
-
-    letter-spacing: -4px;
+    margin-top: 20px;
+    color: #f1f5f9;
+    font-size: clamp(40px, 4vw, 52px);
+    line-height: 1;
+    font-weight: 750;
+    letter-spacing: -1.8px;
 }
 
 .negotiation-seller-active .negotiation-amount {
-    color: #f2f4f6;
+    color: #f1f5f9;
 }
 
 
@@ -782,44 +777,27 @@
 ========================================================= */
 
 .seller-counter-warning {
-    margin-top: 22px;
-    padding: 14px 16px;
-
+    margin-top: 19px;
+    padding: 13px 15px;
     display: flex;
     flex-direction: column;
-    gap: 4px;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(214, 189, 125, .075),
-            rgba(214, 189, 125, .035)
-        );
-
-    border:
-        1px solid
-        rgba(
-            214,
-            189,
-            125,
-            .23
-        );
-
-    border-radius: 7px;
+    gap: 5px;
+    background: #101a23;
+    border: 1px solid #263846;
+    border-left: 3px solid #0ea5e9;
+    border-radius: 8px;
 }
 
 .seller-counter-warning strong {
-    color: #dcc685;
-
-    font-size: 10px;
-    font-weight: 950;
+    color: #dce8f1;
+    font-size: 12px;
+    font-weight: 700;
 }
 
 .seller-counter-warning span {
-    color: #887d67;
-
-    font-size: 9px;
-    line-height: 1.55;
+    color: #91a1af;
+    font-size: 11px;
+    line-height: 1.5;
 }
 
 
@@ -841,73 +819,56 @@
 }
 
 .negotiation-action-buttons button {
-    min-height: 47px;
-
-    padding: 0 15px;
-
-    border-radius: 7px;
-
-    font-size: 8px;
-    font-weight: 950;
-    letter-spacing: .45px;
-
+    min-height: 44px;
+    padding: 0 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 700;
     cursor: pointer;
-
     transition:
-        background .2s ease,
-        color .2s ease,
-        border-color .2s ease,
-        transform .2s ease;
+        background-color 180ms ease,
+        color 180ms ease,
+        border-color 180ms ease,
+        transform 180ms ease,
+        box-shadow 180ms ease;
 }
 
 .negotiation-decline-button {
-    color: #c38f8f;
-
-    background: #171114;
-
-    border: 1px solid #4a3036;
+    color: #d8a1a1;
+    background: #151519;
+    border: 1px solid #49363a;
 }
 
 .negotiation-decline-button:hover {
     color: #ffffff;
-    background: #1d1518;
-    border-color: #714954;
-
+    background: #21171a;
+    border-color: #704b52;
     transform: translateY(-1px);
 }
 
 .negotiation-counter-button {
-    color: #c8d0d8;
-
-    background:
-        linear-gradient(
-            180deg,
-            #1a222a,
-            #141a21
-        );
-
-    border: 1px solid #3b4753;
+    color: #c5d0da;
+    background: #151c23;
+    border: 1px solid #35424e;
 }
 
 .negotiation-counter-button:hover {
     color: #ffffff;
-    background: #202a33;
-    border-color: #73818e;
-
+    background: #1b2731;
+    border-color: #526574;
     transform: translateY(-1px);
 }
 
 .negotiation-accept-button {
-    color: #080a0c;
-
-    background: #f3f5f7;
-
-    border: 1px solid #f3f5f7;
+    color: #ffffff;
+    background: #0ea5e9;
+    border: 1px solid #0ea5e9;
 }
 
 .negotiation-accept-button:hover {
-    background: #ffffff;
-
+    background: #0284c7;
+    border-color: #0284c7;
+    box-shadow: 0 6px 16px rgba(14, 165, 233, 0.18);
     transform: translateY(-1px);
 }
 
@@ -1184,7 +1145,7 @@
 ========================================================= */
 
 .offer-panel {
-    border-color: #2b3642;
+    border-color: #2b3945;
 }
 
 .offer-form-grid {
@@ -1208,29 +1169,24 @@
 
     overflow: hidden;
 
-    height: 48px;
-
-    background: #0b1015;
-
-    border: 1px solid #293440;
-
-    border-radius: 7px;
+    height: 46px;
+    background: #0d1319;
+    border: 1px solid #2b3742;
+    border-radius: 8px;
 
     transition: .2s ease;
 }
 
 .money-input:focus-within {
-    border-color: #697585;
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
 }
 
 .money-input span {
     padding-left: 15px;
-
-    color: #737f8f;
-
+    color: #7dd3fc;
     font-size: 15px;
-
-    font-weight: 900;
+    font-weight: 700;
 }
 
 .money-input input {
@@ -1247,9 +1203,8 @@
 
     color: #ffffff;
 
-    font-size: 17px;
-
-    font-weight: 900;
+    font-size: 16px;
+    font-weight: 650;
 }
 
 .form-field textarea {
@@ -1263,17 +1218,15 @@
 
     outline: none;
 
-    background: #0b1015;
-
-    border: 1px solid #293440;
-
-    border-radius: 7px;
+    background: #0d1319;
+    border: 1px solid #2b3742;
+    border-radius: 8px;
 
     color: #e7ebf0;
 
     font-family: inherit;
 
-    font-size: 12px;
+    font-size: 13px;
 
     line-height: 1.6;
 
@@ -1281,7 +1234,16 @@
 }
 
 .form-field textarea:focus {
-    border-color: #697585;
+    border-color: #0ea5e9;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+}
+
+.form-field label {
+    margin-bottom: 8px;
+    color: #8998a6;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
 }
 
 .form-field textarea::placeholder,
@@ -1296,33 +1258,34 @@
 
 .offer-warning {
     display: flex;
-
-    gap: 11px;
-
+    align-items: flex-start;
+    gap: 10px;
     margin-top: 17px;
-
-    padding: 13px;
-
-    background: #17150f;
-
-    border: 1px solid #393324;
-
-    border-radius: 7px;
+    padding: 12px 14px;
+    background: #101a23;
+    border: 1px solid #263846;
+    border-left: 3px solid #0ea5e9;
+    border-radius: 8px;
 }
 
-.offer-warning > span {
-    color: #d5ad51;
-
-    font-size: 16px;
+.offer-warning-mark {
+    display: grid;
+    width: 18px;
+    height: 18px;
+    flex: 0 0 18px;
+    place-items: center;
+    margin-top: 1px;
+    border: 1px solid rgba(56, 189, 248, 0.5);
+    border-radius: 50%;
+    color: #7dd3fc;
+    font-size: 11px;
+    font-weight: 800;
 }
 
 .offer-warning p {
     margin: 0;
-
-    color: #91866e;
-
-    font-size: 10px;
-
+    color: #a4b2be;
+    font-size: 11px;
     line-height: 1.6;
 }
 
@@ -1347,13 +1310,12 @@
 
     padding: 0 17px;
 
-    border-radius: 7px;
+    border-radius: 8px;
 
     font-family: inherit;
 
-    font-size: 11px;
-
-    font-weight: 900;
+    font-size: 13px;
+    font-weight: 700;
 
     cursor: pointer;
 
@@ -1361,11 +1323,9 @@
 }
 
 .secondary-button {
-    color: #9ba5b3;
-
-    background: #151b22;
-
-    border: 1px solid #293440;
+    color: #aab7c2;
+    background: #151c23;
+    border: 1px solid #2d3944;
 }
 
 .secondary-button:hover {
@@ -1382,17 +1342,14 @@
     gap: 8px;
 
     color: #ffffff;
-
-    background: #1b222b;
-
-    border: 1px solid #46515f;
+    background: #0ea5e9;
+    border: 1px solid #0ea5e9;
 }
 
 .primary-button:hover {
-    background: #242d38;
-
-    border-color: #687484;
-
+    background: #0284c7;
+    border-color: #0284c7;
+    box-shadow: 0 6px 16px rgba(14, 165, 233, 0.18);
     transform: translateY(-1px);
 }
 
@@ -1421,11 +1378,15 @@
 
     flex-shrink: 0;
 
-    background: #191f27;
+    color: #7dd3fc;
+    background: rgba(14, 165, 233, 0.08);
+    border: 1px solid rgba(14, 165, 233, 0.2);
+    border-radius: 9px;
+}
 
-    border: 1px solid #293440;
-
-    border-radius: 8px;
+.restricted-icon svg {
+    width: 20px;
+    height: 20px;
 }
 
 .restricted-offer-panel strong {
@@ -1701,8 +1662,8 @@
     }
 
     .negotiation-amount {
-        font-size: 57px;
-        letter-spacing: -3px;
+        font-size: 42px;
+        letter-spacing: -1.3px;
     }
 
     .negotiation-meta {
@@ -1772,7 +1733,7 @@
     }
 
     .negotiation-amount {
-        font-size: 50px;
+        font-size: 38px;
     }
 
     .negotiation-message {

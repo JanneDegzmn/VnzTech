@@ -49,6 +49,14 @@ if (!is_array($guestRegistrationPrefill)) {
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/public_theme.css?v=<?= filemtime(__DIR__ . '/../assets/css/public_theme.css') ?>"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/social_auth.css?v=<?= filemtime(__DIR__ . '/../assets/css/social_auth.css') ?>"
+    >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/terms_modal.css?v=<?= filemtime(__DIR__ . '/../assets/css/terms_modal.css') ?>"
+    >
     <script
         src="/VNZ-TECH/assets/js/public-theme.js?v=<?= filemtime(__DIR__ . '/../assets/js/public-theme.js') ?>"
         defer
@@ -113,6 +121,7 @@ if (!is_array($guestRegistrationPrefill)) {
             enctype="multipart/form-data"
             autocomplete="off"
             data-loader
+            data-password-strength-form
         >
 
             <div class="profile-upload">
@@ -215,6 +224,8 @@ if (!is_array($guestRegistrationPrefill)) {
                         type="password"
                         id="password"
                         name="password"
+                        data-password-strength-input
+                        aria-describedby="registerPasswordPolicy"
                         minlength="8"
                         required
                     >
@@ -231,6 +242,7 @@ if (!is_array($guestRegistrationPrefill)) {
                         type="password"
                         id="confirm_password"
                         name="confirm_password"
+                        data-password-confirmation
                         minlength="8"
                         required
                     >
@@ -238,6 +250,38 @@ if (!is_array($guestRegistrationPrefill)) {
                 </div>
 
             </div>
+
+            <div class="field password-strength-field">
+                <div
+                    class="password-strength-track"
+                    data-password-strength-track
+                    data-strength="empty"
+                    role="progressbar"
+                    aria-label="Password strength"
+                    aria-valuemin="0"
+                    aria-valuemax="3"
+                    aria-valuenow="0"
+                >
+                    <span class="password-strength-fill"></span>
+                </div>
+                <div
+                    class="password-strength-label"
+                    data-password-strength-label
+                    data-strength="empty"
+                    aria-live="polite"
+                >Start typing to check strength</div>
+                <div class="password-policy" id="registerPasswordPolicy">
+                    Medium requires at least 8 characters and 3 character types. Strong requires at least 16 characters, including uppercase, lowercase, a number, and a symbol.
+                </div>
+                <div class="password-criteria">
+                    <span data-password-rule="length">8+ characters</span>
+                    <span data-password-rule="lowercase">Lowercase</span>
+                    <span data-password-rule="uppercase">Uppercase</span>
+                    <span data-password-rule="number">Number</span>
+                    <span data-password-rule="symbol">Symbol</span>
+                </div>
+            </div>
+            <div class="password-form-error" data-password-error role="alert" hidden></div>
 
             <div class="field">
 
@@ -277,8 +321,10 @@ if (!is_array($guestRegistrationPrefill)) {
                     I agree to the VNZ TECH
 
                     <a
-                        href="#"
-                        onclick="return false;"
+                        href="#termsModal"
+                        data-open-terms
+                        aria-haspopup="dialog"
+                        aria-controls="termsModal"
                     >
                         Terms & Conditions
                     </a>
@@ -298,6 +344,8 @@ if (!is_array($guestRegistrationPrefill)) {
 
         </form>
 
+        <?php include __DIR__ . '/../includes/social_auth_buttons.php'; ?>
+
         <div class="login-link">
 
             Already have an account?
@@ -311,6 +359,11 @@ if (!is_array($guestRegistrationPrefill)) {
     </div>
 
 </div>
+
+<?php include __DIR__ . '/../includes/terms_modal.php'; ?>
+
+<script src="/VNZ-TECH/assets/js/password-strength.js?v=<?= filemtime(__DIR__ . '/../assets/js/password-strength.js') ?>" defer></script>
+<script src="/VNZ-TECH/assets/js/terms-modal.js?v=<?= filemtime(__DIR__ . '/../assets/js/terms-modal.js') ?>" defer></script>
 
 <script>
 const profileInput = document.getElementById('profile_picture');

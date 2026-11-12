@@ -5,6 +5,7 @@ require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/auth.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/guest_submission_link.php';
+require_once __DIR__ . '/admin_activity.php';
 
 class ChatHttpException extends RuntimeException
 {
@@ -467,6 +468,18 @@ function chatGetSubmissionResponsibleAdminId(int $submissionId): int
             t.processed_by_admin_id,
             o.submission_id AS offer_submission_id,
             o.created_by_admin_id AS offer_admin_id,
+            CASE
+                WHEN o.sender_type = 'seller' THEN (
+                    SELECT prior_offer.created_by_admin_id
+                    FROM offers prior_offer
+                    WHERE prior_offer.submission_id = t.submission_id
+                      AND prior_offer.sender_type = 'admin'
+                      AND prior_offer.id < t.offer_id
+                    ORDER BY prior_offer.id DESC
+                    LIMIT 1
+                )
+                ELSE NULL
+            END AS prior_offer_admin_id,
             s.assigned_admin_id
         FROM transactions t
         INNER JOIN submissions s
@@ -500,6 +513,12 @@ function chatGetSubmissionResponsibleAdminId(int $submissionId): int
         if ($adminId !== null) {
             $adminIds[(int) $adminId] = true;
         }
+    }
+    if (
+        count($adminIds) === 0
+        && $transactions[0]['prior_offer_admin_id'] !== null
+    ) {
+        $adminIds[(int) $transactions[0]['prior_offer_admin_id']] = true;
     }
     if (count($adminIds) !== 1) {
         throw new ChatHttpException(
@@ -546,6 +565,18 @@ function chatGetTransactionContext(
             t.processed_by_admin_id,
             t.offer_id,
             o.created_by_admin_id AS offer_admin_id,
+            CASE
+                WHEN o.sender_type = 'seller' THEN (
+                    SELECT prior_offer.created_by_admin_id
+                    FROM offers prior_offer
+                    WHERE prior_offer.submission_id = t.submission_id
+                      AND prior_offer.sender_type = 'admin'
+                      AND prior_offer.id < t.offer_id
+                    ORDER BY prior_offer.id DESC
+                    LIMIT 1
+                )
+                ELSE NULL
+            END AS prior_offer_admin_id,
             o.submission_id AS offer_submission_id,
             s.id AS submission_id,
             s.reference_number AS submission_reference,
@@ -627,11 +658,50 @@ function chatGetTransactionContext(
             $adminIds[(int) $adminId] = true;
         }
     }
+    if (
+        count($adminIds) === 0
+        && $context['prior_offer_admin_id'] !== null
+    ) {
+        $adminIds[(int) $context['prior_offer_admin_id']] = true;
+    }
 
     if (count($adminIds) === 0) {
-        throw new ChatHttpException(
-            'Chat is unavailable because no responsible admin is recorded for this transaction.',
-            409
+        if (
+            !$lockForUpdate
+            || ($actor['actor_type'] ?? null) !== 'admin'
+            || !hasPermission('manage_offers')
+        ) {
+            throw new ChatHttpException(
+                'Chat is unavailable because no responsible admin is recorded for this transaction.',
+                409
+            );
+        }
+
+        $adminId = (int) ($actor['actor_id'] ?? 0);
+        if ($adminId <= 0) {
+            throw new ChatHttpException('Unauthorized.', 403);
+        }
+
+        $claimStmt = $pdo->prepare("
+            UPDATE transactions
+            SET processed_by_admin_id = ?
+            WHERE id = ?
+              AND processed_by_admin_id IS NULL
+        ");
+        $claimStmt->execute([$adminId, $transactionId]);
+        if ($claimStmt->rowCount() !== 1) {
+            throw new ChatHttpException(
+                'Unable to assign a responsible admin to this transaction. Please retry.',
+                409
+            );
+        }
+
+        $context['processed_by_admin_id'] = $adminId;
+        $adminIds[$adminId] = true;
+        logAdminActivity(
+            $adminId,
+            'transaction.admin_claimed',
+            'Transaction #' . $transactionId . ' claimed to restore chat access.'
         );
     }
 
@@ -750,7 +820,13 @@ function chatGetTransactionContext(
             throw new ChatHttpException('Unauthorized.', 403);
         }
 
-        if ($conversationId === null) {
+        if (
+            $conversationId === null
+            && (
+                $actor['actor_type'] !== 'admin'
+                || !$lockForUpdate
+            )
+        ) {
             throw new ChatHttpException(
                 'Guest chat is not yet provisioned for this submission.',
                 409
@@ -1562,6 +1638,17 @@ function getOrCreateTransactionConversation(
             $actor,
             true
         );
+
+        if (
+            !empty($context['guest_submission'])
+            && empty($context['guest_chat_conversation_id'])
+        ) {
+            $pdo->commit();
+            throw new ChatHttpException(
+                'Admin attribution is saved. Ask the guest seller to refresh the Track Submission page, then reopen this chat.',
+                409
+            );
+        }
 
         if (!empty($context['guest_chat_conversation_id'])) {
             $conversationId = (int) $context['guest_chat_conversation_id'];

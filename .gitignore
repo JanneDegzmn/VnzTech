@@ -19,6 +19,7 @@ node_modules/
 /backend/database.local.php
 /backend/mail_config.local.php
 /backend/scaledrone_config.local.php
+/backend/social_auth_config.local.php
 
 # OS files
 .DS_Store

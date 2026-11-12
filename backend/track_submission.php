@@ -109,6 +109,18 @@ function trackRecoverGuestChat(
                 t.id,
                 t.processed_by_admin_id,
                 o.created_by_admin_id AS offer_admin_id,
+                CASE
+                    WHEN o.sender_type = 'seller' THEN (
+                        SELECT prior_offer.created_by_admin_id
+                        FROM offers prior_offer
+                        WHERE prior_offer.submission_id = t.submission_id
+                          AND prior_offer.sender_type = 'admin'
+                          AND prior_offer.id < t.offer_id
+                        ORDER BY prior_offer.id DESC
+                        LIMIT 1
+                    )
+                    ELSE NULL
+                END AS prior_offer_admin_id,
                 s.assigned_admin_id
             FROM transactions t
             INNER JOIN submissions s
@@ -134,6 +146,12 @@ function trackRecoverGuestChat(
             if ($adminId !== null) {
                 $responsibleAdminIds[(int) $adminId] = true;
             }
+        }
+        if (
+            count($responsibleAdminIds) === 0
+            && $transaction['prior_offer_admin_id'] !== null
+        ) {
+            $responsibleAdminIds[(int) $transaction['prior_offer_admin_id']] = true;
         }
         if (count($responsibleAdminIds) !== 1) {
             throw new RuntimeException('Transaction Admin attribution is unavailable or ambiguous.');

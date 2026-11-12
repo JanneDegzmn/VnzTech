@@ -412,6 +412,32 @@ html[data-public-theme="light"] .trade-view-all-btn:focus-visible {
     color: #18212b;
 }
 
+html[data-public-theme="light"] .trade-feature-card {
+    color: #f5f6f8;
+}
+
+html[data-public-theme="light"] .trade-feature-name,
+html[data-public-theme="light"] .trade-feature-requirement strong {
+    color: #f5f6f8;
+}
+
+html[data-public-theme="light"] .trade-feature-condition,
+html[data-public-theme="light"] .trade-feature-description,
+html[data-public-theme="light"] .trade-feature-requirement span {
+    color: #cbd5df;
+}
+
+html[data-public-theme="light"] .trade-feature-requirement {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+html[data-public-theme="light"] .trade-feature-card.is-prev,
+html[data-public-theme="light"] .trade-feature-card.is-next {
+    opacity: 0.9;
+    filter: saturate(0.82) brightness(0.9);
+}
+
 html[data-public-theme="light"] .education-section,
 html[data-public-theme="light"] .process-section {
     background: linear-gradient(180deg, #f7f9fc 0%, #edf2f7 100%);
@@ -896,6 +922,37 @@ html[data-public-theme="light"] .field select {
     border-color: #c6d0dc;
     color: #18212b;
     color-scheme: light;
+}
+
+html[data-public-theme="light"] .password-strength-track {
+    background: #dce4ed;
+}
+
+html[data-public-theme="light"] .password-strength-label[data-strength="empty"],
+html[data-public-theme="light"] .password-policy,
+html[data-public-theme="light"] .password-criteria {
+    color: #526171;
+}
+
+html[data-public-theme="light"] .password-strength-track[data-strength="weak"] + .password-strength-label {
+    color: #b42318;
+}
+
+html[data-public-theme="light"] .password-strength-track[data-strength="medium"] + .password-strength-label {
+    color: #8a5700;
+}
+
+html[data-public-theme="light"] .password-strength-track[data-strength="strong"] + .password-strength-label,
+html[data-public-theme="light"] .password-criteria span.is-met {
+    color: #087443;
+}
+
+html[data-public-theme="light"] .password-form-error {
+    color: #b42318;
+}
+
+html[data-public-theme="light"] .password-visibility-toggle {
+    color: #526171;
 }
 
 html[data-public-theme="light"] .message.error {

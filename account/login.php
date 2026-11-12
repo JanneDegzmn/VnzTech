@@ -73,6 +73,10 @@ $csrfToken = generateCsrfToken();
     >
     <link
         rel="stylesheet"
+        href="/VNZ-TECH/assets/css/social_auth.css?v=<?= filemtime(__DIR__ . '/../assets/css/social_auth.css') ?>"
+    >
+    <link
+        rel="stylesheet"
         href="/VNZ-TECH/assets/css/public_theme.css?v=<?= filemtime(__DIR__ . '/../assets/css/public_theme.css') ?>"
     >
     <script
@@ -243,6 +247,10 @@ $csrfToken = generateCsrfToken();
             </button>
 
         </form>
+
+        <?php if (!$twoFactorChallenge): ?>
+            <?php include __DIR__ . '/../includes/social_auth_buttons.php'; ?>
+        <?php endif; ?>
 
         <?php if ($twoFactorChallenge): ?>
             <div class="register-link">

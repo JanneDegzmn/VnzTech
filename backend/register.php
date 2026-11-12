@@ -3,6 +3,7 @@
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/email_verification.php';
+require_once __DIR__ . '/password_policy.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /VNZ-TECH/account/register.php');
@@ -23,6 +24,8 @@ $mobile = trim($_POST['mobile'] ?? '');
 $email = strtolower(trim($_POST['email'] ?? ''));
 $password = $_POST['password'] ?? '';
 $confirmPassword = $_POST['confirm_password'] ?? '';
+$password = is_string($password) ? $password : '';
+$confirmPassword = is_string($confirmPassword) ? $confirmPassword : '';
 $language = $_POST['language'] ?? 'en';
 $terms = isset($_POST['terms']);
 
@@ -38,8 +41,8 @@ if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
     redirectWithError('Please enter a valid email address.');
 }
 
-if (strlen($password) < 8) {
-    redirectWithError('Password must be at least 8 characters.');
+if (vnzPasswordStrength($password) === 'weak') {
+    redirectWithError('Choose a Medium or Strong password using at least 8 characters and 3 character types.');
 }
 
 if ($password !== $confirmPassword) {

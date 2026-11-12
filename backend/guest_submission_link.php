@@ -41,6 +41,18 @@ function guestSubmissionResponsibleAdminId(
             t.processed_by_admin_id,
             o.submission_id AS offer_submission_id,
             o.created_by_admin_id AS offer_admin_id,
+            CASE
+                WHEN o.sender_type = 'seller' THEN (
+                    SELECT prior_offer.created_by_admin_id
+                    FROM offers prior_offer
+                    WHERE prior_offer.submission_id = t.submission_id
+                      AND prior_offer.sender_type = 'admin'
+                      AND prior_offer.id < t.offer_id
+                    ORDER BY prior_offer.id DESC
+                    LIMIT 1
+                )
+                ELSE NULL
+            END AS prior_offer_admin_id,
             s.assigned_admin_id
         FROM transactions t
         INNER JOIN submissions s
@@ -72,6 +84,12 @@ function guestSubmissionResponsibleAdminId(
         if ($adminId !== null) {
             $adminIds[(int) $adminId] = true;
         }
+    }
+    if (
+        count($adminIds) === 0
+        && $transactions[0]['prior_offer_admin_id'] !== null
+    ) {
+        $adminIds[(int) $transactions[0]['prior_offer_admin_id']] = true;
     }
     if (count($adminIds) !== 1) {
         return null;
