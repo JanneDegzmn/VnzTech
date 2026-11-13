@@ -4,6 +4,7 @@ require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/guest_submission_link.php';
+require_once __DIR__ . '/email_verification_feedback.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Referrer-Policy: no-referrer');
@@ -19,6 +20,11 @@ $token = $_SERVER['REQUEST_METHOD'] === 'POST'
 
 function redirectVerificationResult(string $loginUrl, string $result): never
 {
+    if ($result === 'invalid' && !empty($_SESSION['user_logged_in']) && (int) ($_SESSION['user_id'] ?? 0) > 0) {
+        vnzRememberEmailVerificationFeedback($_SESSION, (int) $_SESSION['user_id'], 'invalid');
+        header('Location: ' . dirname($loginUrl) . '/dashboard.php?page=dashboard&verification=invalid');
+        exit;
+    }
     header('Location: ' . $loginUrl . '?verification=' . rawurlencode($result));
     exit;
 }
@@ -75,11 +81,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             </div>
             <section class="register-card">
                 <h2>Verify your email</h2>
-                <p class="subtitle">Confirm your email address to activate your VNZ TECH Seller account.</p>
+                <p class="subtitle">Click Verify my email to finish verification. We will then check for guest submissions eligible to link to your seller account.</p>
                 <form action="<?= htmlspecialchars($verificationUrl, ENT_QUOTES, 'UTF-8') ?>" method="POST">
                     <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="token" value="<?= htmlspecialchars($token, ENT_QUOTES, 'UTF-8') ?>">
-                    <button type="submit" class="submit-button">VERIFY EMAIL ADDRESS</button>
+                    <button type="submit" class="submit-button">VERIFY MY EMAIL</button>
                 </form>
             </section>
         </main>
@@ -130,12 +136,15 @@ try {
     $deleteStmt->execute([$userId]);
 
     $pdo->commit();
+    vnzRememberEmailVerificationFeedback($_SESSION, $userId, 'success');
 
     if (
         !empty($_SESSION['user_logged_in']) &&
         (int) ($_SESSION['user_id'] ?? 0) === $userId
     ) {
-        header('Location: ' . $appBasePath . '/account/dashboard.php?page=settings&verification=success');
+        $hasGuestOnboarding = (int) ($_SESSION['guest_submission_onboarding']['seller_id'] ?? 0) === $userId;
+        header('Location: ' . $appBasePath . '/account/dashboard.php?page='
+            . ($hasGuestOnboarding ? 'dashboard' : 'settings') . '&verification=success');
         exit;
     }
 

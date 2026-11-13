@@ -7,6 +7,7 @@ require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/email_verification.php';
 require_once __DIR__ . '/chat_presence_store.php';
 require_once __DIR__ . '/social_auth_service.php';
+require_once __DIR__ . '/guest_submission_onboarding.php';
 
 function vnzSocialSignupError(string $message): never
 {
@@ -132,11 +133,14 @@ try {
         hash('sha256', (string) $profile['subject']),
     ]);
     $pdo->commit();
+    vnzRememberGuestSubmissionOnboarding($_SESSION, $userId, $email);
+    unset($_SESSION['guest_registration_prefill']);
     unset($_SESSION['social_signup_profile'], $_SESSION['social_signup_started_at']);
 
     if ($emailVerifiedAt === null) {
         try {
             sendEmailVerification($pdo, $userId, $email);
+            vnzRecordGuestSubmissionVerificationSent($_SESSION, $userId);
         } catch (Throwable $mailError) {
             error_log('Social signup verification email could not be sent for user ' . $userId . ': ' . $mailError->getMessage());
         }

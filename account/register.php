@@ -4,6 +4,14 @@ require_once __DIR__ . '/../backend/session.php';
 
 $success = isset($_GET['success']) && $_GET['success'] === '1';
 $verification = $_GET['verification'] ?? '';
+if ($success) {
+    $verificationQuery = in_array($verification, ['sent', 'pending'], true)
+        ? '&verification=' . $verification
+        : '';
+    header('Location: /VNZ-TECH/account/login.php?success=1' . $verificationQuery);
+    exit;
+}
+
 $error = $_GET['error'] ?? '';
 $guestRegistrationPrefill = $_SESSION['guest_registration_prefill'] ?? [];
 if (!is_array($guestRegistrationPrefill)) {
@@ -98,19 +106,6 @@ if (!is_array($guestRegistrationPrefill)) {
 
             <div class="message error">
                 <?= htmlspecialchars($error, ENT_QUOTES, 'UTF-8') ?>
-            </div>
-
-        <?php endif; ?>
-
-        <?php if ($success): ?>
-
-            <div class="message success">
-                <?php if ($verification === 'sent'): ?>
-                    Account created. Check your email for the verification link before continuing.
-                <?php else: ?>
-                    Account created, but we could not send the verification email yet.
-                    Log in and resend it from Settings after mail delivery is configured.
-                <?php endif; ?>
             </div>
 
         <?php endif; ?>
@@ -299,7 +294,7 @@ if (!is_array($guestRegistrationPrefill)) {
                     </option>
 
                     <option value="fil">
-                        Filipino
+                        Filipino (Taglish)
                     </option>
 
                 </select>

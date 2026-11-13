@@ -4,6 +4,7 @@ require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/email_verification.php';
+require_once __DIR__ . '/guest_submission_onboarding.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -80,6 +81,7 @@ try {
     if (!empty($user['email_verified_at'])) {
         echo json_encode([
             'success' => true,
+            'email_verified' => true,
             'message' => 'Your email address is already verified.'
         ]);
 
@@ -91,6 +93,7 @@ try {
         $userId,
         (string) $user['email']
     );
+    vnzRecordGuestSubmissionVerificationSent($_SESSION, $userId);
 
     echo json_encode([
         'success' => true,

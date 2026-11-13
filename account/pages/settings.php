@@ -140,14 +140,14 @@ $verificationNotice =
         <section class="profile-form-section">
             <div class="profile-section-title">Language</div>
             <p class="settings-supporting-text">
-                Choose the language for supported Seller portal labels. Your choice is saved to your account.
+                Choose English or casual Taglish. Your choice is saved automatically.
             </p>
             <div class="profile-form-grid">
                 <div class="profile-form-group">
                     <label for="sellerLanguage">Preferred Language</label>
                     <select id="sellerLanguage" name="language">
                         <option value="en" <?= ($user['language'] ?? 'en') === 'en' ? 'selected' : '' ?>>English</option>
-                        <option value="fil" <?= ($user['language'] ?? '') === 'fil' ? 'selected' : '' ?>>Filipino</option>
+                        <option value="fil" <?= ($user['language'] ?? '') === 'fil' ? 'selected' : '' ?>>Filipino (Taglish)</option>
                     </select>
                 </div>
             </div>
@@ -406,12 +406,19 @@ $verificationNotice =
 
     const languageForm = document.getElementById('sellerLanguageForm');
     if (languageForm) {
+        const languageSelect = document.getElementById('sellerLanguage');
+        let savingLanguage = false;
+        languageSelect.addEventListener('change', () => languageForm.requestSubmit());
         languageForm.addEventListener('submit', async function (event) {
             event.preventDefault();
+            if (savingLanguage) return;
+            savingLanguage = true;
+            const body = new FormData(languageForm);
             const button = document.getElementById('sellerLanguageSubmit');
             const message = document.getElementById('sellerLanguageMessage');
             const originalLabel = button.textContent;
             button.disabled = true;
+            languageSelect.disabled = true;
             button.textContent = 'SAVING...';
             message.className = 'profile-message';
             message.textContent = '';
@@ -419,7 +426,7 @@ $verificationNotice =
             try {
                 const response = await fetch(languageForm.action, {
                     method: 'POST',
-                    body: new FormData(languageForm),
+                    body,
                     credentials: 'same-origin',
                     headers: { Accept: 'application/json' }
                 });
@@ -434,7 +441,9 @@ $verificationNotice =
                 message.classList.add('show', 'error');
                 message.textContent = error.message || 'Unable to save language preference.';
                 button.disabled = false;
+                languageSelect.disabled = false;
                 button.textContent = originalLabel;
+                savingLanguage = false;
             }
         });
     }

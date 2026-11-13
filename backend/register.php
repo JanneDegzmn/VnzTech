@@ -4,6 +4,7 @@ require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/email_verification.php';
 require_once __DIR__ . '/password_policy.php';
+require_once __DIR__ . '/guest_submission_onboarding.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /VNZ-TECH/account/register.php');
@@ -175,9 +176,9 @@ try {
         $language
     ]);
 
-    unset($_SESSION['guest_registration_prefill']);
-
     $userId = (int) $pdo->lastInsertId();
+    vnzRememberGuestSubmissionOnboarding($_SESSION, $userId, $email);
+    unset($_SESSION['guest_registration_prefill']);
     $verificationEmailSent = false;
 
     try {
@@ -188,6 +189,7 @@ try {
         );
 
         $verificationEmailSent = true;
+        vnzRecordGuestSubmissionVerificationSent($_SESSION, $userId);
     } catch (Throwable $mailError) {
         error_log(
             'Registration verification email could not be sent for user ' .
@@ -198,8 +200,10 @@ try {
     }
 
     header(
-        'Location: /VNZ-TECH/account/register.php?success=1&verification=' .
-        ($verificationEmailSent ? 'sent' : 'pending')
+        'Location: /VNZ-TECH/account/login.php?success=1&verification=' .
+        ($verificationEmailSent ? 'sent' : 'pending'),
+        true,
+        303
     );
     exit;
 

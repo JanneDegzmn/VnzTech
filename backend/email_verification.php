@@ -247,13 +247,14 @@ function sendEmailVerification(PDO $pdo, int $userId, string $email): void
             ENT_QUOTES,
             'UTF-8'
         ) . '">Verify your email address</a></p>' .
+        '<p>Open the link, then click Verify my email to finish verification. Use the latest email if you requested a new link.</p>' .
         '<p>This one-time link expires in 30 minutes. If you did not ' .
         'create this account, you can ignore this email.</p>';
 
     $verificationText =
         "Verify your VNZ TECH email address using this one-time link:\n\n" .
         $verificationUrl .
-        "\n\nThis link expires in 30 minutes.";
+        "\n\nOpen the link, then click Verify my email. Use the latest email if you requested a new link. This link expires in 30 minutes.";
 
     try {
         sendVnzEmail(

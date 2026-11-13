@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/csrf.php';
+require_once __DIR__ . '/../backend/guest_submission_onboarding.php';
 
 
 /*
@@ -202,12 +203,18 @@ $initialAlertMessage =
 $sellerLanguage = ($sellerAccount['language'] ?? 'en') === 'fil'
     ? 'fil'
     : 'en';
+$guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $sellerAccount);
 
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($sellerLanguage, ENT_QUOTES, 'UTF-8') ?>" data-seller-language="<?= htmlspecialchars($sellerLanguage, ENT_QUOTES, 'UTF-8') ?>">
 
 <head>
+
+    <?php if ($guestSubmissionOnboarding !== null): ?>
+        <link rel="stylesheet" href="/VNZ-TECH/assets/css/guest_submission_claim.css?v=<?= filemtime(__DIR__ . '/../assets/css/guest_submission_claim.css') ?>">
+        <script src="/VNZ-TECH/assets/js/guest-submission-claim.js?v=<?= filemtime(__DIR__ . '/../assets/js/guest-submission-claim.js') ?>" defer></script>
+    <?php endif; ?>
 
     <?php include __DIR__ . '/../includes/loader-head.php'; ?>
 
@@ -241,12 +248,20 @@ $sellerLanguage = ($sellerAccount['language'] ?? 'en') === 'fil'
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/seller_theme.css?v=<?= filemtime(__DIR__ . '/../assets/css/seller_theme.css') ?>"
     >
+    <link
+        rel="stylesheet"
+        href="/VNZ-TECH/assets/css/seller_alert.css?v=<?= filemtime(__DIR__ . '/../assets/css/seller_alert.css') ?>"
+    >
     <script
         src="/VNZ-TECH/assets/js/transaction-chat.js?v=<?= filemtime(__DIR__ . '/../assets/js/transaction-chat.js') ?>"
         defer
     ></script>
     <script
         src="/VNZ-TECH/assets/js/floating-messages.js?v=<?= filemtime(__DIR__ . '/../assets/js/floating-messages.js') ?>"
+        defer
+    ></script>
+    <script
+        src="/VNZ-TECH/assets/js/seller-language-copy.js?v=<?= filemtime(__DIR__ . '/../assets/js/seller-language-copy.js') ?>"
         defer
     ></script>
     <script
@@ -529,6 +544,11 @@ $sellerLanguage = ($sellerAccount['language'] ?? 'en') === 'fil'
             <a
                 href="/VNZ-TECH/account/logout.php"
                 class="logout-button"
+                data-vnz-confirm="<?= $sellerLanguage === 'fil' ? 'Mag-logout ka na ba sa account mo?' : 'Are you sure you want to log out of your account?' ?>"
+                data-vnz-confirm-title="<?= $sellerLanguage === 'fil' ? 'Mag-logout?' : 'Log out?' ?>"
+                data-vnz-confirm-label="<?= $sellerLanguage === 'fil' ? 'Mag-logout' : 'Log out' ?>"
+                data-vnz-confirm-cancel-label="<?= $sellerLanguage === 'fil' ? 'Wag muna' : 'Stay signed in' ?>"
+                data-vnz-confirm-danger="true"
             >
 
                 <span class="nav-icon">
@@ -576,6 +596,10 @@ $sellerLanguage = ($sellerAccount['language'] ?? 'en') === 'fil'
             </div>
 
         </div>
+
+        <?php if ($guestSubmissionOnboarding !== null): ?>
+            <?php require __DIR__ . '/../includes/guest-submission-claim-prompt.php'; ?>
+        <?php endif; ?>
 
     </main>
 
@@ -999,13 +1023,15 @@ $sellerLanguage = ($sellerAccount['language'] ?? 'en') === 'fil'
 <div
     id="sellerAlertModal"
     class="seller-alert-modal"
+    data-tone="notice"
     aria-hidden="true"
 >
 
-    <div class="seller-alert-modal-panel">
+    <div class="seller-alert-modal-panel" role="dialog" aria-modal="true" aria-labelledby="sellerAlertModalTitle" aria-describedby="sellerAlertModalMessage">
 
-        <div class="seller-alert-modal-icon">
-            !
+        <div class="seller-alert-modal-icon" aria-hidden="true">
+            <svg class="seller-alert-icon-notice" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 6v7m0 4v.01"/></svg>
+            <svg class="seller-alert-icon-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 12 4 4 8-8"/></svg>
         </div>
 
         <h3 id="sellerAlertModalTitle">
@@ -1083,89 +1109,6 @@ $sellerLanguage = ($sellerAccount['language'] ?? 'en') === 'fil'
         </div>
     </div>
 </div>
-
-
-<style>
-
-.seller-alert-modal {
-    display: none;
-    position: fixed;
-    inset: 0;
-    z-index: 9999;
-    align-items: center;
-    justify-content: center;
-    background: rgba(0, 0, 0, 0.6);
-}
-
-.seller-alert-modal.is-open {
-    display: flex;
-}
-
-.seller-alert-modal-panel {
-    background: #12141c;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 14px;
-    padding: 28px;
-    max-width: 380px;
-    width: 90%;
-    text-align: center;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-}
-
-.seller-alert-modal-icon {
-    width: 40px;
-    height: 40px;
-    margin: 0 auto 14px;
-    border-radius: 50%;
-    background: #f5b301;
-    color: #12141c;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 20px;
-}
-
-.seller-alert-modal-panel h3 {
-    color: #fff;
-    margin: 0 0 8px;
-    font-size: 18px;
-}
-
-.seller-alert-modal-panel p {
-    color: #b7bcc9;
-    font-size: 14px;
-    line-height: 1.5;
-    margin: 0 0 20px;
-    white-space: pre-line;
-}
-
-.seller-alert-modal-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.seller-alert-modal-primary {
-    background: #2f7dff;
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 12px;
-    font-weight: 600;
-    cursor: pointer;
-}
-
-.seller-alert-modal-dismiss {
-    background: transparent;
-    color: #9aa0ac;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 8px;
-    padding: 12px;
-    cursor: pointer;
-}
-
-</style>
 
 
 <!-- =====================================================
@@ -3490,6 +3433,7 @@ $sellerLanguage = ($sellerAccount['language'] ?? 'en') === 'fil'
 
         sellerAlertModalMessage.textContent =
             message;
+        sellerAlertModal.dataset.tone = options.tone === 'success' ? 'success' : 'notice';
 
         if (sellerAlertModalTitle) {
             sellerAlertModalTitle.textContent =
@@ -3602,6 +3546,7 @@ $sellerLanguage = ($sellerAccount['language'] ?? 'en') === 'fil'
                 amountText,
             {
                 title: 'Request Approved',
+                tone: 'success',
                 actionLabel: 'Chat with Admin',
                 onAction: function () {
                     window.closeSellerSubmissionModal?.();
@@ -3859,6 +3804,7 @@ $sellerLanguage = ($sellerAccount['language'] ?? 'en') === 'fil'
                             title: isAccepted
                                 ? 'Request Approved'
                                 : 'Heads up',
+                            tone: isAccepted ? 'success' : 'notice',
 
                             actionLabel: isAccepted && Number(result.transaction_id) > 0
                                 ? 'Chat with Admin'
@@ -4110,6 +4056,14 @@ $sellerLanguage = ($sellerAccount['language'] ?? 'en') === 'fil'
         UNSEEN_RESULTS_POLL_INTERVAL_MS
     );
 
+
+    window.addEventListener('vnz:guest-claim-updated', function () {
+        const params = new URLSearchParams(window.location.search);
+        const page = params.get('page') || 'dashboard';
+        params.delete('page');
+        params.delete('verification');
+        loadPage(page, false, Object.fromEntries(params));
+    });
 
     loadPage(
         pageTitles[initialPage]

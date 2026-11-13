@@ -3,12 +3,16 @@
 require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/csrf.php';
+require_once __DIR__ . '/../backend/email_verification_feedback.php';
 
 if (
     isset($_SESSION['user_logged_in']) &&
     $_SESSION['user_logged_in'] === true &&
     !empty($_SESSION['user_id'])
 ) {
+    if (($_GET['verification'] ?? '') === 'invalid') {
+        vnzRememberEmailVerificationFeedback($_SESSION, (int) $_SESSION['user_id'], 'invalid');
+    }
     header('Location: /VNZ-TECH/account/dashboard.php');
     exit;
 }
@@ -136,9 +140,14 @@ $csrfToken = generateCsrfToken();
 
         <?php if ($success): ?>
 
-            <div class="message success">
+            <div class="message success" role="status">
                 Account created successfully.
-                You may now log in.
+                Log in to continue.
+                <?php if ($verification === 'sent'): ?>
+                    We sent a verification link to your email. Check your inbox or spam folder.
+                <?php elseif ($verification === 'pending'): ?>
+                    We could not send the verification email yet. You can request a new link after logging in.
+                <?php endif; ?>
             </div>
 
         <?php endif; ?>
@@ -151,7 +160,7 @@ $csrfToken = generateCsrfToken();
 
         <?php endif; ?>
 
-        <?php if ($verification === 'success'): ?>
+        <?php if ($verification === 'success' && ($_SESSION['email_verification_feedback']['result'] ?? '') === 'success'): ?>
 
             <div class="message success">
                 Your email address is verified. You may now log in.

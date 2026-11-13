@@ -1,10 +1,7 @@
 (function () {
     'use strict';
 
-    const language = document.documentElement.dataset.sellerLanguage || 'en';
-    if (language !== 'fil') {
-        return;
-    }
+    const isFilipino = document.documentElement.dataset.sellerLanguage === 'fil';
 
     const translations = {
         'Dashboard': 'Dashboard',
@@ -295,81 +292,188 @@
         'Close trade items': 'Isara yung trade items',
     };
 
+    // Product copy is kept separately so wording can evolve without changing
+    // traversal rules. Only known UI strings are translated, never substrings
+    // from arbitrary names, references, notes, messages, or form values.
+    Object.entries(window.VNZSellerLanguageCopy || {}).forEach(([source, target]) => {
+        if (typeof target === 'string') {
+            translations[source] = target;
+        }
+    });
+
+    const protectedContent = [
+        'script', 'style', 'noscript', 'textarea', 'code', 'pre', 'svg', 'math',
+        '[contenteditable]:not([contenteditable="false"])', '[translate="no"]',
+        '[data-user-content]', '[data-vnz-i18n-ignore]',
+        '.chat-message', '.chat-message-content', '.message-content',
+        '.trade-history-description', '.trade-history-admin-notes p',
+        '.trade-request-option-description', '.trade-history-requirements small',
+        '.settings-email-address', '.seller-profile-card h2', '.seller-profile-card p',
+        '.seller-profile-avatar', '.profile-info strong', '.profile-info span',
+        '.profile-strip-left > div:last-child', '.profile-avatar',
+        '.account-info-card strong', '.recent-reference', '.seller-offer-reference',
+        '.seller-offer-card h3', '.seller-offer-message p', '.reference-block strong',
+        '.submission-item-summary h2', '.trade-history-reference',
+        '.trade-history-header h2', '.trade-request-option-heading h3',
+        '.trade-request-option-heading span', '.board-code'
+    ].join(', ');
+    const attributes = ['placeholder', 'aria-label', 'title'];
+    const translatedNodes = new WeakMap();
+    const translatedAttributes = new WeakMap();
+
+    function normalize(value) {
+        return value.replace(/\s+/g, ' ').trim();
+    }
+
+    function lookup(value) {
+        return Object.prototype.hasOwnProperty.call(translations, value)
+            && typeof translations[value] === 'string'
+            ? translations[value]
+            : null;
+    }
+
+    function translatePhrase(value) {
+        const direct = lookup(value);
+        if (direct !== null) {
+            return direct;
+        }
+
+        let match = value.match(/^([\d,]+) offers? in this negotiation$/);
+        if (match) {
+            return `${match[1]} offer${match[1] === '1' ? '' : 's'} sa usapang 'to`;
+        }
+        match = value.match(/^(All|Needs your response|Waiting for VNZ TECH|Closed|Under review) \(([\d,]+)\)$/);
+        if (match) {
+            return `${lookup(match[1]) || match[1]} (${match[2]})`;
+        }
+        match = value.match(/^Showing ([\d,]+)\s*([\u2013\u2014-])\s*([\d,]+) of ([\d,]+)$/);
+        if (match) {
+            return `Pinapakita ang ${match[1]}${match[2]}${match[3]} sa ${match[4]}`;
+        }
+        match = value.match(/^Page ([\d,]+) of ([\d,]+)$/);
+        if (match) {
+            return `Page ${match[1]} sa ${match[2]}`;
+        }
+        match = value.match(/^([\d,]+) total trade requests$/);
+        if (match) {
+            return `${match[1]} trade requests lahat`;
+        }
+        match = value.match(/^(Submission|Transaction|Approved amount|Reference|Status):\s*(.+)$/);
+        if (match) {
+            const labels = {
+                Submission: 'Submission', Transaction: 'Transaction',
+                'Approved amount': 'Approved na amount', Reference: 'Reference', Status: 'Status'
+            };
+            return `${lookup(match[1] + ':') || labels[match[1]] + ':'} ${match[2]}`;
+        }
+        match = value.match(/^Are you sure you want to (accept|decline) the offer of (\u20b1[\d,.]+|PHP [\d,.]+|this offer) for submission (#?SP-[A-Za-z0-9-]+)\?$/);
+        if (match) {
+            return `${match[1] === 'accept' ? 'Tanggapin' : 'I-decline'} mo na ba yung offer na ${match[2] === 'this offer' ? "'to" : match[2]} para sa submission ${match[3]}?`;
+        }
+        match = value.match(/^Send your counter-offer of (\u20b1[\d,.]+|PHP [\d,.]+) for submission (#?SP-[A-Za-z0-9-]+)\?$/);
+        if (match) {
+            return `I-send na yung counter-offer mong ${match[1]} para sa submission ${match[2]}?`;
+        }
+        return value;
+    }
+
+    function translate(value) {
+        if (!isFilipino || typeof value !== 'string' || value.trim() === '') {
+            return value;
+        }
+        const normalized = normalize(value);
+        let translated = translatePhrase(normalized);
+        if (translated === normalized && /[\r\n]/.test(value)) {
+            // Alerts contain separate detail lines. Keep their newlines and
+            // interpolate references/amounts verbatim instead of flattening them.
+            return value.split(/(\r?\n)/).map(part => {
+                if (/^\r?\n$/.test(part)) return part;
+                const phrase = normalize(part);
+                const result = translatePhrase(phrase);
+                return result === phrase ? part : preserveSpacing(part, result);
+            }).join('');
+        }
+        return translated === normalized ? value : preserveSpacing(value, translated);
+    }
+
+    function preserveSpacing(source, translated) {
+        const leading = source.match(/^\s*/)[0];
+        const trailing = source.match(/\s*$/)[0];
+        return leading + translated + trailing;
+    }
+
+    function isProtected(element) {
+        return !element || Boolean(element.closest(protectedContent));
+    }
+
     function translateNode(node) {
-        if (
-            !node.parentElement ||
-            node.parentElement.closest(
-                'script, style, textarea, code, pre, [contenteditable="true"], [data-user-content], .chat-message, .chat-message-content, .message-content, .trade-history-description, .settings-email-address, .seller-profile-card, .profile-info, .recent-reference, .seller-offer-reference, .seller-offer-card h3, .seller-offer-message p, .reference-block strong, .submission-item-summary h2'
-            )
-        ) {
-            return;
+        if (isProtected(node.parentElement)) return;
+        const current = node.nodeValue;
+        if (translatedNodes.get(node) === current) return;
+        const translated = translate(current);
+        if (translated !== current) {
+            translatedNodes.set(node, translated);
+            node.nodeValue = translated;
         }
+    }
 
-        const normalized = node.nodeValue.replace(/\s+/g, ' ').trim();
-        let translated = translations[normalized];
-        if (!translated) {
-            const offerCount = normalized.match(/^(\d+) offers? in this negotiation$/);
-            const offerFilter = normalized.match(/^(All|Needs your response|Waiting for VNZ TECH|Closed|Under review) \((\d+)\)$/);
-            if (offerCount) {
-                translated = `${offerCount[1]} offer${offerCount[1] === '1' ? '' : 's'} sa negotiation na 'to`;
-            } else if (offerFilter) {
-                const labels = {
-                    'All': 'Lahat',
-                    'Needs your response': 'Kailangan ng reply mo',
-                    'Waiting for VNZ TECH': 'Waiting sa VNZ TECH',
-                    'Closed': 'Closed',
-                    'Under review': 'Under review'
-                };
-                translated = `${labels[offerFilter[1]]} (${offerFilter[2]})`;
+    function translateAttributes(element) {
+        if (isProtected(element)) return;
+        let previous = translatedAttributes.get(element);
+        if (!previous) {
+            previous = new Map();
+            translatedAttributes.set(element, previous);
+        }
+        attributes.forEach(attribute => {
+            const current = element.getAttribute(attribute);
+            if (current === null || previous.get(attribute) === current) return;
+            const translated = translate(current);
+            if (translated !== current) {
+                previous.set(attribute, translated);
+                element.setAttribute(attribute, translated);
             }
-        }
-        if (!translated || translated === normalized) {
-            return;
-        }
-
-        const leading = node.nodeValue.match(/^\s*/)?.[0] || '';
-        const trailing = node.nodeValue.match(/\s*$/)?.[0] || '';
-        node.nodeValue = leading + translated + trailing;
+        });
     }
 
     function translateElement(root) {
+        if (!isFilipino || !root) return;
+        if (root.nodeType === Node.TEXT_NODE) {
+            translateNode(root);
+            return;
+        }
+        // Walk individual nodes: icons, nested counts, controls, and listeners
+        // survive translation. Never replace an element's innerHTML/textContent.
         const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
         let node;
-        while ((node = walker.nextNode())) {
-            translateNode(node);
+        while ((node = walker.nextNode())) translateNode(node);
+        if (root.nodeType === Node.ELEMENT_NODE) translateAttributes(root);
+        if (root.querySelectorAll) {
+            root.querySelectorAll('[placeholder], [aria-label], [title]').forEach(translateAttributes);
         }
-
-        const elements = root instanceof Element ? [root, ...root.querySelectorAll('*')] : [];
-        elements.forEach((element) => {
-            ['placeholder', 'aria-label', 'title'].forEach((attribute) => {
-                const value = element.getAttribute(attribute);
-                if (value && translations[value.trim()]) {
-                    element.setAttribute(attribute, translations[value.trim()]);
-                }
-            });
-        });
     }
 
+    window.VNZSellerLanguage = Object.freeze({translate, translateElement});
+
     function start() {
+        if (!isFilipino || !document.body) return;
         translateElement(document.body);
-        const observer = new MutationObserver((records) => {
-            records.forEach((record) => {
-                if (record.type === 'characterData') {
-                    translateNode(record.target);
-                }
-                record.addedNodes.forEach((node) => {
-                    if (node.nodeType === Node.TEXT_NODE) {
-                        translateNode(node);
-                    } else if (node.nodeType === Node.ELEMENT_NODE) {
-                        translateElement(node);
-                    }
+        const observer = new MutationObserver(records => {
+            const addedRoots = new Set();
+            records.forEach(record => {
+                if (record.type === 'characterData') translateNode(record.target);
+                if (record.type === 'attributes') translateAttributes(record.target);
+                record.addedNodes.forEach(node => {
+                    if (node.nodeType === Node.TEXT_NODE) translateNode(node);
+                    if (node.nodeType === Node.ELEMENT_NODE) addedRoots.add(node);
                 });
+            });
+            addedRoots.forEach(root => {
+                if (root.isConnected) translateElement(root);
             });
         });
         observer.observe(document.body, {
-            childList: true,
-            characterData: true,
-            subtree: true
+            childList: true, characterData: true, attributes: true,
+            attributeFilter: attributes, subtree: true
         });
     }
 

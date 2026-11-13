@@ -413,7 +413,11 @@ $csrfToken = generateCsrfToken();
                 class="logout-button"
                 title="Logout"
                 aria-label="Log out of the admin account"
-                data-loader
+                data-vnz-confirm="Are you sure you want to log out of your admin account?"
+                data-vnz-confirm-title="Log out?"
+                data-vnz-confirm-label="Log out"
+                data-vnz-confirm-cancel-label="Stay signed in"
+                data-vnz-confirm-danger="true"
             >
                 <span aria-hidden="true">↪</span>
                 <span>Logout</span>

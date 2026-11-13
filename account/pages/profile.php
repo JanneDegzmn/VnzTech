@@ -323,7 +323,7 @@ $csrfToken = generateCsrfToken();
                                 ? 'selected'
                                 : '' ?>
                         >
-                            Filipino
+                            Filipino (Taglish)
                         </option>
 
                     </select>

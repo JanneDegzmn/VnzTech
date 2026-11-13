@@ -44,6 +44,7 @@ function createTestDatabase(): PDO
         "CREATE TABLE offers (
             id INTEGER PRIMARY KEY,
             submission_id INTEGER NOT NULL,
+            sender_type TEXT NOT NULL DEFAULT 'admin',
             created_by_admin_id INTEGER NULL
         )",
         "CREATE TABLE admins (id INTEGER PRIMARY KEY)",

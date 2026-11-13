@@ -2132,6 +2132,8 @@ select {
     font-size: 15px;
 
     font-weight: 900;
+
+    letter-spacing: normal;
 }
 
 .remove-item-btn {

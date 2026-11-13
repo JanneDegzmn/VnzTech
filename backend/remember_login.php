@@ -86,32 +86,39 @@ function vnzIssueRememberLoginToken(
     PDO $pdo,
     string $actorType,
     int $actorId
-): void {
+): bool {
     if (!in_array($actorType, ['admin', 'seller'], true) || $actorId <= 0) {
         throw new InvalidArgumentException('Invalid remember-token identity.');
     }
 
-    vnzRevokeRememberLoginCookie($pdo);
-    $selector = bin2hex(random_bytes(16));
-    $validator = bin2hex(random_bytes(32));
-    $expiresAt = time() + VNZ_REMEMBER_LIFETIME;
-    $stmt = $pdo->prepare("
-        INSERT INTO remember_login_tokens (
-            selector,
-            validator_hash,
-            actor_type,
-            actor_id,
-            expires_at
-        )
-        VALUES (?, ?, ?, ?, FROM_UNIXTIME(?))
-    ");
-    $stmt->execute([
-        $selector,
-        hash('sha256', $validator),
-        $actorType,
-        $actorId,
-        $expiresAt
-    ]);
+    try {
+        vnzRevokeRememberLoginCookie($pdo);
+        $selector = bin2hex(random_bytes(16));
+        $validator = bin2hex(random_bytes(32));
+        $expiresAt = time() + VNZ_REMEMBER_LIFETIME;
+        $stmt = $pdo->prepare("
+            INSERT INTO remember_login_tokens (
+                selector,
+                validator_hash,
+                actor_type,
+                actor_id,
+                expires_at
+            )
+            VALUES (?, ?, ?, ?, FROM_UNIXTIME(?))
+        ");
+        $stmt->execute([
+            $selector,
+            hash('sha256', $validator),
+            $actorType,
+            $actorId,
+            $expiresAt
+        ]);
+    } catch (PDOException $error) {
+        // Persistence is optional; a valid password/2FA login remains a session login.
+        vnzClearRememberCookie();
+        error_log('Remembered login could not be saved; verify its database migration and availability.');
+        return false;
+    }
     $cookieValue = $selector . '.' . $validator;
     setcookie(
         VNZ_REMEMBER_COOKIE,
@@ -119,6 +126,7 @@ function vnzIssueRememberLoginToken(
         vnzRememberCookieOptions($expiresAt)
     );
     $_COOKIE[VNZ_REMEMBER_COOKIE] = $cookieValue;
+    return true;
 }
 
 function vnzRestoreRememberedLogin(PDO $pdo): bool
@@ -198,6 +206,14 @@ function vnzRestoreRememberedLogin(PDO $pdo): bool
             return false;
         }
 
+        // Complete persistence work before establishing any authenticated session.
+        $usedStmt = $pdo->prepare("
+            UPDATE remember_login_tokens
+            SET last_used_at = CURRENT_TIMESTAMP
+            WHERE selector = ?
+        ");
+        $usedStmt->execute([$selector]);
+
         session_regenerate_id(true);
         if ($actorType === 'seller') {
             clearAdminSessionState();
@@ -215,14 +231,9 @@ function vnzRestoreRememberedLogin(PDO $pdo): bool
             $_SESSION['admin_last_name'] = $identity['last_name'];
             $_SESSION['admin_email'] = $identity['email'];
         }
-        $usedStmt = $pdo->prepare("
-            UPDATE remember_login_tokens
-            SET last_used_at = CURRENT_TIMESTAMP
-            WHERE selector = ?
-        ");
-        $usedStmt->execute([$selector]);
         return true;
     } catch (PDOException $error) {
+        vnzClearRememberCookie();
         error_log('Remembered login could not be restored; verify its database migration.');
         return false;
     }

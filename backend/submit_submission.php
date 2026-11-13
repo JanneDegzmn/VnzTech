@@ -1518,6 +1518,7 @@ try {
         empty($_SESSION['user_logged_in'])
     ) {
         $_SESSION['guest_registration_prefill'] = [
+            'submission_id' => (int) $submissionId,
             'full_name' => (string) $sellerName,
             'mobile' => (string) $sellerMobile,
             'email' => (string) $sellerEmail

@@ -119,17 +119,21 @@
     const pendingLinks = new WeakSet();
     document.addEventListener('click', async event => {
         const link = event.target.closest('[data-vnz-confirm]');
-        if (!link || pendingLinks.has(link)) {
+        if (!link) {
             return;
         }
 
         event.preventDefault();
+        if (pendingLinks.has(link)) {
+            return;
+        }
         pendingLinks.add(link);
         link.setAttribute('aria-disabled', 'true');
         const confirmed = await window.VNZDialog.confirm({
             title: link.dataset.vnzConfirmTitle || 'Confirm Action?',
             message: link.dataset.vnzConfirm,
             confirmLabel: link.dataset.vnzConfirmLabel || 'Continue',
+            cancelLabel: link.dataset.vnzConfirmCancelLabel || 'Cancel',
             danger: link.dataset.vnzConfirmDanger === 'true'
         });
         pendingLinks.delete(link);

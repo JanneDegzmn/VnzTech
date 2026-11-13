@@ -1,35 +1,85 @@
 .vnz-dialog {
+    --vnz-dialog-surface: var(--panel, #101821);
+    --vnz-dialog-surface-muted: var(--panel-2, #1b2732);
+    --vnz-dialog-surface-hover: var(--panel-3, #253543);
+    --vnz-dialog-border: var(--border, var(--line, #2e3a46));
+    --vnz-dialog-text: var(--text, var(--white, #edf5f8));
+    --vnz-dialog-muted: var(--soft, var(--muted, #b6c3ce));
+    --vnz-dialog-accent: #7dd3fc;
+    --vnz-dialog-accent-surface: rgba(14, 165, 233, 0.14);
+    --vnz-dialog-accent-border: rgba(56, 189, 248, 0.3);
+    --vnz-dialog-primary: #38bdf8;
+    --vnz-dialog-primary-hover: #7dd3fc;
+    --vnz-dialog-primary-text: #04131b;
+    --vnz-dialog-danger: #fca5a5;
+    --vnz-dialog-danger-surface: rgba(239, 68, 68, 0.14);
+    --vnz-dialog-danger-border: rgba(248, 113, 113, 0.36);
+    --vnz-dialog-focus: #7dd3fc;
+    --vnz-dialog-backdrop: rgba(3, 7, 11, 0.78);
+    --vnz-dialog-shadow: rgba(0, 0, 0, 0.58);
+
+    box-sizing: border-box;
+    color-scheme: dark;
     position: fixed;
     inset: 0;
     margin: auto;
     width: min(440px, calc(100vw - 32px));
     max-width: none;
     max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     padding: 0;
     overflow: visible;
-    color: #edf5f8;
+    color: var(--vnz-dialog-text);
     background: transparent;
     border: 0;
 }
 
-.vnz-dialog-panel {
-    max-height: calc(100vh - 32px);
-    overflow-y: auto;
+/* Each portal keeps its own theme flag and palette names. */
+:is(
+    html[data-public-theme="light"]:not([data-seller-theme]):not([data-admin-theme]),
+    html[data-seller-theme="light"]:not([data-admin-theme]),
+    html[data-admin-theme="light"]
+) .vnz-dialog {
+    --vnz-dialog-surface: var(--admin-light-panel, var(--panel, #ffffff));
+    --vnz-dialog-surface-muted: var(--admin-light-panel-muted, var(--panel-2, #f7f9fc));
+    --vnz-dialog-surface-hover: var(--admin-light-panel-muted, var(--panel-3, #edf2f7));
+    --vnz-dialog-border: var(--admin-light-border, var(--border, var(--line, #dce3eb)));
+    --vnz-dialog-text: var(--admin-light-text, var(--text, var(--white, #18212b)));
+    --vnz-dialog-muted: var(--admin-light-muted, var(--soft, var(--muted, #586675)));
+    --vnz-dialog-accent: #0369a1;
+    --vnz-dialog-accent-surface: #e8f5fc;
+    --vnz-dialog-accent-border: #b6dced;
+    --vnz-dialog-primary: #0369a1;
+    --vnz-dialog-primary-hover: #075985;
+    --vnz-dialog-primary-text: #ffffff;
+    --vnz-dialog-danger: #b91c1c;
+    --vnz-dialog-danger-surface: #fef2f2;
+    --vnz-dialog-danger-border: #fecaca;
+    --vnz-dialog-focus: #0369a1;
+    --vnz-dialog-backdrop: rgba(15, 23, 42, 0.48);
+    --vnz-dialog-shadow: rgba(15, 23, 42, 0.2);
+
+    color-scheme: light;
 }
 
 .vnz-dialog::backdrop {
-    background: rgba(3, 7, 11, 0.78);
+    background: var(--vnz-dialog-backdrop);
     backdrop-filter: blur(5px);
 }
 
 .vnz-dialog-panel {
+    box-sizing: border-box;
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
     padding: 26px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
     background:
         radial-gradient(circle at 100% 0, rgba(34, 184, 238, 0.1), transparent 38%),
-        #101821;
-    border: 1px solid rgba(148, 163, 184, 0.24);
+        var(--vnz-dialog-surface);
+    border: 1px solid var(--vnz-dialog-border);
     border-radius: 16px;
-    box-shadow: 0 24px 70px rgba(0, 0, 0, 0.58);
+    box-shadow: 0 24px 70px var(--vnz-dialog-shadow);
 }
 
 .vnz-dialog-mark {
@@ -38,31 +88,32 @@
     height: 34px;
     place-items: center;
     margin-bottom: 13px;
-    color: #7dd3fc;
-    background: rgba(14, 165, 233, 0.14);
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: var(--vnz-dialog-accent);
+    background: var(--vnz-dialog-accent-surface);
+    border: 1px solid var(--vnz-dialog-accent-border);
     border-radius: 50%;
     font-size: 17px;
     font-weight: 800;
 }
 
 .vnz-dialog.is-danger .vnz-dialog-mark {
-    color: #fecaca;
-    background: rgba(239, 68, 68, 0.14);
-    border-color: rgba(248, 113, 113, 0.36);
+    color: var(--vnz-dialog-danger);
+    background: var(--vnz-dialog-danger-surface);
+    border-color: var(--vnz-dialog-danger-border);
 }
 
 .vnz-dialog-panel h2 {
     margin: 0;
-    color: #f8fafc;
+    color: var(--vnz-dialog-text);
     font-size: 19px;
     font-weight: 800;
     line-height: 1.3;
+    overflow-wrap: anywhere;
 }
 
 .vnz-dialog-panel p {
     margin: 10px 0 22px;
-    color: #b6c3ce;
+    color: var(--vnz-dialog-muted);
     font-size: 14px;
     line-height: 1.6;
     overflow-wrap: anywhere;
@@ -76,45 +127,55 @@
 }
 
 .vnz-dialog-actions button {
-    min-height: 40px;
+    box-sizing: border-box;
+    min-height: 44px;
+    max-width: 100%;
     padding: 9px 15px;
-    color: #dce7ee;
-    background: #1b2732;
-    border: 1px solid rgba(148, 163, 184, 0.25);
+    color: var(--vnz-dialog-text);
+    background: var(--vnz-dialog-surface-muted);
+    border: 1px solid var(--vnz-dialog-border);
     border-radius: 9px;
     cursor: pointer;
     font: inherit;
     font-size: 13px;
     font-weight: 750;
+    overflow-wrap: anywhere;
 }
 
-.vnz-dialog-actions button:hover {
-    background: #253543;
+.vnz-dialog-actions button:hover:not(:disabled) {
+    background: var(--vnz-dialog-surface-hover);
 }
 
 .vnz-dialog-actions .vnz-dialog-confirm {
-    color: #04131b;
-    background: #38bdf8;
-    border-color: #38bdf8;
+    color: var(--vnz-dialog-primary-text);
+    background: var(--vnz-dialog-primary);
+    border-color: var(--vnz-dialog-primary);
 }
 
-.vnz-dialog-actions .vnz-dialog-confirm:hover {
-    background: #7dd3fc;
+.vnz-dialog-actions .vnz-dialog-confirm:hover:not(:disabled) {
+    background: var(--vnz-dialog-primary-hover);
+    border-color: var(--vnz-dialog-primary-hover);
 }
 
 .vnz-dialog.is-danger .vnz-dialog-actions .vnz-dialog-confirm {
     color: #fff;
-    background: #dc4056;
-    border-color: #f06a79;
+    background: #b91c1c;
+    border-color: #b91c1c;
 }
 
-.vnz-dialog.is-danger .vnz-dialog-actions .vnz-dialog-confirm:hover {
-    background: #ef5265;
+.vnz-dialog.is-danger .vnz-dialog-actions .vnz-dialog-confirm:hover:not(:disabled) {
+    background: #991b1b;
+    border-color: #991b1b;
 }
 
 .vnz-dialog-actions button:focus-visible {
-    outline: 2px solid #e0f2fe;
+    outline: 3px solid var(--vnz-dialog-focus);
     outline-offset: 3px;
+}
+
+.vnz-dialog-actions button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 @media (max-width: 480px) {
