@@ -4,6 +4,7 @@ require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/auth.php';
 require_once __DIR__ . '/../../backend/csrf.php';
+require_once __DIR__ . '/../../backend/identity_verification.php';
 
 requireAdminLogin();
 
@@ -138,6 +139,7 @@ $stmt = $pdo->prepare("
         s.seller_mobile,
         s.seller_address,
         s.selling_method,
+        s.bulk_format,
         s.status,
         s.assigned_admin_id,
         s.seller_notes,
@@ -169,6 +171,24 @@ if (!$submission) {
     exit('Submission not found.');
 }
 
+// Photo access additionally requires an active role; legacy page permission
+// helpers only test the administrator's active flag.
+$submissionFaceMeta = null;
+$submissionFaceUnavailable = false;
+$submissionFaceCanView = false;
+if (vnzSubmissionFaceMode()) {
+    $submissionFaceRole = $pdo->prepare('SELECT a.id FROM admins a INNER JOIN roles r ON r.id=a.role_id AND r.is_active=1 WHERE a.id=? AND a.is_active=1 LIMIT 1');
+    $submissionFaceRole->execute([(int) ($_SESSION['admin_id'] ?? 0)]);
+    $submissionFaceCanView = (bool) $submissionFaceRole->fetchColumn();
+    if ($submissionFaceCanView) {
+        try {
+            $submissionFaceMeta = vnzSubmissionFaceMeta($pdo, $submissionId);
+        } catch (Throwable $error) {
+            $submissionFaceUnavailable = true;
+        }
+    }
+}
+
 
 /*
 |--------------------------------------------------------------------------
@@ -189,6 +209,7 @@ $itemStmt = $pdo->prepare("
         damage_level,
         board_code,
         quantity,
+        quantity_is_estimated,
         seller_asking_price,
         additional_information,
         created_at,
@@ -603,10 +624,12 @@ foreach ($items as $item) {
                 <strong>
 
                     <?= e(
-                        $submission['selling_method']
+                        !empty($submission['bulk_format'])
+                            ? 'Bulk'
+                            : ($submission['selling_method']
                             === 'wholesale'
                             ? 'Wholesale'
-                            : 'Per Piece'
+                            : 'Per Piece')
                     ) ?>
 
                 </strong>
@@ -707,10 +730,12 @@ foreach ($items as $item) {
                 <strong>
 
                     <?= e(
-                        $submission['selling_method']
+                        !empty($submission['bulk_format'])
+                            ? 'Bulk'
+                            : ($submission['selling_method']
                             === 'wholesale'
                             ? 'Wholesale'
-                            : 'Per Piece'
+                            : 'Per Piece')
                     ) ?>
 
                 </strong>
@@ -718,6 +743,59 @@ foreach ($items as $item) {
             </div>
 
         </div>
+
+        <?php if ($submissionFaceCanView): ?>
+            <div class="submission-face" data-submission-face>
+                <div class="submission-face-heading">
+                    <h3>Submission selfie</h3>
+                    <?php if (!empty($submissionFaceMeta['available'])): ?>
+                        <span class="submission-face-badge">Face detected</span>
+                    <?php endif; ?>
+                </div>
+                <?php if (!empty($submissionFaceMeta['available'])): ?>
+                    <button type="button" class="submission-face-view" data-face-view-open
+                            data-face-view-src="/VNZ-TECH/backend/submission_face_photo.php?submission_id=<?= (int) $submissionId ?>"
+                            aria-haspopup="dialog">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.7"/>
+                            <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.7"/>
+                        </svg>
+                        View submission selfie
+                    </button>
+                    <p class="submission-face-note">Captured for this submission. Face detection does not confirm identity.</p>
+                    <p class="submission-face-note">Private photo for submission review. Deleted 30 days after the submission is accepted or declined, at the next daily cleanup.</p>
+                    <dialog class="submission-selfie-viewer" data-face-viewer aria-label="Submission selfie">
+                        <header class="submission-selfie-viewer-header">
+                            <h3>Submission selfie</h3>
+                            <button type="button" class="submission-selfie-control" data-face-view-close aria-label="Close selfie viewer" autofocus>
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </header>
+                        <div class="submission-selfie-toolbar">
+                            <button type="button" class="submission-selfie-control" data-face-view-zoom aria-pressed="false" disabled>Zoom in</button>
+                            <span data-face-view-hint>Click photo to zoom</span>
+                        </div>
+                        <div class="submission-selfie-stage" data-face-view-stage>
+                            <p class="submission-selfie-status" data-face-view-status role="status">Loading selfie...</p>
+                            <button type="button" class="submission-selfie-image-button" data-face-view-image-button aria-label="Zoom in on submission selfie" hidden>
+                                <img class="submission-selfie-image" data-face-view-image
+                                     alt="Private camera selfie captured for this submission" decoding="async" referrerpolicy="no-referrer">
+                            </button>
+                        </div>
+                        <p class="submission-selfie-caption">Captured for this submission. Face detection does not confirm identity.</p>
+                    </dialog>
+                    <script src="/VNZ-TECH/assets/js/submission-selfie-viewer.js?v=6.2"></script>
+                <?php elseif ($submissionFaceUnavailable): ?>
+                    <p class="submission-face-note" role="status">The private photo is temporarily unavailable. Refresh this submission to try again.</p>
+                <?php elseif ($submissionFaceMeta): ?>
+                    <p class="submission-face-note">The submission selfie is no longer available under the photo retention policy.</p>
+                <?php else: ?>
+                    <p class="submission-face-note">No submission selfie was stored for this submission.</p>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
 
     </section>
 
@@ -848,24 +926,20 @@ foreach ($items as $item) {
                                         "
                                     >
 
-                                        <?= e(
-                                            $item[
-                                                'item_type'
-                                            ]
-                                        ) ?>
+                                        <?php if (!empty($submission['bulk_format'])): ?>
+                                            <?= in_array($item['item_type'], ['whole_phone', 'Whole Phone'], true) ? 'Phone bulk' : 'Scrap board bulk' ?>
+                                        <?php else: ?>
+                                            <?= e($item['item_type']) ?>
+                                        <?php endif; ?>
 
                                     </span>
 
 
                                     <h3>
 
-                                        <?php if (
-                                            $item[
-                                                'item_type'
-                                            ]
-                                            ===
-                                            'Whole Phone'
-                                        ): ?>
+                                        <?php if (!empty($submission['bulk_format'])): ?>
+                                            <?= in_array($item['item_type'], ['whole_phone', 'Whole Phone'], true) ? 'Phone bulk' : 'Scrap board bulk' ?>
+                                                        <?php elseif (in_array($item['item_type'], ['whole_phone', 'Whole Phone'], true)): ?>
 
                                             <?= e(
                                                 trim(
@@ -907,6 +981,7 @@ foreach ($items as $item) {
                             >
 
                                 QTY
+                                <?= !empty($submission['bulk_format']) && !empty($item['quantity_is_estimated']) ? '≈' : '' ?>
                                 <?= number_format(
                                     (int)
                                     $item[
@@ -926,11 +1001,18 @@ foreach ($items as $item) {
                         >
 
 
-                            <?php if (
-                                $item['item_type']
-                                ===
-                                'Whole Phone'
-                            ): ?>
+                            <?php if (!empty($submission['bulk_format'])): ?>
+
+                                <div class="detail-field">
+                                    <span>LOT TYPE</span>
+                                    <strong>
+                                        <?= in_array($item['item_type'], ['whole_phone', 'Whole Phone'], true) ? 'Phone bulk' : 'Scrap board bulk' ?>
+                                    </strong>
+                                </div>
+
+                            <?php else: ?>
+
+                            <?php if (in_array($item['item_type'], ['whole_phone', 'Whole Phone'], true)): ?>
 
 
                                 <div
@@ -1162,13 +1244,15 @@ foreach ($items as $item) {
 
                             <?php endif; ?>
 
+                            <?php endif; ?>
+
 
                             <div
                                 class="detail-field"
                             >
 
                                 <span>
-                                    QUANTITY
+                                    <?= !empty($submission['bulk_format']) && !empty($item['quantity_is_estimated']) ? 'ESTIMATED QUANTITY' : 'QUANTITY' ?>
                                 </span>
 
                                 <strong>
@@ -1193,7 +1277,7 @@ foreach ($items as $item) {
                             >
 
                                 <span>
-                                    SELLER ASKING PRICE
+                                    <?= !empty($submission['bulk_format']) ? 'TOTAL ASKING PRICE FOR THIS LOT' : 'SELLER ASKING PRICE' ?>
                                 </span>
 
                                 <strong>

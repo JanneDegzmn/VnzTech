@@ -16,6 +16,9 @@ node_modules/
 /vendor/
 
 # Local mail credentials
+/backend/identity_required.flag
+/backend/identity_dual_required.flag
+/backend/submission_face_required.flag
 /backend/database.local.php
 /backend/mail_config.local.php
 /backend/scaledrone_config.local.php

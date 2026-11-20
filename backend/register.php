@@ -2,9 +2,11 @@
 
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
+require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/email_verification.php';
 require_once __DIR__ . '/password_policy.php';
 require_once __DIR__ . '/guest_submission_onboarding.php';
+require_once __DIR__ . '/identity_verification.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: /VNZ-TECH/account/register.php');
@@ -18,6 +20,10 @@ function redirectWithError(string $message): void
         urlencode($message)
     );
     exit;
+}
+
+if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
+    redirectWithError('Your session expired. Refresh the page and try again.');
 }
 
 $fullName = trim($_POST['full_name'] ?? '');
@@ -58,24 +64,10 @@ if (!$terms) {
     redirectWithError('You must agree to the Terms & Conditions.');
 }
 
+$profilePicturePath = null;
+$registrationError = 'Something went wrong while creating your account.';
+
 try {
-
-    $check = $pdo->prepare("
-        SELECT id
-        FROM users
-        WHERE email = ?
-        LIMIT 1
-    ");
-
-    $check->execute([$email]);
-
-    if ($check->fetch()) {
-        redirectWithError(
-            'An account with this email address already exists.'
-        );
-    }
-
-    $profilePicturePath = null;
 
     if (
         isset($_FILES['profile_picture']) &&
@@ -152,6 +144,19 @@ try {
         $password,
         PASSWORD_DEFAULT
     );
+    if (!is_string($passwordHash)) {
+        throw new RuntimeException('Unable to secure the new account password.');
+    }
+
+    // User creation and reservation of an exact guest identity attempt are atomic.
+    // Do not hold this transaction open while receiving files or sending email.
+    $pdo->beginTransaction();
+    $check = $pdo->prepare('SELECT id FROM users WHERE email = ? LIMIT 1 FOR UPDATE');
+    $check->execute([$email]);
+    if ($check->fetch()) {
+        $registrationError = 'An account with this email address already exists.';
+        throw new RuntimeException('Registration email already exists.');
+    }
 
     $insert = $pdo->prepare("
         INSERT INTO users (
@@ -177,37 +182,13 @@ try {
     ]);
 
     $userId = (int) $pdo->lastInsertId();
-    vnzRememberGuestSubmissionOnboarding($_SESSION, $userId, $email);
-    unset($_SESSION['guest_registration_prefill']);
-    $verificationEmailSent = false;
-
-    try {
-        sendEmailVerification(
-            $pdo,
-            $userId,
-            $email
-        );
-
-        $verificationEmailSent = true;
-        vnzRecordGuestSubmissionVerificationSent($_SESSION, $userId);
-    } catch (Throwable $mailError) {
-        error_log(
-            'Registration verification email could not be sent for user ' .
-            $userId .
-            ': ' .
-            $mailError->getMessage()
-        );
-    }
-
-    header(
-        'Location: /VNZ-TECH/account/login.php?success=1&verification=' .
-        ($verificationEmailSent ? 'sent' : 'pending'),
-        true,
-        303
-    );
-    exit;
+    vnzIdentityReserveGuest($pdo, $userId, $email);
+    $pdo->commit();
 
 } catch (Throwable $e) {
+    if ($pdo->inTransaction()) {
+        $pdo->rollBack();
+    }
 
     if (
         isset($profilePicturePath) &&
@@ -222,7 +203,26 @@ try {
         }
     }
 
-    redirectWithError(
-        'Something went wrong while creating your account.'
-    );
+    redirectWithError($registrationError);
 }
+
+// Account/profile ownership is committed. Mail failure cannot roll it back or
+// delete its profile picture; the login page offers verification recovery.
+vnzRememberGuestSubmissionOnboarding($_SESSION, $userId, $email);
+unset($_SESSION['guest_registration_prefill']);
+$verificationEmailSent = false;
+try {
+    sendEmailVerification($pdo, $userId, $email);
+    $verificationEmailSent = true;
+    vnzRecordGuestSubmissionVerificationSent($_SESSION, $userId);
+} catch (Throwable $mailError) {
+    error_log('Registration verification email could not be sent for user ' . $userId . ': ' . $mailError->getMessage());
+}
+
+header(
+    'Location: /VNZ-TECH/account/login.php?success=1&verification=' .
+    ($verificationEmailSent ? 'sent' : 'pending'),
+    true,
+    303
+);
+exit;

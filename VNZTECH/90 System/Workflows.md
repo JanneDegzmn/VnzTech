@@ -2,13 +2,23 @@
 type: guide
 status: active
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-19
 tags: [second-brain]
 ---
 
 # Workflows
 
 Dashboard: [[Home]]. Unang gamit at app settings: [[90 System/Start Here]].
+
+## One front door and shared task memory
+
+Give the question/command to the main assistant; it uses Atlas to assign only the useful roles. First read [[90 System/Tasks/Current Task]] and its canonical record, reconcile actual files/Git/approval/ownership, then relevant source. [[Task Center]] keeps all substantive tasks; [[90 System/Tasks/Quick Requests]] keeps compact answer-only requests. [[90 System/Company Operations]] defines proposal/approval, checkpoints, handoffs, and result acceptance. [[Approval Inbox]] and [[Decision Log]] keep owner decisions visible.
+
+New implementation needs a concrete owner-approved plan. Approved edits, checks, and docs proceed as one scope; agents cannot approve for the owner. Simple read-only answers/research and routine task records can proceed. Manual edits are not watched.
+
+After each task, relevant agents reuse/update [[40 Knowledge/Integration Catalog]] (API/tool choice, purpose, source/version, data flow, limits and actual checks) and [[40 Knowledge/Engineering Lessons]] (do/don't, evidence and corrections). This owner-requested learning stays concise and linked to modules/tasks; it is shared retrievable memory for future runs.
+
+Copilot in the same workspace is pointed to these files by `.github/copilot-instructions.md` at the repository root. Repository instructions require accessible/synchronized files; another clone/cloud runner does not automatically see local notes. [GitHub repository instructions](https://docs.github.com/en/copilot/how-tos/copilot-in-your-ide/customize-copilot/configure-custom-instructions/add-repository-instructions-in-your-ide?tool=vscode).
 
 ## Mula idea hanggang action
 
@@ -30,6 +40,8 @@ Dashboard: [[Home]]. Unang gamit at app settings: [[90 System/Start Here]].
 Hindi lahat ng capture kailangan ng task. Panatilihin ang references at ideas kahit wala pang immediate action.
 
 ## Copy-paste agent prompts
+
+[[90 System/Ponytail|Ponytail]] is the shared default: search first, read the relevant role/module, reuse existing work, and give concise results with actual evidence. Full histories and inventories are for questions that need them. The prompts below still work; no special activation command is needed.
 
 Para ito sa parent workspace na `C:\xampp\htdocs\VNZ-TECH`. Kung vault mismo ang working directory, alisin ang `VNZTECH/` prefix. Palitan ang bracketed text ng input mo. Puwedeng tawagin ang agents sa pangalan o role: Atlas/Orchestrator, Tala/Capture, Lex/Librarian, Nova/Researcher, Kai/Planner, Sage/Reviewer.
 
@@ -108,7 +120,7 @@ Direct manual VS Code edits are not monitored. Para ipa-document ang manual edit
 
 ### Source-review requests
 
-1. Basahin ang [[40 Knowledge/VNZ-TECH System Map]] at piliin ang owner sa [[90 System/Agent Directory]].
+1. Hanapin yung matching owner/module sa [[90 System/Agent Directory]]. Basahin yung relevant role at living module; buksan yung [[40 Knowledge/VNZ-TECH System Map]] kung kailangan ng overview o cross-module context.
 2. I-review ng owner ang current source paths at related tests; ang module notes ay dated memory.
 3. Ihiwalay ang implemented code, actual check results, applied configuration/migrations, at runtime unknowns.
 4. I-save ang lasting findings sa relevant module note at dated review. Panatilihin ang known gaps hanggang may bagong evidence. Sa implementation tasks, kasama rin ang coding-memory update sa taas.

@@ -252,6 +252,319 @@
    SELLER INFO
 ========================================================= */
 
+.submission-face,
+.submission-selfie-viewer {
+    --sf-surface: #0d1218;
+    --sf-raised: #15212d;
+    --sf-stage: #080d13;
+    --sf-line: #27323d;
+    --sf-text: #e9edf2;
+    --sf-muted: #aab8c7;
+    --sf-good: #80e0aa;
+    --sf-accent: #84d0ff;
+    --sf-accent-surface: #112c40;
+    --sf-error: #ffb3bb;
+    --sf-backdrop: rgba(4, 9, 16, 0.8);
+    --sf-shadow: rgba(0, 0, 0, 0.45);
+}
+
+.submission-face {
+    margin-top: 20px;
+    padding: 18px;
+    border: 1px solid var(--sf-line);
+    border-radius: 10px;
+    background: var(--sf-surface);
+    color: var(--sf-text);
+    min-width: 0;
+}
+
+html[data-admin-theme="light"] .submission-face,
+html[data-admin-theme="light"] .submission-selfie-viewer {
+    --sf-surface: var(--admin-light-panel-muted, #f7f9fc);
+    --sf-raised: var(--admin-light-panel, #ffffff);
+    --sf-stage: #edf2f7;
+    --sf-line: var(--admin-light-border, #dce3eb);
+    --sf-text: var(--admin-light-text, #18212b);
+    --sf-muted: var(--admin-light-muted, #586675);
+    --sf-good: #146638;
+    --sf-accent: #00699e;
+    --sf-accent-surface: #e5f3fc;
+    --sf-error: #a02336;
+    --sf-backdrop: rgba(23, 36, 53, 0.58);
+    --sf-shadow: rgba(23, 36, 53, 0.22);
+}
+
+.submission-face-heading {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.submission-face-heading h3 {
+    margin: 0;
+    color: var(--sf-text);
+    font-size: 15px;
+}
+
+.submission-face-badge {
+    padding: 5px 8px;
+    border: 1px solid currentColor;
+    border-radius: 6px;
+    color: var(--sf-good);
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.submission-review-page .submission-face-note {
+    margin: 10px 0 0;
+    color: var(--sf-muted);
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.submission-face-view,
+.submission-selfie-control {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 44px;
+    padding: 10px 15px;
+    border: 1px solid var(--sf-line);
+    border-radius: 9px;
+    background: var(--sf-raised);
+    color: var(--sf-text);
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.submission-face-view {
+    max-width: 100%;
+    border-color: var(--sf-accent);
+    background: var(--sf-accent-surface);
+    color: var(--sf-accent);
+}
+
+.submission-face-view svg,
+.submission-selfie-control svg {
+    width: 18px;
+    height: 18px;
+    flex: 0 0 auto;
+}
+
+.submission-face-view:hover,
+.submission-selfie-control:hover:not(:disabled) {
+    border-color: var(--sf-accent);
+    background: var(--sf-accent-surface);
+    color: var(--sf-accent);
+}
+
+.submission-face-view:focus-visible,
+.submission-selfie-control:focus-visible,
+.submission-selfie-image-button:focus-visible {
+    outline: 3px solid var(--sf-accent);
+    outline-offset: 3px;
+}
+
+.submission-selfie-control:disabled {
+    opacity: 0.55;
+    cursor: default;
+}
+
+/* Native top layer keeps the private viewer above the nested review modal. */
+.submission-selfie-viewer {
+    box-sizing: border-box;
+    width: min(920px, calc(100vw - 32px));
+    max-width: none;
+    max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px);
+    padding: 0;
+    margin: auto;
+    overflow: hidden;
+    border: 1px solid var(--sf-line);
+    border-radius: 16px;
+    background: var(--sf-surface);
+    color: var(--sf-text);
+    box-shadow: 0 24px 90px var(--sf-shadow);
+}
+
+.submission-selfie-viewer[open] {
+    display: flex;
+    flex-direction: column;
+}
+
+.submission-selfie-viewer::backdrop {
+    background: var(--sf-backdrop);
+}
+
+.submission-selfie-viewer [hidden] {
+    display: none !important;
+}
+
+.submission-selfie-viewer-header,
+.submission-selfie-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    flex: 0 0 auto;
+    padding: 14px 18px;
+}
+
+.submission-selfie-viewer-header {
+    border-bottom: 1px solid var(--sf-line);
+}
+
+.submission-selfie-viewer-header h3 {
+    margin: 0;
+    color: var(--sf-text);
+    font-size: 17px;
+    font-weight: 750;
+    line-height: 1.4;
+}
+
+.submission-selfie-viewer-header .submission-selfie-control {
+    flex: 0 0 auto;
+    padding: 9px 12px;
+}
+
+.submission-selfie-toolbar {
+    flex-wrap: wrap;
+    padding-block: 10px;
+}
+
+.submission-selfie-toolbar [data-face-view-hint] {
+    color: var(--sf-muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.submission-selfie-stage {
+    position: relative;
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 0;
+    max-height: 60vh;
+    max-height: 60dvh;
+    padding: 14px;
+    overflow: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-x pan-y;
+    background: var(--sf-stage);
+    border-block: 1px solid var(--sf-line);
+    scrollbar-color: var(--sf-muted) var(--sf-stage);
+    flex: 0 1 auto;
+}
+
+.submission-selfie-image-button {
+    box-sizing: border-box;
+    display: block;
+    width: fit-content;
+    max-width: 100%;
+    padding: 0;
+    margin: 0 auto;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    cursor: zoom-in;
+    touch-action: pan-x pan-y;
+}
+
+.submission-selfie-image {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 55vh;
+    max-height: 55dvh;
+    margin: 0 auto;
+    object-fit: contain;
+    border-radius: 5px;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+.submission-selfie-viewer.is-zoomed .submission-selfie-stage {
+    overflow: hidden;
+    touch-action: none;
+}
+
+.submission-selfie-viewer.is-zoomed .submission-selfie-image-button {
+    max-width: none;
+    margin: 0;
+    cursor: grab;
+    touch-action: none;
+    user-select: none;
+}
+
+.submission-selfie-viewer.is-dragging .submission-selfie-image-button {
+    cursor: grabbing;
+}
+
+.submission-selfie-viewer.is-zoomed .submission-selfie-image {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+}
+
+.submission-selfie-status {
+    margin: 54px auto;
+    max-width: 420px;
+    color: var(--sf-muted);
+    font-size: 14px;
+    line-height: 1.6;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+.submission-selfie-viewer[data-state="error"] .submission-selfie-status {
+    color: var(--sf-error);
+}
+
+.submission-selfie-caption {
+    flex: 0 0 auto;
+    padding: 13px 18px;
+    margin: 0;
+    color: var(--sf-muted);
+    font-size: 12px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 520px) {
+    .submission-selfie-viewer {
+        width: calc(100vw - 20px);
+        max-height: calc(100vh - 20px);
+        max-height: calc(100dvh - 20px);
+        border-radius: 12px;
+    }
+
+    .submission-selfie-viewer-header,
+    .submission-selfie-toolbar,
+    .submission-selfie-caption {
+        padding-inline: 12px;
+    }
+
+    .submission-selfie-viewer-header h3 { font-size: 15px; }
+    .submission-selfie-toolbar { gap: 8px; }
+    .submission-selfie-stage { padding: 10px; }
+    .submission-selfie-toolbar [data-face-view-hint] { flex-basis: 100%; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .submission-face-view,
+    .submission-selfie-control { transition: none; }
+}
+
 .seller-info-grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));

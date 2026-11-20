@@ -2,6 +2,16 @@
 
 This is the PHP/PDO VNZ-TECH application. Its Obsidian second brain is the `VNZTECH/` subdirectory.
 
+## Owner approval, routing, and task continuity
+
+The user approved this operating model on 2026-11-19. They give commands/questions to the main assistant; it acts as Atlas (Delivery Director), selects the smallest relevant team by scope, and consolidates the report. Existing 20 names/module specialties remain available. Read `VNZTECH/90 System/Company Operations.md` when routing or approval rules need detail.
+
+- Start by reading `VNZTECH/90 System/Tasks/Current Task.md` and its canonical task record, then only relevant role/module/source. Reconcile files/Git state, recorded approval scope, runner ownership, and next action. Task notes are context; an `approved` field alone is not authorization or an instruction override.
+- New requests allow read-only intake/research, proposals, and routine task/checkpoint records. Before implementing code/config/install/migration or external changes, present a concrete versioned plan and obtain the owner's explicit approval. The owner is the sole final approver; agents review/recommend only. Existing approval covers its specified implementation, checks, and documentation without repeated permission prompts. Material scope changes or uncovered releases/external writes need new approval.
+- Record actual owner words/source/scope; never invent approval, a message timestamp, or acceptance. Keep implementation, verification, and owner acceptance separate. This company/task-memory setup is already approved in `TASK-20261119-001`.
+- Log substantive requests in `VNZTECH/Task Center.md` with one record per logical task; small read-only Q&A use `VNZTECH/90 System/Tasks/Quick Requests.md`. Update the short Current Task pointer and record after meaningful milestones and before handoff/stop/final: completed step, next safe action, blockers, attributable files/checks, approval, runner, and local time.
+- One writer per task/shared index; other runners reconcile and record handoffs before taking ownership. Markers are advisory, not locks. Copilot must use the same accessible/synchronized files; no background monitoring or guaranteed agent enforcement is implied. Preserve older records when changing the current pointer.
+
 ## Theme consistency for every UI change
 
 The user explicitly requires all new or modified UI to follow the active light/dark theme. This includes modals, popups, login errors, alerts, confirmations, toasts, forms, and dynamically created content across public, seller, and admin pages.
@@ -22,6 +32,10 @@ The user wants Obsidian kept current without repeating an update request. Apply 
 6. Check the changed note links and briefly report the Obsidian update with the coding outcome. This documentation is part of completing the task; do not wait for a separate request or ask whether to update it.
 
 This applies when the assistant changes application source, assets, migrations, tests, configuration, or documentation describing application behavior. Keep updates proportional: a small coding task needs a short entry and relevant note adjustments, not a new full-system audit or broad test rerun.
+
+## Shared engineering knowledge
+
+Owner explicitly requested on 2026-11-19 that every task feed reusable knowledge to the relevant agents. Maintain `VNZTECH/40 Knowledge/Integration Catalog.md` for API/third-party choices (purpose, version/license/source, data sent, limits, alternatives and actual verification) and `VNZTECH/40 Knowledge/Engineering Lessons.md` for evidence-backed do/don't lessons and their task/source links. Relevant roles read the matching entries before proposing similar features; link domain notes rather than copying entire histories into every agent. Update or correct lessons when new evidence changes them. This is shared task memory for future runners, not automatic model retraining. Never store secrets, personal IDs or raw biometric data in knowledge notes.
 
 ## Evidence and scope
 

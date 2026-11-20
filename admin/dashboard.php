@@ -4,6 +4,7 @@ require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/auth.php';
 require_once __DIR__ . '/../backend/csrf.php';
+require_once __DIR__ . '/../backend/identity_verification.php';
 
 requireAdminLogin();
 
@@ -31,6 +32,8 @@ $csrfToken = generateCsrfToken();
     >
 
     <title>VNZ TECH - Admin Dashboard</title>
+    <link rel="stylesheet" href="/VNZ-TECH/assets/css/identity_verification.css?v=<?= filemtime(__DIR__ . '/../assets/css/identity_verification.css') ?>">
+    <script src="/VNZ-TECH/assets/js/identity-verification.js?v=<?= filemtime(__DIR__ . '/../assets/js/identity-verification.js') ?>" defer></script>
 
     <link
         rel="stylesheet"
@@ -261,6 +264,13 @@ $csrfToken = generateCsrfToken();
             <div class="nav-section-title">
                 MANAGEMENT
             </div>
+
+            <?php if (!vnzSubmissionFaceMode() && !vnzIdentityAutomatic() && vnzIdentityReviewer($pdo)): ?>
+                <button type="button" class="nav-item" data-page="identity_verifications">
+                    <span class="nav-icon" aria-hidden="true">✓</span>
+                    <span class="nav-text">ID verification</span>
+                </button>
+            <?php endif; ?>
 
 
             <?php if (hasPermission('manage_rates')): ?>
@@ -871,6 +881,8 @@ document.addEventListener(
 
             submissions: 'Submissions',
 
+            identity_verifications: 'ID verification',
+
             submission_review: 'Review Submission',
 
             offers: 'Offers',
@@ -1146,7 +1158,7 @@ document.addEventListener(
             .then(
                 function (response) {
 
-                    if (!response.ok) {
+                    if (!response.ok && !(page === 'identity_verifications' && response.status === 410)) {
 
                         throw new Error(
                             'Unable to load page.'

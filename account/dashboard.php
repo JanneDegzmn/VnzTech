@@ -3,6 +3,9 @@
 require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/csrf.php';
+require_once __DIR__ . '/../backend/identity_verification.php';
+require_once __DIR__ . '/../includes/identity-verification.php';
+require_once __DIR__ . '/../includes/submission-face-capture.php';
 require_once __DIR__ . '/../backend/guest_submission_onboarding.php';
 
 
@@ -210,6 +213,13 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
 <html lang="<?= htmlspecialchars($sellerLanguage, ENT_QUOTES, 'UTF-8') ?>" data-seller-language="<?= htmlspecialchars($sellerLanguage, ENT_QUOTES, 'UTF-8') ?>">
 
 <head>
+    <?php if (vnzSubmissionFaceMode()): ?>
+    <link rel="stylesheet" href="/VNZ-TECH/assets/css/submission_face_capture.css?v=<?= filemtime(__DIR__ . '/../assets/css/submission_face_capture.css') ?>">
+    <script src="/VNZ-TECH/assets/js/submission-face-capture.js?v=<?= filemtime(__DIR__ . '/../assets/js/submission-face-capture.js') ?>" defer></script>
+    <?php else: ?>
+    <link rel="stylesheet" href="/VNZ-TECH/assets/css/identity_verification.css?v=<?= filemtime(__DIR__ . '/../assets/css/identity_verification.css') ?>">
+    <script src="/VNZ-TECH/assets/js/identity-verification.js?v=<?= filemtime(__DIR__ . '/../assets/js/identity-verification.js') ?>" defer></script>
+    <?php endif; ?>
 
     <?php if ($guestSubmissionOnboarding !== null): ?>
         <link rel="stylesheet" href="/VNZ-TECH/assets/css/guest_submission_claim.css?v=<?= filemtime(__DIR__ . '/../assets/css/guest_submission_claim.css') ?>">
@@ -252,6 +262,8 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
         rel="stylesheet"
         href="/VNZ-TECH/assets/css/seller_alert.css?v=<?= filemtime(__DIR__ . '/../assets/css/seller_alert.css') ?>"
     >
+    <link rel="stylesheet" href="/VNZ-TECH/assets/css/seller_topbar.css?v=<?= filemtime(__DIR__ . '/../assets/css/seller_topbar.css') ?>">
+    <script src="/VNZ-TECH/assets/js/seller-topbar.js?v=<?= filemtime(__DIR__ . '/../assets/js/seller-topbar.js') ?>" defer></script>
     <script
         src="/VNZ-TECH/assets/js/transaction-chat.js?v=<?= filemtime(__DIR__ . '/../assets/js/transaction-chat.js') ?>"
         defer
@@ -588,6 +600,7 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
     ====================================================== -->
 
     <main class="dashboard-main">
+        <?php require __DIR__ . "/../includes/seller-topbar.php"; ?>
 
         <div id="contentArea">
 
@@ -654,8 +667,7 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
                     </h2>
 
                     <p>
-                        Submit your phone or scrap item details
-                        and our team will review your submission.
+                        Submit a phone, scrap board, or a bulk lot for our team to review.
                     </p>
 
                 </div>
@@ -689,6 +701,15 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
                         name="submission_source"
                         value="account"
                     >
+
+                    <input
+                        type="hidden"
+                        name="bulk_format"
+                        value="0"
+                        id="sellerBulkFormat"
+                    >
+
+                    <?php if (vnzSubmissionFaceMode()) { vnzRenderSubmissionFaceCapture('account', $sellerLanguage); } else { vnzRenderIdentityVerification('account', (string) ($sellerAccount['email'] ?? ''), $sellerLanguage, vnzIdentityEnabled()); } ?>
 
 
                     <div class="seller-form-section">
@@ -910,13 +931,20 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
                                         for="method_wholesale"
                                         class="seller-form-method-label"
                                     >
-                                        Wholesale / Bulk
+                                        Bulk
                                     </label>
 
                                 </div>
 
 
                             </div>
+
+                            <small
+                                class="seller-selling-method-help"
+                                data-selling-method-help
+                            >
+                                Enter each phone or scrap board with its details, photos, and asking price.
+                            </small>
 
                         </div>
 
@@ -949,35 +977,6 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
                     </div>
 
 
-                    <div class="seller-form-section">
-
-                        <div class="seller-form-section-title">
-
-                            Additional Information
-
-                        </div>
-
-
-                        <div class="seller-form-group">
-
-                            <label for="seller_notes">
-
-                                Seller Notes
-
-                            </label>
-
-
-                            <textarea
-                                id="seller_notes"
-                                name="seller_notes"
-                                placeholder="Anything else you want our team to know..."
-                            ></textarea>
-
-                        </div>
-
-                    </div>
-
-
                     <div class="seller-form-disclaimer">
 
                         By submitting this form, you confirm that
@@ -996,6 +995,8 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
                             type="submit"
                             class="seller-form-submit"
                             id="sellerSubmitBtn"
+                            <?= vnzSubmissionFaceMode() ? '' : 'data-identity-final' ?>
+                            <?= vnzIdentityEnabled() ? 'disabled' : '' ?>
                         >
 
                             SUBMIT ITEM FOR REVIEW
@@ -2133,6 +2134,18 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
             'sellerSubmissionForm'
         );
 
+    const sellerBulkFormatInput =
+        document.getElementById(
+            'sellerBulkFormat'
+        );
+
+    const sellerSellingMethodHelp =
+        sellerSubmissionForm
+            ? sellerSubmissionForm.querySelector(
+                '[data-selling-method-help]'
+            )
+            : null;
+
 
     const sellerFormMessage =
         document.getElementById(
@@ -2148,6 +2161,56 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
 
     let sellerItemIndex =
         0;
+
+    function isSellerBulkMode() {
+        const selectedMethod = sellerSubmissionForm
+            ? sellerSubmissionForm.querySelector(
+                'input[name="selling_method"]:checked'
+            )
+            : null;
+
+        return Boolean(selectedMethod && selectedMethod.value === 'wholesale');
+    }
+
+    function syncSellerSellingMode() {
+        const isBulk = isSellerBulkMode();
+
+        if (sellerBulkFormatInput) {
+            sellerBulkFormatInput.value = isBulk ? '1' : '0';
+        }
+
+        if (sellerSellingMethodHelp) {
+            sellerSellingMethodHelp.textContent = isBulk
+                ? 'Add phone or scrap-board lots with photos, quantity, and one total price per lot.'
+                : 'Enter each phone or scrap board with its details, photos, and asking price.';
+        }
+
+        if (sellerAddItemBtn) {
+            sellerAddItemBtn.textContent = isBulk
+                ? '+ Add Another Bulk Lot'
+                : '+ Add Another Item';
+        }
+
+        if (sellerItemsContainer) {
+            sellerItemsContainer
+                .querySelectorAll('.seller-item-card')
+                .forEach(function (itemCard) {
+                    itemCard.dispatchEvent(
+                        new CustomEvent('seller-selling-method-change', {
+                            detail: { isBulk: isBulk }
+                        })
+                    );
+                });
+        }
+    }
+
+    if (sellerSubmissionForm) {
+        sellerSubmissionForm
+            .querySelectorAll('input[name="selling_method"]')
+            .forEach(function (input) {
+                input.addEventListener('change', syncSellerSellingMode);
+            });
+    }
 
 
     const issueList = [
@@ -2420,7 +2483,7 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
 
             <div class="seller-item-header">
 
-                <div class="seller-item-title">
+                <div class="seller-item-title" data-item-heading>
                     Item ${index + 1}
                 </div>
 
@@ -2435,7 +2498,7 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
             </div>
 
 
-            <div class="seller-item-type-row">
+            <div class="seller-item-type-row" data-item-type-row>
 
                 <button
                     type="button"
@@ -2783,13 +2846,85 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
 
 
             <div
+                class="seller-bulk-fields"
+                data-bulk-fields
+                style="display: none;"
+            >
+
+                <div class="seller-form-grid">
+
+                    <div class="seller-form-group full">
+
+                        <label for="seller-bulk-category-${index}">
+                            Bulk Category
+                        </label>
+
+                        <select
+                            id="seller-bulk-category-${index}"
+                            data-bulk-item-type
+                            required
+                            disabled
+                        >
+                            <option value="" selected disabled>Choose bulk type</option>
+                            <option value="Whole Phone">Phone bulk</option>
+                            <option value="Scrap Board">Scrap board bulk</option>
+                        </select>
+
+                    </div>
+
+                    <div class="seller-form-group">
+
+                        <label for="seller-bulk-quantity-${index}">
+                            Quantity
+                        </label>
+
+                        <input
+                            id="seller-bulk-quantity-${index}"
+                            type="number"
+                            name="items[${index}][quantity]"
+                            min="1"
+                            max="100000"
+                            placeholder="Enter item count"
+                            data-bulk-quantity
+                            required
+                            disabled
+                        >
+
+                    </div>
+
+                    <div class="seller-form-group">
+
+                        <label for="seller-bulk-quantity-type-${index}">
+                            Quantity type
+                        </label>
+
+                        <select
+                            id="seller-bulk-quantity-type-${index}"
+                            name="items[${index}][quantity_is_estimated]"
+                            data-bulk-quantity-type
+                            required
+                            disabled
+                        >
+                            <option value="">Choose exact or estimated</option>
+                            <option value="0">Exact count</option>
+                            <option value="1">Estimated count</option>
+                        </select>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div
                 class="
                     seller-form-group
                     seller-asking-price-group
                 "
             >
 
-                <label>
+                <label data-price-label>
                     Seller Asking Price
                 </label>
 
@@ -2814,7 +2949,7 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
                 </div>
 
 
-                <small>
+                <small data-price-help>
 
                     Your requested price.
                     Final VNZ TECH offer is subject
@@ -2840,7 +2975,7 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
                 <textarea
                     name="items[${index}][additional_information]"
                     maxlength="1500"
-                    placeholder="Missing parts, repair history, accessories, etc."
+                placeholder="Anything else about this item or bulk lot..."
                 ></textarea>
 
             </div>
@@ -2892,6 +3027,8 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
         setupSellerItem(
             itemCard
         );
+
+        syncSellerSellingMode();
 
     }
 
@@ -2969,6 +3106,43 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
                 '[data-board-code]'
             );
 
+        const itemTypeRow =
+            itemCard.querySelector(
+                '[data-item-type-row]'
+            );
+
+        const bulkFields =
+            itemCard.querySelector(
+                '[data-bulk-fields]'
+            );
+
+        const bulkInputs =
+            bulkFields.querySelectorAll(
+                'input, select, textarea'
+            );
+
+        const bulkTypeSelect =
+            itemCard.querySelector(
+                '[data-bulk-item-type]'
+            );
+
+        const itemHeading =
+            itemCard.querySelector(
+                '[data-item-heading]'
+            );
+
+        const priceLabel =
+            itemCard.querySelector(
+                '[data-price-label]'
+            );
+
+        const priceHelp =
+            itemCard.querySelector(
+                '[data-price-help]'
+            );
+
+        let perPieceType = 'phone';
+
 
         issueList.forEach(
             issue => {
@@ -3039,80 +3213,67 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
         );
 
 
-        function setType(
-            type
-        ) {
+        function syncItemMode(isBulk) {
+            const isPhone = perPieceType === 'phone';
 
-            const isPhone =
-                type === 'phone';
+            itemHeading.textContent = isBulk
+                ? 'Bulk Lot ' + (Number(itemCard.dataset.index) + 1)
+                : 'Item ' + (Number(itemCard.dataset.index) + 1);
+            itemTypeRow.hidden = isBulk;
+            phoneFields.style.display = !isBulk && isPhone ? '' : 'none';
+            scrapFields.style.display = !isBulk && !isPhone ? '' : 'none';
+            bulkFields.style.display = isBulk ? '' : 'none';
 
+            phoneInputs.forEach(function (input) {
+                input.disabled = isBulk || !isPhone;
+            });
+            scrapInputs.forEach(function (input) {
+                input.disabled = isBulk || isPhone;
+            });
+            bulkInputs.forEach(function (input) {
+                input.disabled = !isBulk;
+            });
 
-            itemTypeInput.value =
-                isPhone
+            issueSelect.required = !isBulk && isPhone;
+            damageSelect.required = !isBulk && isPhone;
+            boardDamage.required = !isBulk && !isPhone;
+            boardCode.required = !isBulk && !isPhone;
+            bulkTypeSelect.required = isBulk;
+
+            itemTypeInput.value = isBulk
+                ? bulkTypeSelect.value
+                : isPhone
                     ? 'Whole Phone'
                     : 'Scrap Board';
 
+            priceLabel.textContent = isBulk
+                ? 'Total Asking Price for This Bulk Lot'
+                : 'Seller Asking Price';
+            priceHelp.textContent = isBulk
+                ? 'Enter the total price for this entire lot.'
+                : 'Your requested price. Final VNZ TECH offer is subject to inspection and verification.';
 
-            phoneButton.classList.toggle(
-                'active',
-                isPhone
-            );
-
-
-            scrapButton.classList.toggle(
-                'active',
-                !isPhone
-            );
-
-
-            phoneFields.style.display =
-                isPhone
-                    ? ''
-                    : 'none';
-
-
-            scrapFields.style.display =
-                isPhone
-                    ? 'none'
-                    : '';
-
-
-            phoneInputs.forEach(
-                input => {
-
-                    input.disabled =
-                        !isPhone;
-
-                }
-            );
-
-
-            scrapInputs.forEach(
-                input => {
-
-                    input.disabled =
-                        isPhone;
-
-                }
-            );
-
-
-            issueSelect.required =
-                isPhone;
-
-
-            damageSelect.required =
-                isPhone;
-
-
-            boardDamage.required =
-                !isPhone;
-
-
-            boardCode.required =
-                !isPhone;
-
+            phoneButton.classList.toggle('active', isPhone);
+            scrapButton.classList.toggle('active', !isPhone);
         }
+
+        function setType(type) {
+            perPieceType = type;
+            syncItemMode(isSellerBulkMode());
+        }
+
+        itemCard.addEventListener(
+            'seller-selling-method-change',
+            function (event) {
+                syncItemMode(Boolean(event.detail && event.detail.isBulk));
+            }
+        );
+
+        bulkTypeSelect.addEventListener('change', function () {
+            if (isSellerBulkMode()) {
+                itemTypeInput.value = bulkTypeSelect.value;
+            }
+        });
 
 
         phoneButton.addEventListener(
@@ -3122,6 +3283,8 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
                 setType(
                     'phone'
                 );
+
+                syncItemMode(isSellerBulkMode());
 
             }
         );
@@ -3341,7 +3504,11 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
 
         sellerSubmissionForm.addEventListener(
             'submit',
-            function () {
+            function (event) {
+
+                if (event.defaultPrevented || (sellerSubmissionForm.dataset.faceCaptureRequired === '1' && sellerSubmissionForm.dataset.faceCaptureReady !== '1')) {
+                    return;
+                }
 
                 if (
                     sellerSubmitBtn
@@ -4180,7 +4347,7 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
 
 </script>
 
-<?php require __DIR__ . '/../includes/floating-messages.php'; ?>
+
 
 </body>
 </html>

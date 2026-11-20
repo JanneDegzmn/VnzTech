@@ -1,0 +1,5953 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;padding:20px;background:#e5eaf0;color:#223140;font:14px Arial}h1{font-size:20px;margin:0 0 4px}p{margin:10px 0 8px}main{display:grid;grid-template-columns:520px 375px;gap:10px 18px}iframe{border:0;height:320px;border-radius:12px}small{display:block;margin:0 0 12px}</style></head><body><h1>Profile upload button: proposal v1</h1><small>Design preview only. Application files have not been changed.</small><main><div><p>Dark / 520px</p><iframe title="Dark / 520px" style="width:520px" srcdoc="&lt;!doctype html&gt;&lt;html data-public-theme=&quot;dark&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;&lt;style&gt;* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(0, 132, 201, 0.18),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at bottom left,
+            rgba(0, 132, 201, 0.10),
+            transparent 30%
+        ),
+        #090c10;
+
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px 16px;
+}
+
+.register-wrapper {
+    width: 100%;
+    max-width: 520px;
+}
+
+/* =========================================================
+   BACK TO HOME
+   ========================================================= */
+
+.page-back {
+    margin-bottom: 14px;
+}
+
+.page-back a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color: #6f7c88;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.page-back a:hover {
+    color: #ffffff;
+    transform: translateX(-3px);
+}
+
+/* =========================================================
+   BRAND
+   ========================================================= */
+
+.brand {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.brand h1 {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.brand p {
+    color: #8f9aa5;
+    margin-top: 7px;
+    font-size: 14px;
+}
+
+/* =========================================================
+   REGISTER CARD
+   ========================================================= */
+
+.register-card {
+    background: rgba(16, 20, 25, 0.96);
+
+    border: 1px solid #242b33;
+    border-radius: 18px;
+
+    padding: 28px;
+
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.45);
+}
+
+.register-card h2 {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    color: #89949f;
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.message {
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    margin-bottom: 18px;
+
+    font-size: 14px;
+}
+
+.message.error {
+    background: rgba(220, 38, 38, 0.12);
+
+    border: 1px solid rgba(220, 38, 38, 0.35);
+
+    color: #ffb4b4;
+}
+
+.message.success {
+    background: rgba(34, 197, 94, 0.12);
+
+    border: 1px solid rgba(34, 197, 94, 0.35);
+
+    color: #b8f5ca;
+}
+
+/* =========================================================
+   PROFILE UPLOAD
+   ========================================================= */
+
+.profile-upload {
+    display: flex;
+    align-items: center;
+
+    gap: 16px;
+
+    margin-bottom: 24px;
+}
+
+.avatar-preview {
+    width: 76px;
+    height: 76px;
+
+    border-radius: 50%;
+
+    border: 2px solid #2c3944;
+
+    background: #11161c;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    flex-shrink: 0;
+
+    color: #73808c;
+
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.upload-content label {
+    display: inline-block;
+
+    margin-bottom: 6px;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.upload-content p {
+    color: #77838f;
+
+    font-size: 12px;
+
+    margin-bottom: 8px;
+}
+
+.upload-content input {
+    width: 100%;
+
+    color: #aeb8c2;
+
+    font-size: 12px;
+}
+
+/* =========================================================
+   FORM FIELDS
+   ========================================================= */
+
+.field {
+    margin-bottom: 17px;
+}
+
+.field label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+.field input,
+.field select {
+    width: 100%;
+
+    border: 1px solid #29323b;
+
+    background: #0d1217;
+
+    color: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 12px 13px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.field input:focus,
+.field select:focus {
+    border-color: #0ea5e9;
+
+    box-shadow:
+        0 0 0 3px rgba(14, 165, 233, 0.10);
+}
+
+.hint {
+    color: #67737e;
+
+    font-size: 11px;
+
+    margin-top: 6px;
+
+    line-height: 1.4;
+}
+
+/* =========================================================
+   PASSWORD ROW
+   ========================================================= */
+
+.password-row {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 12px;
+}
+
+/* =========================================================
+   TERMS
+   ========================================================= */
+
+.terms {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 9px;
+
+    margin: 6px 0 20px;
+}
+
+.terms input {
+    margin-top: 3px;
+
+    accent-color: #0ea5e9;
+}
+
+.terms label {
+    color: #8c98a3;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+.terms a {
+    color: #38bdf8;
+
+    text-decoration: none;
+}
+
+.terms a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   SUBMIT BUTTON
+   ========================================================= */
+
+.submit-button {
+    width: 100%;
+
+    border: 0;
+
+    border-radius: 11px;
+
+    padding: 13px 16px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0ea5e9,
+            #0284c7
+        );
+
+    color: white;
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.4px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        filter 0.2s ease;
+}
+
+.submit-button:hover {
+    transform: translateY(-1px);
+
+    filter: brightness(1.07);
+}
+
+/* =========================================================
+   LOGIN LINK
+   ========================================================= */
+
+.login-link {
+    text-align: center;
+
+    margin-top: 20px;
+
+    color: #7f8b96;
+
+    font-size: 13px;
+}
+
+.login-link a {
+    color: #38bdf8;
+
+    font-weight: 700;
+
+    text-decoration: none;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 560px) {
+
+    body {
+        padding: 22px 14px;
+    }
+
+    .register-card {
+        padding: 22px 18px;
+    }
+
+    .password-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .brand h1 {
+        font-size: 26px;
+    }
+
+    .page-back {
+        margin-bottom: 14px;
+    }
+
+    .page-back a {
+        font-size: 11px;
+    }
+}
+html[data-public-theme=&quot;light&quot;] {
+    color-scheme: light;
+    --bg: #f4f7fa;
+    --bg-soft: #edf2f7;
+    --panel: #ffffff;
+    --panel-2: #f7f9fc;
+    --panel-3: #edf2f7;
+    --line: #dce3eb;
+    --line-light: #c6d0dc;
+    --white: #18212b;
+    --soft: #465565;
+    --muted: #586675;
+    --muted-dark: #718091;
+}
+
+html,
+body,
+body *,
+body *::before,
+body *::after {
+    transition:
+        color 220ms ease,
+        background-color 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+}
+
+.public-theme-toggle {
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 20000;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 15px;
+    border: 1px solid #34404c;
+    border-radius: 999px;
+    background: rgba(13, 18, 23, 0.96);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.22);
+    color: #e7edf3;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+}
+
+.public-theme-toggle:hover {
+    border-color: #0ea5e9;
+    background: #151d25;
+}
+
+.public-theme-toggle [data-theme-icon] {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.tracking-modal-minimized {
+    position: fixed;
+    right: calc(max(12px, env(safe-area-inset-right)) + 132px);
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 20001;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    color: #e7edf3;
+    background: rgba(13, 18, 23, 0.97);
+    border: 1px solid #34404c;
+    border-radius: 999px;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.24);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    animation: tracking-modal-minimized-in 0.22s ease-out both;
+}
+
+.tracking-modal-minimized[hidden] {
+    display: none !important;
+}
+
+.tracking-modal-minimized:hover,
+.tracking-modal-minimized:focus-visible {
+    border-color: #0ea5e9;
+    background: #151d25;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22), 0 8px 26px rgba(0, 0, 0, 0.24);
+    transform: translateY(-2px);
+}
+
+.tracking-modal-minimized &gt; span:first-child {
+    font-size: 16px;
+}
+
+.tracking-modal-unread-badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    display: grid;
+    min-width: 21px;
+    height: 21px;
+    place-items: center;
+    padding: 0 5px;
+    color: #ffffff;
+    background: #ef4444;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(127, 29, 29, 0.3);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    animation: tracking-modal-unread-pulse 0.45s ease-out;
+}
+
+.tracking-modal-unread-badge[hidden] {
+    display: none !important;
+}
+
+.tracking-modal-minimized.has-unread-replies .tracking-modal-unread-badge {
+    animation: tracking-modal-unread-pulse 0.45s ease-out;
+}
+
+@keyframes tracking-modal-unread-pulse {
+    0% { transform: scale(0.55); }
+    65% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+}
+
+@keyframes tracking-modal-minimized-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+body.public-theme-has-chat .floating-messages-launcher {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(66px + env(safe-area-inset-bottom));
+}
+
+html[data-public-theme=&quot;light&quot;] .public-theme-toggle {
+    border-color: #c6d0dc;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 26px rgba(30, 55, 80, 0.14);
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .public-theme-toggle:hover {
+    border-color: #0284c7;
+    background: #f2f8fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized {
+    color: #263746;
+    background: rgba(255, 255, 255, 0.97);
+    border-color: #c6d0dc;
+    box-shadow: 0 8px 26px rgba(30, 55, 80, 0.16);
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized:hover,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized:focus-visible {
+    color: #075985;
+    background: #f2f8fc;
+    border-color: #0284c7;
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-unread-badge {
+    color: #ffffff;
+    background: #dc2626;
+    border-color: #ffffff;
+}
+
+@media (max-width: 420px) {
+    .tracking-modal-minimized {
+        gap: 5px;
+        padding: 0 12px;
+        font-size: 11px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tracking-modal-minimized,
+    .tracking-modal-unread-badge {
+        animation: none;
+        transition: none;
+    }
+}
+
+html[data-public-theme=&quot;light&quot;] body {
+    background: #f4f7fa;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-page {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .site-header {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: #dce3eb;
+    box-shadow: 0 5px 20px rgba(30, 55, 80, 0.06);
+}
+
+html[data-public-theme=&quot;light&quot;] .brand-mark,
+html[data-public-theme=&quot;light&quot;] .brand-name {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .nav-link,
+html[data-public-theme=&quot;light&quot;] .header-back,
+html[data-public-theme=&quot;light&quot;] .footer-link,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item a {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .nav-link:hover,
+html[data-public-theme=&quot;light&quot;] .nav-link.is-active,
+html[data-public-theme=&quot;light&quot;] .footer-link:hover,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item a:hover {
+    color: #0369a1;
+}
+
+@media (max-width: 1080px) {
+    html[data-public-theme=&quot;light&quot;] .nav-menu {
+        background: #ffffff;
+        border-bottom-color: #dce3eb;
+        box-shadow: 0 16px 30px rgba(30, 55, 80, 0.12);
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-link {
+        background: #ffffff;
+        border-bottom-color: #e5ebf1;
+        color: #344454;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-link:hover,
+    html[data-public-theme=&quot;light&quot;] .nav-link:focus-visible,
+    html[data-public-theme=&quot;light&quot;] .nav-link.is-active {
+        background: #f1f7fb;
+        color: #075985;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-actions {
+        border-color: #dce3eb;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-toggle {
+        background: #ffffff;
+        border-color: #c6d0dc;
+        color: #344454;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-toggle-bar {
+        background: #344454;
+    }
+}
+
+html[data-public-theme=&quot;light&quot;] .header-login-btn,
+html[data-public-theme=&quot;light&quot;] .header-account-btn,
+html[data-public-theme=&quot;light&quot;] .header-track-btn,
+html[data-public-theme=&quot;light&quot;] .hero-btn-secondary,
+html[data-public-theme=&quot;light&quot;] .close-form-btn {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .header-login-btn:hover,
+html[data-public-theme=&quot;light&quot;] .header-account-btn:hover,
+html[data-public-theme=&quot;light&quot;] .header-track-btn:hover,
+html[data-public-theme=&quot;light&quot;] .hero-btn-secondary:hover,
+html[data-public-theme=&quot;light&quot;] .close-form-btn:hover {
+    background: #eaf4fa;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .marketing-section,
+html[data-public-theme=&quot;light&quot;] .hero-section {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .section-dot-nav {
+    background: rgba(255, 255, 255, 0.94);
+    border-color: #dce3eb;
+    box-shadow: 0 12px 28px rgba(30, 55, 80, 0.16);
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link {
+    background: #dce3eb;
+    border-color: #b8c5d2;
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link::after {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: #dce3eb;
+    color: #344454;
+    box-shadow: 0 5px 16px rgba(30, 55, 80, 0.12);
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link:hover,
+html[data-public-theme=&quot;light&quot;] .dot-link:focus-visible,
+html[data-public-theme=&quot;light&quot;] .dot-link.is-active {
+    background: #0284c7;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.14);
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-section {
+    background:
+        radial-gradient(circle at 78% 42%, rgba(2, 132, 199, 0.08), transparent 34%),
+        linear-gradient(120deg, #ffffff 0%, #f2f6fa 100%);
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-copy h1,
+html[data-public-theme=&quot;light&quot;] .section-intro h2,
+html[data-public-theme=&quot;light&quot;] .education-card h3,
+html[data-public-theme=&quot;light&quot;] .form-section-header h2,
+html[data-public-theme=&quot;light&quot;] .process-banner strong,
+html[data-public-theme=&quot;light&quot;] .footer-cta-title,
+html[data-public-theme=&quot;light&quot;] .success-screen h1 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-copy h1 span,
+html[data-public-theme=&quot;light&quot;] .section-intro h2 span,
+html[data-public-theme=&quot;light&quot;] .hero-statement span,
+html[data-public-theme=&quot;light&quot;] .hero-statement span:first-child {
+    color: #708090;
+}
+
+html[data-public-theme=&quot;light&quot;] .eyebrow,
+html[data-public-theme=&quot;light&quot;] .section-kicker,
+html[data-public-theme=&quot;light&quot;] .hero-description,
+html[data-public-theme=&quot;light&quot;] .section-intro p,
+html[data-public-theme=&quot;light&quot;] .education-card p,
+html[data-public-theme=&quot;light&quot;] .mini-points span,
+html[data-public-theme=&quot;light&quot;] .process-banner p,
+html[data-public-theme=&quot;light&quot;] .form-section-header p,
+html[data-public-theme=&quot;light&quot;] .footer-tagline,
+html[data-public-theme=&quot;light&quot;] .footer-description {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-meta span,
+html[data-public-theme=&quot;light&quot;] .card-flow span,
+html[data-public-theme=&quot;light&quot;] .process-banner,
+html[data-public-theme=&quot;light&quot;] .education-card,
+html[data-public-theme=&quot;light&quot;] .step-card,
+html[data-public-theme=&quot;light&quot;] .form-block,
+html[data-public-theme=&quot;light&quot;] .item-form-card,
+html[data-public-theme=&quot;light&quot;] .choice-card span,
+html[data-public-theme=&quot;light&quot;] .item-type-choice span,
+html[data-public-theme=&quot;light&quot;] .upload-box,
+html[data-public-theme=&quot;light&quot;] .account-email-note,
+html[data-public-theme=&quot;light&quot;] .account-success-note,
+html[data-public-theme=&quot;light&quot;] .photo-preview {
+    background: #ffffff;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta {
+    background: linear-gradient(180deg, #ffffff 0%, #f4f7fa 100%);
+    border-color: #dce3eb;
+    box-shadow: 0 12px 32px rgba(30, 55, 80, 0.08);
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta h3 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta &gt; span {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary {
+    background: #dce6ee;
+    border-color: #c6d3df;
+    color: #18212b;
+    box-shadow: 0 4px 12px rgba(30, 55, 80, 0.1);
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary:hover,
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary:focus-visible {
+    background: #cbd9e4;
+    border-color: #aebfce;
+    color: #111b24;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn {
+    background: #dce6ee;
+    border-color: #aebfce;
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn:hover,
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn:focus-visible {
+    background: #cbd9e4;
+    border-color: #8fa5b8;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-card {
+    color: #f5f6f8;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-name,
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement strong {
+    color: #f5f6f8;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-condition,
+html[data-public-theme=&quot;light&quot;] .trade-feature-description,
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement span {
+    color: #cbd5df;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-card.is-prev,
+html[data-public-theme=&quot;light&quot;] .trade-feature-card.is-next {
+    opacity: 0.9;
+    filter: saturate(0.82) brightness(0.9);
+}
+
+html[data-public-theme=&quot;light&quot;] .education-section,
+html[data-public-theme=&quot;light&quot;] .process-section {
+    background: linear-gradient(180deg, #f7f9fc 0%, #edf2f7 100%);
+}
+
+html[data-public-theme=&quot;light&quot;] .card-index,
+html[data-public-theme=&quot;light&quot;] .card-label,
+html[data-public-theme=&quot;light&quot;] .card-flow b {
+    color: #718091;
+}
+
+html[data-public-theme=&quot;light&quot;] .site-footer {
+    background: #ffffff;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .footer-title,
+html[data-public-theme=&quot;light&quot;] .footer-brand {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .footer-bottom,
+html[data-public-theme=&quot;light&quot;] .footer-grid,
+html[data-public-theme=&quot;light&quot;] .footer-cta {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .submission-form-section {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title,
+html[data-public-theme=&quot;light&quot;] .form-block-title strong,
+html[data-public-theme=&quot;light&quot;] .item-form-header h3,
+html[data-public-theme=&quot;light&quot;] .photo-heading strong,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title small,
+html[data-public-theme=&quot;light&quot;] .form-group label,
+html[data-public-theme=&quot;light&quot;] .form-group label small,
+html[data-public-theme=&quot;light&quot;] .photo-heading &gt; small,
+html[data-public-theme=&quot;light&quot;] .upload-box small,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer span,
+html[data-public-theme=&quot;light&quot;] .submit-area p {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title &gt; span:first-child {
+    background: #eef3f8;
+    border-color: #dce3eb;
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .submission-form-section {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer {
+    background: #fff9e8;
+    border-color: #eadcae;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer strong {
+    color: #805700;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer span {
+    color: #665b3f;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-group input,
+html[data-public-theme=&quot;light&quot;] .form-group select,
+html[data-public-theme=&quot;light&quot;] .form-group textarea,
+html[data-public-theme=&quot;light&quot;] .price-input input,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field input,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field select,
+html[data-public-theme=&quot;light&quot;] .track-counter-form input {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #18212b;
+    color-scheme: light;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-group select option {
+    background: #ffffff;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .price-input {
+    background: #ffffff;
+    border-color: #c6d0dc;
+}
+
+html[data-public-theme=&quot;light&quot;] .price-input &gt; span {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span {
+    background: #e8f5fc;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card strong,
+html[data-public-theme=&quot;light&quot;] .item-type-choice strong {
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card small,
+html[data-public-theme=&quot;light&quot;] .item-type-choice small {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span strong,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span strong {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span small,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span small {
+    color: #36566b;
+}
+
+html[data-public-theme=&quot;light&quot;] .submit-btn {
+    background: #dce6ee;
+    border: 1px solid #b8c8d6;
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .submit-btn:hover,
+html[data-public-theme=&quot;light&quot;] .submit-btn:focus-visible {
+    background: #cbd9e4;
+    border-color: #9fb2c2;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .selling-method,
+html[data-public-theme=&quot;light&quot;] .photo-upload-block,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-banner {
+    background: linear-gradient(135deg, #e8f5fc, #ffffff);
+    border-color: #b6dced;
+    box-shadow: 0 12px 30px rgba(30, 55, 80, 0.08);
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-copy strong,
+html[data-public-theme=&quot;light&quot;] .account-email-note strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-copy small,
+html[data-public-theme=&quot;light&quot;] .account-email-note small,
+html[data-public-theme=&quot;light&quot;] .account-email-note span,
+html[data-public-theme=&quot;light&quot;] .account-success-note span {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-banner-link {
+    background: #ffffff;
+    border-color: #b6dced;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card,
+html[data-public-theme=&quot;light&quot;] .rates-modal-header,
+html[data-public-theme=&quot;light&quot;] .rates-modal-body,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-details,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-card,
+html[data-public-theme=&quot;light&quot;] .trade-modal-card,
+html[data-public-theme=&quot;light&quot;] .trade-request-modal-card {
+    background: #ffffff;
+    border-color: #dce3eb;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card h2 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card p {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-kicker,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field label,
+html[data-public-theme=&quot;light&quot;] .rates-modal-state,
+html[data-public-theme=&quot;light&quot;] .track-result-row strong {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-primary {
+    color: #ffffff;
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    border-color: #0284c7;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-primary:hover {
+    background: linear-gradient(135deg, #0369a1, #075985);
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-secondary {
+    color: #344454;
+    background: #ffffff;
+    border-color: #c6d0dc;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-secondary:hover {
+    color: #075985;
+    background: #f1f8fc;
+    border-color: #91cce5;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-danger {
+    color: #991b1b;
+    background: #fff1f2;
+    border-color: #fecdd3;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-danger:hover {
+    background: #ffe4e6;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn:focus-visible {
+    outline: 3px solid rgba(2, 132, 199, 0.35);
+    outline-offset: 3px;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-modal-message.success {
+    background: #edf8f1;
+    border-color: #b8dfc7;
+    color: #245a38;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-modal-message.error {
+    background: #fff1f0;
+    border-color: #efc1bd;
+    color: #8b2f2a;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-group-title,
+html[data-public-theme=&quot;light&quot;] .rates-row-label span,
+html[data-public-theme=&quot;light&quot;] .rates-row-price small,
+html[data-public-theme=&quot;light&quot;] .rates-modal-footnote {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-row {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-row-label strong,
+html[data-public-theme=&quot;light&quot;] .rates-row-price {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-modal-close,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-back,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-close {
+    background: #f1f5f9;
+    border-color: #dce3eb;
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-modal-card-item,
+html[data-public-theme=&quot;light&quot;] .trade-modal-requirement,
+html[data-public-theme=&quot;light&quot;] .track-result-row,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat,
+html[data-public-theme=&quot;light&quot;] .track-counter-form {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border: 1px solid #dce3eb;
+    border-radius: 8px;
+    background: #f7f9fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row:last-child {
+    margin-bottom: 0;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row strong {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons button,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions button {
+    background: #e8edf2;
+    border-color: #c6d0dc;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons button:hover,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions button:hover {
+    background: #dce5ec;
+    border-color: #9eafbf;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons .track-offer-accept,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions .track-offer-accept {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons .track-offer-accept:hover,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions .track-offer-accept:hover {
+    background: #075985;
+    border-color: #075985;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-actions button:disabled {
+    opacity: 0.6;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat {
+    background: linear-gradient(135deg, #edf6fb, #f7f9fc);
+    border-color: #b6dced;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; div:first-child strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat p {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a:hover,
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a:focus-visible {
+    color: #0c4a6e;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button:hover,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button:focus-visible {
+    background: #075985;
+    border-color: #075985;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column {
+    color: #18212b;
+    background: #f7f9fc;
+    border-left-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header {
+    background: #ffffff;
+    border-bottom-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header span {
+    color: #0369a1;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat {
+    --chat-bg: #ffffff;
+    --chat-panel: #f7f9fc;
+    --chat-border: #dce3eb;
+    --chat-text: #18212b;
+    --chat-muted: #586675;
+    --chat-accent: #0369a1;
+    --chat-accent-dark: #075985;
+    --chat-own: #dbeefa;
+    --chat-other: #f1f5f9;
+    --chat-video-ready: #15803d;
+    --chat-video-error: #b91c1c;
+    background: #ffffff;
+    box-shadow: none;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-item strong,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-quantity {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-photo,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-photo-placeholder {
+    background: #edf2f7;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-composer {
+    background: #f7f9fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message.is-own &gt; .transaction-chat-bubble {
+    background: #dbeefa;
+    border-color: #b6dced;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message-content {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message-content a {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message time {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-attachment-preview,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-voice-composer {
+    color: #344454;
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-connection,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-call-button {
+    background: #f1f5f9;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .login-wrapper,
+html[data-public-theme=&quot;light&quot;] .register-wrapper {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .login-card,
+html[data-public-theme=&quot;light&quot;] .register-card {
+    background: rgba(255, 255, 255, 0.97);
+    border-color: #dce3eb;
+    box-shadow: 0 25px 70px rgba(30, 55, 80, 0.14);
+}
+
+html[data-public-theme=&quot;light&quot;] .login-card h2,
+html[data-public-theme=&quot;light&quot;] .register-card h2,
+html[data-public-theme=&quot;light&quot;] .brand h1,
+html[data-public-theme=&quot;light&quot;] .field label,
+html[data-public-theme=&quot;light&quot;] .upload-content label {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .subtitle,
+html[data-public-theme=&quot;light&quot;] .brand p,
+html[data-public-theme=&quot;light&quot;] .remember,
+html[data-public-theme=&quot;light&quot;] .register-link,
+html[data-public-theme=&quot;light&quot;] .login-link,
+html[data-public-theme=&quot;light&quot;] .terms label,
+html[data-public-theme=&quot;light&quot;] .upload-content p {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .field input,
+html[data-public-theme=&quot;light&quot;] .field select {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #18212b;
+    color-scheme: light;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track {
+    background: #dce4ed;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-label[data-strength=&quot;empty&quot;],
+html[data-public-theme=&quot;light&quot;] .password-policy,
+html[data-public-theme=&quot;light&quot;] .password-criteria {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;weak&quot;] + .password-strength-label {
+    color: #b42318;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;medium&quot;] + .password-strength-label {
+    color: #8a5700;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;strong&quot;] + .password-strength-label,
+html[data-public-theme=&quot;light&quot;] .password-criteria span.is-met {
+    color: #087443;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-form-error {
+    color: #b42318;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-visibility-toggle {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .message.error {
+    background: #fff0f0;
+    border-color: #efc3c3;
+    color: #9b2626;
+}
+
+html[data-public-theme=&quot;light&quot;] .message.success {
+    background: #eaf8ef;
+    border-color: #b7e0c4;
+    color: #17643a;
+}
+
+html[data-public-theme=&quot;light&quot;] .page-back a {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .page-back a:hover {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .avatar-preview {
+    background: #f1f5f9;
+    border-color: #c6d0dc;
+    color: #586675;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html,
+    body,
+    body *,
+    body *::before,
+    body *::after {
+        transition-duration: 0.01ms;
+    }
+}
+
+
+.upload-content { flex: 1; min-width: 0; }
+.upload-content input[type=&quot;file&quot;] {
+    display: block;
+    max-width: 100%;
+    padding: 6px;
+    border: 1px solid var(--line-light, #2c3944);
+    border-radius: 12px;
+    background: var(--panel-2, #11161c);
+    color: var(--soft, #aeb8c2);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.upload-content input[type=&quot;file&quot;]::file-selector-button {
+    min-height: 44px;
+    margin-right: 10px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: #0077ad;
+    color: #ffffff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 160ms ease;
+}
+.upload-content input[type=&quot;file&quot;]:hover::file-selector-button { background: #006596; }
+.upload-content input[type=&quot;file&quot;]:focus-visible {
+    outline: 2px solid #0ea5e9;
+    outline-offset: 3px;
+}
+@media (max-width: 420px) {
+    .profile-upload { align-items: flex-start; gap: 12px; }
+    .avatar-preview { width: 56px; height: 56px; font-size: 22px; }
+    .upload-content input[type=&quot;file&quot;]::file-selector-button { padding: 0 10px; margin-right: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .upload-content input[type=&quot;file&quot;]::file-selector-button { transition: none; }
+}
+
+body{min-height:100%;padding:12px;align-items:flex-start}.register-card{padding:22px}.profile-upload{margin-bottom:0}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;div class=&quot;register-wrapper&quot;&gt;&lt;div class=&quot;register-card&quot;&gt;&lt;h2&gt;Create Your Account&lt;/h2&gt;&lt;p class=&quot;subtitle&quot;&gt;Keep track of your submissions, offers, transactions, and future inquiries in one place.&lt;/p&gt;&lt;form&gt;            &lt;div class=&quot;profile-upload&quot;&gt;
+
+                &lt;div
+                    class=&quot;avatar-preview&quot;
+                    id=&quot;avatarPreview&quot;
+                &gt;
+                    V
+                &lt;/div&gt;
+
+                &lt;div class=&quot;upload-content&quot;&gt;
+
+                    &lt;label for=&quot;profile_picture&quot;&gt;
+                        Profile Picture
+                    &lt;/label&gt;
+
+                    &lt;p id=&quot;profilePictureHelp&quot;&gt;
+                        Optional. JPG, PNG, or WEBP. Max 5MB.
+                    &lt;/p&gt;
+
+                    &lt;input
+                        type=&quot;file&quot;
+                        id=&quot;profile_picture&quot;
+                        name=&quot;profile_picture&quot; aria-describedby=&quot;profilePictureHelp&quot;
+                        accept=&quot;.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp&quot;
+                    &gt;
+
+                &lt;/div&gt;
+
+            &lt;/div&gt;
+
+&lt;/form&gt;&lt;/div&gt;&lt;/div&gt;&lt;script&gt;setTimeout(()=&gt;{const i=document.querySelector(&#x27;input[type=file]&#x27;), b=getComputedStyle(i,&#x27;::file-selector-button&#x27;); document.documentElement.dataset.checked=String(i.getBoundingClientRect().right&lt;=innerWidth &amp;&amp; parseFloat(b.minHeight)&gt;=44);},300);&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;"></iframe></div><div><p>Dark / 375px</p><iframe title="Dark / 375px" style="width:375px" srcdoc="&lt;!doctype html&gt;&lt;html data-public-theme=&quot;dark&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;&lt;style&gt;* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(0, 132, 201, 0.18),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at bottom left,
+            rgba(0, 132, 201, 0.10),
+            transparent 30%
+        ),
+        #090c10;
+
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px 16px;
+}
+
+.register-wrapper {
+    width: 100%;
+    max-width: 520px;
+}
+
+/* =========================================================
+   BACK TO HOME
+   ========================================================= */
+
+.page-back {
+    margin-bottom: 14px;
+}
+
+.page-back a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color: #6f7c88;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.page-back a:hover {
+    color: #ffffff;
+    transform: translateX(-3px);
+}
+
+/* =========================================================
+   BRAND
+   ========================================================= */
+
+.brand {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.brand h1 {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.brand p {
+    color: #8f9aa5;
+    margin-top: 7px;
+    font-size: 14px;
+}
+
+/* =========================================================
+   REGISTER CARD
+   ========================================================= */
+
+.register-card {
+    background: rgba(16, 20, 25, 0.96);
+
+    border: 1px solid #242b33;
+    border-radius: 18px;
+
+    padding: 28px;
+
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.45);
+}
+
+.register-card h2 {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    color: #89949f;
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.message {
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    margin-bottom: 18px;
+
+    font-size: 14px;
+}
+
+.message.error {
+    background: rgba(220, 38, 38, 0.12);
+
+    border: 1px solid rgba(220, 38, 38, 0.35);
+
+    color: #ffb4b4;
+}
+
+.message.success {
+    background: rgba(34, 197, 94, 0.12);
+
+    border: 1px solid rgba(34, 197, 94, 0.35);
+
+    color: #b8f5ca;
+}
+
+/* =========================================================
+   PROFILE UPLOAD
+   ========================================================= */
+
+.profile-upload {
+    display: flex;
+    align-items: center;
+
+    gap: 16px;
+
+    margin-bottom: 24px;
+}
+
+.avatar-preview {
+    width: 76px;
+    height: 76px;
+
+    border-radius: 50%;
+
+    border: 2px solid #2c3944;
+
+    background: #11161c;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    flex-shrink: 0;
+
+    color: #73808c;
+
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.upload-content label {
+    display: inline-block;
+
+    margin-bottom: 6px;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.upload-content p {
+    color: #77838f;
+
+    font-size: 12px;
+
+    margin-bottom: 8px;
+}
+
+.upload-content input {
+    width: 100%;
+
+    color: #aeb8c2;
+
+    font-size: 12px;
+}
+
+/* =========================================================
+   FORM FIELDS
+   ========================================================= */
+
+.field {
+    margin-bottom: 17px;
+}
+
+.field label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+.field input,
+.field select {
+    width: 100%;
+
+    border: 1px solid #29323b;
+
+    background: #0d1217;
+
+    color: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 12px 13px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.field input:focus,
+.field select:focus {
+    border-color: #0ea5e9;
+
+    box-shadow:
+        0 0 0 3px rgba(14, 165, 233, 0.10);
+}
+
+.hint {
+    color: #67737e;
+
+    font-size: 11px;
+
+    margin-top: 6px;
+
+    line-height: 1.4;
+}
+
+/* =========================================================
+   PASSWORD ROW
+   ========================================================= */
+
+.password-row {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 12px;
+}
+
+/* =========================================================
+   TERMS
+   ========================================================= */
+
+.terms {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 9px;
+
+    margin: 6px 0 20px;
+}
+
+.terms input {
+    margin-top: 3px;
+
+    accent-color: #0ea5e9;
+}
+
+.terms label {
+    color: #8c98a3;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+.terms a {
+    color: #38bdf8;
+
+    text-decoration: none;
+}
+
+.terms a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   SUBMIT BUTTON
+   ========================================================= */
+
+.submit-button {
+    width: 100%;
+
+    border: 0;
+
+    border-radius: 11px;
+
+    padding: 13px 16px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0ea5e9,
+            #0284c7
+        );
+
+    color: white;
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.4px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        filter 0.2s ease;
+}
+
+.submit-button:hover {
+    transform: translateY(-1px);
+
+    filter: brightness(1.07);
+}
+
+/* =========================================================
+   LOGIN LINK
+   ========================================================= */
+
+.login-link {
+    text-align: center;
+
+    margin-top: 20px;
+
+    color: #7f8b96;
+
+    font-size: 13px;
+}
+
+.login-link a {
+    color: #38bdf8;
+
+    font-weight: 700;
+
+    text-decoration: none;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 560px) {
+
+    body {
+        padding: 22px 14px;
+    }
+
+    .register-card {
+        padding: 22px 18px;
+    }
+
+    .password-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .brand h1 {
+        font-size: 26px;
+    }
+
+    .page-back {
+        margin-bottom: 14px;
+    }
+
+    .page-back a {
+        font-size: 11px;
+    }
+}
+html[data-public-theme=&quot;light&quot;] {
+    color-scheme: light;
+    --bg: #f4f7fa;
+    --bg-soft: #edf2f7;
+    --panel: #ffffff;
+    --panel-2: #f7f9fc;
+    --panel-3: #edf2f7;
+    --line: #dce3eb;
+    --line-light: #c6d0dc;
+    --white: #18212b;
+    --soft: #465565;
+    --muted: #586675;
+    --muted-dark: #718091;
+}
+
+html,
+body,
+body *,
+body *::before,
+body *::after {
+    transition:
+        color 220ms ease,
+        background-color 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+}
+
+.public-theme-toggle {
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 20000;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 15px;
+    border: 1px solid #34404c;
+    border-radius: 999px;
+    background: rgba(13, 18, 23, 0.96);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.22);
+    color: #e7edf3;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+}
+
+.public-theme-toggle:hover {
+    border-color: #0ea5e9;
+    background: #151d25;
+}
+
+.public-theme-toggle [data-theme-icon] {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.tracking-modal-minimized {
+    position: fixed;
+    right: calc(max(12px, env(safe-area-inset-right)) + 132px);
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 20001;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    color: #e7edf3;
+    background: rgba(13, 18, 23, 0.97);
+    border: 1px solid #34404c;
+    border-radius: 999px;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.24);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    animation: tracking-modal-minimized-in 0.22s ease-out both;
+}
+
+.tracking-modal-minimized[hidden] {
+    display: none !important;
+}
+
+.tracking-modal-minimized:hover,
+.tracking-modal-minimized:focus-visible {
+    border-color: #0ea5e9;
+    background: #151d25;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22), 0 8px 26px rgba(0, 0, 0, 0.24);
+    transform: translateY(-2px);
+}
+
+.tracking-modal-minimized &gt; span:first-child {
+    font-size: 16px;
+}
+
+.tracking-modal-unread-badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    display: grid;
+    min-width: 21px;
+    height: 21px;
+    place-items: center;
+    padding: 0 5px;
+    color: #ffffff;
+    background: #ef4444;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(127, 29, 29, 0.3);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    animation: tracking-modal-unread-pulse 0.45s ease-out;
+}
+
+.tracking-modal-unread-badge[hidden] {
+    display: none !important;
+}
+
+.tracking-modal-minimized.has-unread-replies .tracking-modal-unread-badge {
+    animation: tracking-modal-unread-pulse 0.45s ease-out;
+}
+
+@keyframes tracking-modal-unread-pulse {
+    0% { transform: scale(0.55); }
+    65% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+}
+
+@keyframes tracking-modal-minimized-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+body.public-theme-has-chat .floating-messages-launcher {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(66px + env(safe-area-inset-bottom));
+}
+
+html[data-public-theme=&quot;light&quot;] .public-theme-toggle {
+    border-color: #c6d0dc;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 26px rgba(30, 55, 80, 0.14);
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .public-theme-toggle:hover {
+    border-color: #0284c7;
+    background: #f2f8fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized {
+    color: #263746;
+    background: rgba(255, 255, 255, 0.97);
+    border-color: #c6d0dc;
+    box-shadow: 0 8px 26px rgba(30, 55, 80, 0.16);
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized:hover,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized:focus-visible {
+    color: #075985;
+    background: #f2f8fc;
+    border-color: #0284c7;
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-unread-badge {
+    color: #ffffff;
+    background: #dc2626;
+    border-color: #ffffff;
+}
+
+@media (max-width: 420px) {
+    .tracking-modal-minimized {
+        gap: 5px;
+        padding: 0 12px;
+        font-size: 11px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tracking-modal-minimized,
+    .tracking-modal-unread-badge {
+        animation: none;
+        transition: none;
+    }
+}
+
+html[data-public-theme=&quot;light&quot;] body {
+    background: #f4f7fa;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-page {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .site-header {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: #dce3eb;
+    box-shadow: 0 5px 20px rgba(30, 55, 80, 0.06);
+}
+
+html[data-public-theme=&quot;light&quot;] .brand-mark,
+html[data-public-theme=&quot;light&quot;] .brand-name {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .nav-link,
+html[data-public-theme=&quot;light&quot;] .header-back,
+html[data-public-theme=&quot;light&quot;] .footer-link,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item a {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .nav-link:hover,
+html[data-public-theme=&quot;light&quot;] .nav-link.is-active,
+html[data-public-theme=&quot;light&quot;] .footer-link:hover,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item a:hover {
+    color: #0369a1;
+}
+
+@media (max-width: 1080px) {
+    html[data-public-theme=&quot;light&quot;] .nav-menu {
+        background: #ffffff;
+        border-bottom-color: #dce3eb;
+        box-shadow: 0 16px 30px rgba(30, 55, 80, 0.12);
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-link {
+        background: #ffffff;
+        border-bottom-color: #e5ebf1;
+        color: #344454;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-link:hover,
+    html[data-public-theme=&quot;light&quot;] .nav-link:focus-visible,
+    html[data-public-theme=&quot;light&quot;] .nav-link.is-active {
+        background: #f1f7fb;
+        color: #075985;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-actions {
+        border-color: #dce3eb;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-toggle {
+        background: #ffffff;
+        border-color: #c6d0dc;
+        color: #344454;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-toggle-bar {
+        background: #344454;
+    }
+}
+
+html[data-public-theme=&quot;light&quot;] .header-login-btn,
+html[data-public-theme=&quot;light&quot;] .header-account-btn,
+html[data-public-theme=&quot;light&quot;] .header-track-btn,
+html[data-public-theme=&quot;light&quot;] .hero-btn-secondary,
+html[data-public-theme=&quot;light&quot;] .close-form-btn {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .header-login-btn:hover,
+html[data-public-theme=&quot;light&quot;] .header-account-btn:hover,
+html[data-public-theme=&quot;light&quot;] .header-track-btn:hover,
+html[data-public-theme=&quot;light&quot;] .hero-btn-secondary:hover,
+html[data-public-theme=&quot;light&quot;] .close-form-btn:hover {
+    background: #eaf4fa;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .marketing-section,
+html[data-public-theme=&quot;light&quot;] .hero-section {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .section-dot-nav {
+    background: rgba(255, 255, 255, 0.94);
+    border-color: #dce3eb;
+    box-shadow: 0 12px 28px rgba(30, 55, 80, 0.16);
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link {
+    background: #dce3eb;
+    border-color: #b8c5d2;
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link::after {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: #dce3eb;
+    color: #344454;
+    box-shadow: 0 5px 16px rgba(30, 55, 80, 0.12);
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link:hover,
+html[data-public-theme=&quot;light&quot;] .dot-link:focus-visible,
+html[data-public-theme=&quot;light&quot;] .dot-link.is-active {
+    background: #0284c7;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.14);
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-section {
+    background:
+        radial-gradient(circle at 78% 42%, rgba(2, 132, 199, 0.08), transparent 34%),
+        linear-gradient(120deg, #ffffff 0%, #f2f6fa 100%);
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-copy h1,
+html[data-public-theme=&quot;light&quot;] .section-intro h2,
+html[data-public-theme=&quot;light&quot;] .education-card h3,
+html[data-public-theme=&quot;light&quot;] .form-section-header h2,
+html[data-public-theme=&quot;light&quot;] .process-banner strong,
+html[data-public-theme=&quot;light&quot;] .footer-cta-title,
+html[data-public-theme=&quot;light&quot;] .success-screen h1 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-copy h1 span,
+html[data-public-theme=&quot;light&quot;] .section-intro h2 span,
+html[data-public-theme=&quot;light&quot;] .hero-statement span,
+html[data-public-theme=&quot;light&quot;] .hero-statement span:first-child {
+    color: #708090;
+}
+
+html[data-public-theme=&quot;light&quot;] .eyebrow,
+html[data-public-theme=&quot;light&quot;] .section-kicker,
+html[data-public-theme=&quot;light&quot;] .hero-description,
+html[data-public-theme=&quot;light&quot;] .section-intro p,
+html[data-public-theme=&quot;light&quot;] .education-card p,
+html[data-public-theme=&quot;light&quot;] .mini-points span,
+html[data-public-theme=&quot;light&quot;] .process-banner p,
+html[data-public-theme=&quot;light&quot;] .form-section-header p,
+html[data-public-theme=&quot;light&quot;] .footer-tagline,
+html[data-public-theme=&quot;light&quot;] .footer-description {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-meta span,
+html[data-public-theme=&quot;light&quot;] .card-flow span,
+html[data-public-theme=&quot;light&quot;] .process-banner,
+html[data-public-theme=&quot;light&quot;] .education-card,
+html[data-public-theme=&quot;light&quot;] .step-card,
+html[data-public-theme=&quot;light&quot;] .form-block,
+html[data-public-theme=&quot;light&quot;] .item-form-card,
+html[data-public-theme=&quot;light&quot;] .choice-card span,
+html[data-public-theme=&quot;light&quot;] .item-type-choice span,
+html[data-public-theme=&quot;light&quot;] .upload-box,
+html[data-public-theme=&quot;light&quot;] .account-email-note,
+html[data-public-theme=&quot;light&quot;] .account-success-note,
+html[data-public-theme=&quot;light&quot;] .photo-preview {
+    background: #ffffff;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta {
+    background: linear-gradient(180deg, #ffffff 0%, #f4f7fa 100%);
+    border-color: #dce3eb;
+    box-shadow: 0 12px 32px rgba(30, 55, 80, 0.08);
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta h3 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta &gt; span {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary {
+    background: #dce6ee;
+    border-color: #c6d3df;
+    color: #18212b;
+    box-shadow: 0 4px 12px rgba(30, 55, 80, 0.1);
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary:hover,
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary:focus-visible {
+    background: #cbd9e4;
+    border-color: #aebfce;
+    color: #111b24;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn {
+    background: #dce6ee;
+    border-color: #aebfce;
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn:hover,
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn:focus-visible {
+    background: #cbd9e4;
+    border-color: #8fa5b8;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-card {
+    color: #f5f6f8;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-name,
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement strong {
+    color: #f5f6f8;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-condition,
+html[data-public-theme=&quot;light&quot;] .trade-feature-description,
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement span {
+    color: #cbd5df;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-card.is-prev,
+html[data-public-theme=&quot;light&quot;] .trade-feature-card.is-next {
+    opacity: 0.9;
+    filter: saturate(0.82) brightness(0.9);
+}
+
+html[data-public-theme=&quot;light&quot;] .education-section,
+html[data-public-theme=&quot;light&quot;] .process-section {
+    background: linear-gradient(180deg, #f7f9fc 0%, #edf2f7 100%);
+}
+
+html[data-public-theme=&quot;light&quot;] .card-index,
+html[data-public-theme=&quot;light&quot;] .card-label,
+html[data-public-theme=&quot;light&quot;] .card-flow b {
+    color: #718091;
+}
+
+html[data-public-theme=&quot;light&quot;] .site-footer {
+    background: #ffffff;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .footer-title,
+html[data-public-theme=&quot;light&quot;] .footer-brand {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .footer-bottom,
+html[data-public-theme=&quot;light&quot;] .footer-grid,
+html[data-public-theme=&quot;light&quot;] .footer-cta {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .submission-form-section {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title,
+html[data-public-theme=&quot;light&quot;] .form-block-title strong,
+html[data-public-theme=&quot;light&quot;] .item-form-header h3,
+html[data-public-theme=&quot;light&quot;] .photo-heading strong,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title small,
+html[data-public-theme=&quot;light&quot;] .form-group label,
+html[data-public-theme=&quot;light&quot;] .form-group label small,
+html[data-public-theme=&quot;light&quot;] .photo-heading &gt; small,
+html[data-public-theme=&quot;light&quot;] .upload-box small,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer span,
+html[data-public-theme=&quot;light&quot;] .submit-area p {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title &gt; span:first-child {
+    background: #eef3f8;
+    border-color: #dce3eb;
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .submission-form-section {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer {
+    background: #fff9e8;
+    border-color: #eadcae;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer strong {
+    color: #805700;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer span {
+    color: #665b3f;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-group input,
+html[data-public-theme=&quot;light&quot;] .form-group select,
+html[data-public-theme=&quot;light&quot;] .form-group textarea,
+html[data-public-theme=&quot;light&quot;] .price-input input,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field input,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field select,
+html[data-public-theme=&quot;light&quot;] .track-counter-form input {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #18212b;
+    color-scheme: light;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-group select option {
+    background: #ffffff;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .price-input {
+    background: #ffffff;
+    border-color: #c6d0dc;
+}
+
+html[data-public-theme=&quot;light&quot;] .price-input &gt; span {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span {
+    background: #e8f5fc;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card strong,
+html[data-public-theme=&quot;light&quot;] .item-type-choice strong {
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card small,
+html[data-public-theme=&quot;light&quot;] .item-type-choice small {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span strong,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span strong {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span small,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span small {
+    color: #36566b;
+}
+
+html[data-public-theme=&quot;light&quot;] .submit-btn {
+    background: #dce6ee;
+    border: 1px solid #b8c8d6;
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .submit-btn:hover,
+html[data-public-theme=&quot;light&quot;] .submit-btn:focus-visible {
+    background: #cbd9e4;
+    border-color: #9fb2c2;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .selling-method,
+html[data-public-theme=&quot;light&quot;] .photo-upload-block,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-banner {
+    background: linear-gradient(135deg, #e8f5fc, #ffffff);
+    border-color: #b6dced;
+    box-shadow: 0 12px 30px rgba(30, 55, 80, 0.08);
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-copy strong,
+html[data-public-theme=&quot;light&quot;] .account-email-note strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-copy small,
+html[data-public-theme=&quot;light&quot;] .account-email-note small,
+html[data-public-theme=&quot;light&quot;] .account-email-note span,
+html[data-public-theme=&quot;light&quot;] .account-success-note span {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-banner-link {
+    background: #ffffff;
+    border-color: #b6dced;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card,
+html[data-public-theme=&quot;light&quot;] .rates-modal-header,
+html[data-public-theme=&quot;light&quot;] .rates-modal-body,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-details,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-card,
+html[data-public-theme=&quot;light&quot;] .trade-modal-card,
+html[data-public-theme=&quot;light&quot;] .trade-request-modal-card {
+    background: #ffffff;
+    border-color: #dce3eb;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card h2 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card p {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-kicker,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field label,
+html[data-public-theme=&quot;light&quot;] .rates-modal-state,
+html[data-public-theme=&quot;light&quot;] .track-result-row strong {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-primary {
+    color: #ffffff;
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    border-color: #0284c7;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-primary:hover {
+    background: linear-gradient(135deg, #0369a1, #075985);
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-secondary {
+    color: #344454;
+    background: #ffffff;
+    border-color: #c6d0dc;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-secondary:hover {
+    color: #075985;
+    background: #f1f8fc;
+    border-color: #91cce5;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-danger {
+    color: #991b1b;
+    background: #fff1f2;
+    border-color: #fecdd3;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-danger:hover {
+    background: #ffe4e6;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn:focus-visible {
+    outline: 3px solid rgba(2, 132, 199, 0.35);
+    outline-offset: 3px;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-modal-message.success {
+    background: #edf8f1;
+    border-color: #b8dfc7;
+    color: #245a38;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-modal-message.error {
+    background: #fff1f0;
+    border-color: #efc1bd;
+    color: #8b2f2a;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-group-title,
+html[data-public-theme=&quot;light&quot;] .rates-row-label span,
+html[data-public-theme=&quot;light&quot;] .rates-row-price small,
+html[data-public-theme=&quot;light&quot;] .rates-modal-footnote {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-row {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-row-label strong,
+html[data-public-theme=&quot;light&quot;] .rates-row-price {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-modal-close,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-back,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-close {
+    background: #f1f5f9;
+    border-color: #dce3eb;
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-modal-card-item,
+html[data-public-theme=&quot;light&quot;] .trade-modal-requirement,
+html[data-public-theme=&quot;light&quot;] .track-result-row,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat,
+html[data-public-theme=&quot;light&quot;] .track-counter-form {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border: 1px solid #dce3eb;
+    border-radius: 8px;
+    background: #f7f9fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row:last-child {
+    margin-bottom: 0;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row strong {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons button,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions button {
+    background: #e8edf2;
+    border-color: #c6d0dc;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons button:hover,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions button:hover {
+    background: #dce5ec;
+    border-color: #9eafbf;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons .track-offer-accept,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions .track-offer-accept {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons .track-offer-accept:hover,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions .track-offer-accept:hover {
+    background: #075985;
+    border-color: #075985;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-actions button:disabled {
+    opacity: 0.6;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat {
+    background: linear-gradient(135deg, #edf6fb, #f7f9fc);
+    border-color: #b6dced;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; div:first-child strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat p {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a:hover,
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a:focus-visible {
+    color: #0c4a6e;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button:hover,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button:focus-visible {
+    background: #075985;
+    border-color: #075985;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column {
+    color: #18212b;
+    background: #f7f9fc;
+    border-left-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header {
+    background: #ffffff;
+    border-bottom-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header span {
+    color: #0369a1;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat {
+    --chat-bg: #ffffff;
+    --chat-panel: #f7f9fc;
+    --chat-border: #dce3eb;
+    --chat-text: #18212b;
+    --chat-muted: #586675;
+    --chat-accent: #0369a1;
+    --chat-accent-dark: #075985;
+    --chat-own: #dbeefa;
+    --chat-other: #f1f5f9;
+    --chat-video-ready: #15803d;
+    --chat-video-error: #b91c1c;
+    background: #ffffff;
+    box-shadow: none;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-item strong,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-quantity {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-photo,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-photo-placeholder {
+    background: #edf2f7;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-composer {
+    background: #f7f9fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message.is-own &gt; .transaction-chat-bubble {
+    background: #dbeefa;
+    border-color: #b6dced;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message-content {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message-content a {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message time {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-attachment-preview,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-voice-composer {
+    color: #344454;
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-connection,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-call-button {
+    background: #f1f5f9;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .login-wrapper,
+html[data-public-theme=&quot;light&quot;] .register-wrapper {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .login-card,
+html[data-public-theme=&quot;light&quot;] .register-card {
+    background: rgba(255, 255, 255, 0.97);
+    border-color: #dce3eb;
+    box-shadow: 0 25px 70px rgba(30, 55, 80, 0.14);
+}
+
+html[data-public-theme=&quot;light&quot;] .login-card h2,
+html[data-public-theme=&quot;light&quot;] .register-card h2,
+html[data-public-theme=&quot;light&quot;] .brand h1,
+html[data-public-theme=&quot;light&quot;] .field label,
+html[data-public-theme=&quot;light&quot;] .upload-content label {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .subtitle,
+html[data-public-theme=&quot;light&quot;] .brand p,
+html[data-public-theme=&quot;light&quot;] .remember,
+html[data-public-theme=&quot;light&quot;] .register-link,
+html[data-public-theme=&quot;light&quot;] .login-link,
+html[data-public-theme=&quot;light&quot;] .terms label,
+html[data-public-theme=&quot;light&quot;] .upload-content p {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .field input,
+html[data-public-theme=&quot;light&quot;] .field select {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #18212b;
+    color-scheme: light;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track {
+    background: #dce4ed;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-label[data-strength=&quot;empty&quot;],
+html[data-public-theme=&quot;light&quot;] .password-policy,
+html[data-public-theme=&quot;light&quot;] .password-criteria {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;weak&quot;] + .password-strength-label {
+    color: #b42318;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;medium&quot;] + .password-strength-label {
+    color: #8a5700;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;strong&quot;] + .password-strength-label,
+html[data-public-theme=&quot;light&quot;] .password-criteria span.is-met {
+    color: #087443;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-form-error {
+    color: #b42318;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-visibility-toggle {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .message.error {
+    background: #fff0f0;
+    border-color: #efc3c3;
+    color: #9b2626;
+}
+
+html[data-public-theme=&quot;light&quot;] .message.success {
+    background: #eaf8ef;
+    border-color: #b7e0c4;
+    color: #17643a;
+}
+
+html[data-public-theme=&quot;light&quot;] .page-back a {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .page-back a:hover {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .avatar-preview {
+    background: #f1f5f9;
+    border-color: #c6d0dc;
+    color: #586675;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html,
+    body,
+    body *,
+    body *::before,
+    body *::after {
+        transition-duration: 0.01ms;
+    }
+}
+
+
+.upload-content { flex: 1; min-width: 0; }
+.upload-content input[type=&quot;file&quot;] {
+    display: block;
+    max-width: 100%;
+    padding: 6px;
+    border: 1px solid var(--line-light, #2c3944);
+    border-radius: 12px;
+    background: var(--panel-2, #11161c);
+    color: var(--soft, #aeb8c2);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.upload-content input[type=&quot;file&quot;]::file-selector-button {
+    min-height: 44px;
+    margin-right: 10px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: #0077ad;
+    color: #ffffff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 160ms ease;
+}
+.upload-content input[type=&quot;file&quot;]:hover::file-selector-button { background: #006596; }
+.upload-content input[type=&quot;file&quot;]:focus-visible {
+    outline: 2px solid #0ea5e9;
+    outline-offset: 3px;
+}
+@media (max-width: 420px) {
+    .profile-upload { align-items: flex-start; gap: 12px; }
+    .avatar-preview { width: 56px; height: 56px; font-size: 22px; }
+    .upload-content input[type=&quot;file&quot;]::file-selector-button { padding: 0 10px; margin-right: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .upload-content input[type=&quot;file&quot;]::file-selector-button { transition: none; }
+}
+
+body{min-height:100%;padding:12px;align-items:flex-start}.register-card{padding:22px}.profile-upload{margin-bottom:0}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;div class=&quot;register-wrapper&quot;&gt;&lt;div class=&quot;register-card&quot;&gt;&lt;h2&gt;Create Your Account&lt;/h2&gt;&lt;p class=&quot;subtitle&quot;&gt;Keep track of your submissions, offers, transactions, and future inquiries in one place.&lt;/p&gt;&lt;form&gt;            &lt;div class=&quot;profile-upload&quot;&gt;
+
+                &lt;div
+                    class=&quot;avatar-preview&quot;
+                    id=&quot;avatarPreview&quot;
+                &gt;
+                    V
+                &lt;/div&gt;
+
+                &lt;div class=&quot;upload-content&quot;&gt;
+
+                    &lt;label for=&quot;profile_picture&quot;&gt;
+                        Profile Picture
+                    &lt;/label&gt;
+
+                    &lt;p id=&quot;profilePictureHelp&quot;&gt;
+                        Optional. JPG, PNG, or WEBP. Max 5MB.
+                    &lt;/p&gt;
+
+                    &lt;input
+                        type=&quot;file&quot;
+                        id=&quot;profile_picture&quot;
+                        name=&quot;profile_picture&quot; aria-describedby=&quot;profilePictureHelp&quot;
+                        accept=&quot;.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp&quot;
+                    &gt;
+
+                &lt;/div&gt;
+
+            &lt;/div&gt;
+
+&lt;/form&gt;&lt;/div&gt;&lt;/div&gt;&lt;script&gt;setTimeout(()=&gt;{const i=document.querySelector(&#x27;input[type=file]&#x27;), b=getComputedStyle(i,&#x27;::file-selector-button&#x27;); document.documentElement.dataset.checked=String(i.getBoundingClientRect().right&lt;=innerWidth &amp;&amp; parseFloat(b.minHeight)&gt;=44);},300);&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;"></iframe></div><div><p>Light / 520px</p><iframe title="Light / 520px" style="width:520px" srcdoc="&lt;!doctype html&gt;&lt;html data-public-theme=&quot;light&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;&lt;style&gt;* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(0, 132, 201, 0.18),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at bottom left,
+            rgba(0, 132, 201, 0.10),
+            transparent 30%
+        ),
+        #090c10;
+
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px 16px;
+}
+
+.register-wrapper {
+    width: 100%;
+    max-width: 520px;
+}
+
+/* =========================================================
+   BACK TO HOME
+   ========================================================= */
+
+.page-back {
+    margin-bottom: 14px;
+}
+
+.page-back a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color: #6f7c88;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.page-back a:hover {
+    color: #ffffff;
+    transform: translateX(-3px);
+}
+
+/* =========================================================
+   BRAND
+   ========================================================= */
+
+.brand {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.brand h1 {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.brand p {
+    color: #8f9aa5;
+    margin-top: 7px;
+    font-size: 14px;
+}
+
+/* =========================================================
+   REGISTER CARD
+   ========================================================= */
+
+.register-card {
+    background: rgba(16, 20, 25, 0.96);
+
+    border: 1px solid #242b33;
+    border-radius: 18px;
+
+    padding: 28px;
+
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.45);
+}
+
+.register-card h2 {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    color: #89949f;
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.message {
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    margin-bottom: 18px;
+
+    font-size: 14px;
+}
+
+.message.error {
+    background: rgba(220, 38, 38, 0.12);
+
+    border: 1px solid rgba(220, 38, 38, 0.35);
+
+    color: #ffb4b4;
+}
+
+.message.success {
+    background: rgba(34, 197, 94, 0.12);
+
+    border: 1px solid rgba(34, 197, 94, 0.35);
+
+    color: #b8f5ca;
+}
+
+/* =========================================================
+   PROFILE UPLOAD
+   ========================================================= */
+
+.profile-upload {
+    display: flex;
+    align-items: center;
+
+    gap: 16px;
+
+    margin-bottom: 24px;
+}
+
+.avatar-preview {
+    width: 76px;
+    height: 76px;
+
+    border-radius: 50%;
+
+    border: 2px solid #2c3944;
+
+    background: #11161c;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    flex-shrink: 0;
+
+    color: #73808c;
+
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.upload-content label {
+    display: inline-block;
+
+    margin-bottom: 6px;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.upload-content p {
+    color: #77838f;
+
+    font-size: 12px;
+
+    margin-bottom: 8px;
+}
+
+.upload-content input {
+    width: 100%;
+
+    color: #aeb8c2;
+
+    font-size: 12px;
+}
+
+/* =========================================================
+   FORM FIELDS
+   ========================================================= */
+
+.field {
+    margin-bottom: 17px;
+}
+
+.field label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+.field input,
+.field select {
+    width: 100%;
+
+    border: 1px solid #29323b;
+
+    background: #0d1217;
+
+    color: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 12px 13px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.field input:focus,
+.field select:focus {
+    border-color: #0ea5e9;
+
+    box-shadow:
+        0 0 0 3px rgba(14, 165, 233, 0.10);
+}
+
+.hint {
+    color: #67737e;
+
+    font-size: 11px;
+
+    margin-top: 6px;
+
+    line-height: 1.4;
+}
+
+/* =========================================================
+   PASSWORD ROW
+   ========================================================= */
+
+.password-row {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 12px;
+}
+
+/* =========================================================
+   TERMS
+   ========================================================= */
+
+.terms {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 9px;
+
+    margin: 6px 0 20px;
+}
+
+.terms input {
+    margin-top: 3px;
+
+    accent-color: #0ea5e9;
+}
+
+.terms label {
+    color: #8c98a3;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+.terms a {
+    color: #38bdf8;
+
+    text-decoration: none;
+}
+
+.terms a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   SUBMIT BUTTON
+   ========================================================= */
+
+.submit-button {
+    width: 100%;
+
+    border: 0;
+
+    border-radius: 11px;
+
+    padding: 13px 16px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0ea5e9,
+            #0284c7
+        );
+
+    color: white;
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.4px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        filter 0.2s ease;
+}
+
+.submit-button:hover {
+    transform: translateY(-1px);
+
+    filter: brightness(1.07);
+}
+
+/* =========================================================
+   LOGIN LINK
+   ========================================================= */
+
+.login-link {
+    text-align: center;
+
+    margin-top: 20px;
+
+    color: #7f8b96;
+
+    font-size: 13px;
+}
+
+.login-link a {
+    color: #38bdf8;
+
+    font-weight: 700;
+
+    text-decoration: none;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 560px) {
+
+    body {
+        padding: 22px 14px;
+    }
+
+    .register-card {
+        padding: 22px 18px;
+    }
+
+    .password-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .brand h1 {
+        font-size: 26px;
+    }
+
+    .page-back {
+        margin-bottom: 14px;
+    }
+
+    .page-back a {
+        font-size: 11px;
+    }
+}
+html[data-public-theme=&quot;light&quot;] {
+    color-scheme: light;
+    --bg: #f4f7fa;
+    --bg-soft: #edf2f7;
+    --panel: #ffffff;
+    --panel-2: #f7f9fc;
+    --panel-3: #edf2f7;
+    --line: #dce3eb;
+    --line-light: #c6d0dc;
+    --white: #18212b;
+    --soft: #465565;
+    --muted: #586675;
+    --muted-dark: #718091;
+}
+
+html,
+body,
+body *,
+body *::before,
+body *::after {
+    transition:
+        color 220ms ease,
+        background-color 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+}
+
+.public-theme-toggle {
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 20000;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 15px;
+    border: 1px solid #34404c;
+    border-radius: 999px;
+    background: rgba(13, 18, 23, 0.96);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.22);
+    color: #e7edf3;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+}
+
+.public-theme-toggle:hover {
+    border-color: #0ea5e9;
+    background: #151d25;
+}
+
+.public-theme-toggle [data-theme-icon] {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.tracking-modal-minimized {
+    position: fixed;
+    right: calc(max(12px, env(safe-area-inset-right)) + 132px);
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 20001;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    color: #e7edf3;
+    background: rgba(13, 18, 23, 0.97);
+    border: 1px solid #34404c;
+    border-radius: 999px;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.24);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    animation: tracking-modal-minimized-in 0.22s ease-out both;
+}
+
+.tracking-modal-minimized[hidden] {
+    display: none !important;
+}
+
+.tracking-modal-minimized:hover,
+.tracking-modal-minimized:focus-visible {
+    border-color: #0ea5e9;
+    background: #151d25;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22), 0 8px 26px rgba(0, 0, 0, 0.24);
+    transform: translateY(-2px);
+}
+
+.tracking-modal-minimized &gt; span:first-child {
+    font-size: 16px;
+}
+
+.tracking-modal-unread-badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    display: grid;
+    min-width: 21px;
+    height: 21px;
+    place-items: center;
+    padding: 0 5px;
+    color: #ffffff;
+    background: #ef4444;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(127, 29, 29, 0.3);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    animation: tracking-modal-unread-pulse 0.45s ease-out;
+}
+
+.tracking-modal-unread-badge[hidden] {
+    display: none !important;
+}
+
+.tracking-modal-minimized.has-unread-replies .tracking-modal-unread-badge {
+    animation: tracking-modal-unread-pulse 0.45s ease-out;
+}
+
+@keyframes tracking-modal-unread-pulse {
+    0% { transform: scale(0.55); }
+    65% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+}
+
+@keyframes tracking-modal-minimized-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+body.public-theme-has-chat .floating-messages-launcher {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(66px + env(safe-area-inset-bottom));
+}
+
+html[data-public-theme=&quot;light&quot;] .public-theme-toggle {
+    border-color: #c6d0dc;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 26px rgba(30, 55, 80, 0.14);
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .public-theme-toggle:hover {
+    border-color: #0284c7;
+    background: #f2f8fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized {
+    color: #263746;
+    background: rgba(255, 255, 255, 0.97);
+    border-color: #c6d0dc;
+    box-shadow: 0 8px 26px rgba(30, 55, 80, 0.16);
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized:hover,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized:focus-visible {
+    color: #075985;
+    background: #f2f8fc;
+    border-color: #0284c7;
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-unread-badge {
+    color: #ffffff;
+    background: #dc2626;
+    border-color: #ffffff;
+}
+
+@media (max-width: 420px) {
+    .tracking-modal-minimized {
+        gap: 5px;
+        padding: 0 12px;
+        font-size: 11px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tracking-modal-minimized,
+    .tracking-modal-unread-badge {
+        animation: none;
+        transition: none;
+    }
+}
+
+html[data-public-theme=&quot;light&quot;] body {
+    background: #f4f7fa;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-page {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .site-header {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: #dce3eb;
+    box-shadow: 0 5px 20px rgba(30, 55, 80, 0.06);
+}
+
+html[data-public-theme=&quot;light&quot;] .brand-mark,
+html[data-public-theme=&quot;light&quot;] .brand-name {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .nav-link,
+html[data-public-theme=&quot;light&quot;] .header-back,
+html[data-public-theme=&quot;light&quot;] .footer-link,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item a {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .nav-link:hover,
+html[data-public-theme=&quot;light&quot;] .nav-link.is-active,
+html[data-public-theme=&quot;light&quot;] .footer-link:hover,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item a:hover {
+    color: #0369a1;
+}
+
+@media (max-width: 1080px) {
+    html[data-public-theme=&quot;light&quot;] .nav-menu {
+        background: #ffffff;
+        border-bottom-color: #dce3eb;
+        box-shadow: 0 16px 30px rgba(30, 55, 80, 0.12);
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-link {
+        background: #ffffff;
+        border-bottom-color: #e5ebf1;
+        color: #344454;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-link:hover,
+    html[data-public-theme=&quot;light&quot;] .nav-link:focus-visible,
+    html[data-public-theme=&quot;light&quot;] .nav-link.is-active {
+        background: #f1f7fb;
+        color: #075985;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-actions {
+        border-color: #dce3eb;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-toggle {
+        background: #ffffff;
+        border-color: #c6d0dc;
+        color: #344454;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-toggle-bar {
+        background: #344454;
+    }
+}
+
+html[data-public-theme=&quot;light&quot;] .header-login-btn,
+html[data-public-theme=&quot;light&quot;] .header-account-btn,
+html[data-public-theme=&quot;light&quot;] .header-track-btn,
+html[data-public-theme=&quot;light&quot;] .hero-btn-secondary,
+html[data-public-theme=&quot;light&quot;] .close-form-btn {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .header-login-btn:hover,
+html[data-public-theme=&quot;light&quot;] .header-account-btn:hover,
+html[data-public-theme=&quot;light&quot;] .header-track-btn:hover,
+html[data-public-theme=&quot;light&quot;] .hero-btn-secondary:hover,
+html[data-public-theme=&quot;light&quot;] .close-form-btn:hover {
+    background: #eaf4fa;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .marketing-section,
+html[data-public-theme=&quot;light&quot;] .hero-section {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .section-dot-nav {
+    background: rgba(255, 255, 255, 0.94);
+    border-color: #dce3eb;
+    box-shadow: 0 12px 28px rgba(30, 55, 80, 0.16);
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link {
+    background: #dce3eb;
+    border-color: #b8c5d2;
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link::after {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: #dce3eb;
+    color: #344454;
+    box-shadow: 0 5px 16px rgba(30, 55, 80, 0.12);
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link:hover,
+html[data-public-theme=&quot;light&quot;] .dot-link:focus-visible,
+html[data-public-theme=&quot;light&quot;] .dot-link.is-active {
+    background: #0284c7;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.14);
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-section {
+    background:
+        radial-gradient(circle at 78% 42%, rgba(2, 132, 199, 0.08), transparent 34%),
+        linear-gradient(120deg, #ffffff 0%, #f2f6fa 100%);
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-copy h1,
+html[data-public-theme=&quot;light&quot;] .section-intro h2,
+html[data-public-theme=&quot;light&quot;] .education-card h3,
+html[data-public-theme=&quot;light&quot;] .form-section-header h2,
+html[data-public-theme=&quot;light&quot;] .process-banner strong,
+html[data-public-theme=&quot;light&quot;] .footer-cta-title,
+html[data-public-theme=&quot;light&quot;] .success-screen h1 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-copy h1 span,
+html[data-public-theme=&quot;light&quot;] .section-intro h2 span,
+html[data-public-theme=&quot;light&quot;] .hero-statement span,
+html[data-public-theme=&quot;light&quot;] .hero-statement span:first-child {
+    color: #708090;
+}
+
+html[data-public-theme=&quot;light&quot;] .eyebrow,
+html[data-public-theme=&quot;light&quot;] .section-kicker,
+html[data-public-theme=&quot;light&quot;] .hero-description,
+html[data-public-theme=&quot;light&quot;] .section-intro p,
+html[data-public-theme=&quot;light&quot;] .education-card p,
+html[data-public-theme=&quot;light&quot;] .mini-points span,
+html[data-public-theme=&quot;light&quot;] .process-banner p,
+html[data-public-theme=&quot;light&quot;] .form-section-header p,
+html[data-public-theme=&quot;light&quot;] .footer-tagline,
+html[data-public-theme=&quot;light&quot;] .footer-description {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-meta span,
+html[data-public-theme=&quot;light&quot;] .card-flow span,
+html[data-public-theme=&quot;light&quot;] .process-banner,
+html[data-public-theme=&quot;light&quot;] .education-card,
+html[data-public-theme=&quot;light&quot;] .step-card,
+html[data-public-theme=&quot;light&quot;] .form-block,
+html[data-public-theme=&quot;light&quot;] .item-form-card,
+html[data-public-theme=&quot;light&quot;] .choice-card span,
+html[data-public-theme=&quot;light&quot;] .item-type-choice span,
+html[data-public-theme=&quot;light&quot;] .upload-box,
+html[data-public-theme=&quot;light&quot;] .account-email-note,
+html[data-public-theme=&quot;light&quot;] .account-success-note,
+html[data-public-theme=&quot;light&quot;] .photo-preview {
+    background: #ffffff;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta {
+    background: linear-gradient(180deg, #ffffff 0%, #f4f7fa 100%);
+    border-color: #dce3eb;
+    box-shadow: 0 12px 32px rgba(30, 55, 80, 0.08);
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta h3 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta &gt; span {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary {
+    background: #dce6ee;
+    border-color: #c6d3df;
+    color: #18212b;
+    box-shadow: 0 4px 12px rgba(30, 55, 80, 0.1);
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary:hover,
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary:focus-visible {
+    background: #cbd9e4;
+    border-color: #aebfce;
+    color: #111b24;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn {
+    background: #dce6ee;
+    border-color: #aebfce;
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn:hover,
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn:focus-visible {
+    background: #cbd9e4;
+    border-color: #8fa5b8;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-card {
+    color: #f5f6f8;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-name,
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement strong {
+    color: #f5f6f8;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-condition,
+html[data-public-theme=&quot;light&quot;] .trade-feature-description,
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement span {
+    color: #cbd5df;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-card.is-prev,
+html[data-public-theme=&quot;light&quot;] .trade-feature-card.is-next {
+    opacity: 0.9;
+    filter: saturate(0.82) brightness(0.9);
+}
+
+html[data-public-theme=&quot;light&quot;] .education-section,
+html[data-public-theme=&quot;light&quot;] .process-section {
+    background: linear-gradient(180deg, #f7f9fc 0%, #edf2f7 100%);
+}
+
+html[data-public-theme=&quot;light&quot;] .card-index,
+html[data-public-theme=&quot;light&quot;] .card-label,
+html[data-public-theme=&quot;light&quot;] .card-flow b {
+    color: #718091;
+}
+
+html[data-public-theme=&quot;light&quot;] .site-footer {
+    background: #ffffff;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .footer-title,
+html[data-public-theme=&quot;light&quot;] .footer-brand {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .footer-bottom,
+html[data-public-theme=&quot;light&quot;] .footer-grid,
+html[data-public-theme=&quot;light&quot;] .footer-cta {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .submission-form-section {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title,
+html[data-public-theme=&quot;light&quot;] .form-block-title strong,
+html[data-public-theme=&quot;light&quot;] .item-form-header h3,
+html[data-public-theme=&quot;light&quot;] .photo-heading strong,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title small,
+html[data-public-theme=&quot;light&quot;] .form-group label,
+html[data-public-theme=&quot;light&quot;] .form-group label small,
+html[data-public-theme=&quot;light&quot;] .photo-heading &gt; small,
+html[data-public-theme=&quot;light&quot;] .upload-box small,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer span,
+html[data-public-theme=&quot;light&quot;] .submit-area p {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title &gt; span:first-child {
+    background: #eef3f8;
+    border-color: #dce3eb;
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .submission-form-section {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer {
+    background: #fff9e8;
+    border-color: #eadcae;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer strong {
+    color: #805700;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer span {
+    color: #665b3f;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-group input,
+html[data-public-theme=&quot;light&quot;] .form-group select,
+html[data-public-theme=&quot;light&quot;] .form-group textarea,
+html[data-public-theme=&quot;light&quot;] .price-input input,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field input,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field select,
+html[data-public-theme=&quot;light&quot;] .track-counter-form input {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #18212b;
+    color-scheme: light;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-group select option {
+    background: #ffffff;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .price-input {
+    background: #ffffff;
+    border-color: #c6d0dc;
+}
+
+html[data-public-theme=&quot;light&quot;] .price-input &gt; span {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span {
+    background: #e8f5fc;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card strong,
+html[data-public-theme=&quot;light&quot;] .item-type-choice strong {
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card small,
+html[data-public-theme=&quot;light&quot;] .item-type-choice small {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span strong,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span strong {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span small,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span small {
+    color: #36566b;
+}
+
+html[data-public-theme=&quot;light&quot;] .submit-btn {
+    background: #dce6ee;
+    border: 1px solid #b8c8d6;
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .submit-btn:hover,
+html[data-public-theme=&quot;light&quot;] .submit-btn:focus-visible {
+    background: #cbd9e4;
+    border-color: #9fb2c2;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .selling-method,
+html[data-public-theme=&quot;light&quot;] .photo-upload-block,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-banner {
+    background: linear-gradient(135deg, #e8f5fc, #ffffff);
+    border-color: #b6dced;
+    box-shadow: 0 12px 30px rgba(30, 55, 80, 0.08);
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-copy strong,
+html[data-public-theme=&quot;light&quot;] .account-email-note strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-copy small,
+html[data-public-theme=&quot;light&quot;] .account-email-note small,
+html[data-public-theme=&quot;light&quot;] .account-email-note span,
+html[data-public-theme=&quot;light&quot;] .account-success-note span {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-banner-link {
+    background: #ffffff;
+    border-color: #b6dced;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card,
+html[data-public-theme=&quot;light&quot;] .rates-modal-header,
+html[data-public-theme=&quot;light&quot;] .rates-modal-body,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-details,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-card,
+html[data-public-theme=&quot;light&quot;] .trade-modal-card,
+html[data-public-theme=&quot;light&quot;] .trade-request-modal-card {
+    background: #ffffff;
+    border-color: #dce3eb;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card h2 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card p {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-kicker,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field label,
+html[data-public-theme=&quot;light&quot;] .rates-modal-state,
+html[data-public-theme=&quot;light&quot;] .track-result-row strong {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-primary {
+    color: #ffffff;
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    border-color: #0284c7;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-primary:hover {
+    background: linear-gradient(135deg, #0369a1, #075985);
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-secondary {
+    color: #344454;
+    background: #ffffff;
+    border-color: #c6d0dc;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-secondary:hover {
+    color: #075985;
+    background: #f1f8fc;
+    border-color: #91cce5;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-danger {
+    color: #991b1b;
+    background: #fff1f2;
+    border-color: #fecdd3;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-danger:hover {
+    background: #ffe4e6;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn:focus-visible {
+    outline: 3px solid rgba(2, 132, 199, 0.35);
+    outline-offset: 3px;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-modal-message.success {
+    background: #edf8f1;
+    border-color: #b8dfc7;
+    color: #245a38;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-modal-message.error {
+    background: #fff1f0;
+    border-color: #efc1bd;
+    color: #8b2f2a;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-group-title,
+html[data-public-theme=&quot;light&quot;] .rates-row-label span,
+html[data-public-theme=&quot;light&quot;] .rates-row-price small,
+html[data-public-theme=&quot;light&quot;] .rates-modal-footnote {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-row {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-row-label strong,
+html[data-public-theme=&quot;light&quot;] .rates-row-price {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-modal-close,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-back,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-close {
+    background: #f1f5f9;
+    border-color: #dce3eb;
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-modal-card-item,
+html[data-public-theme=&quot;light&quot;] .trade-modal-requirement,
+html[data-public-theme=&quot;light&quot;] .track-result-row,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat,
+html[data-public-theme=&quot;light&quot;] .track-counter-form {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border: 1px solid #dce3eb;
+    border-radius: 8px;
+    background: #f7f9fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row:last-child {
+    margin-bottom: 0;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row strong {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons button,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions button {
+    background: #e8edf2;
+    border-color: #c6d0dc;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons button:hover,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions button:hover {
+    background: #dce5ec;
+    border-color: #9eafbf;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons .track-offer-accept,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions .track-offer-accept {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons .track-offer-accept:hover,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions .track-offer-accept:hover {
+    background: #075985;
+    border-color: #075985;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-actions button:disabled {
+    opacity: 0.6;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat {
+    background: linear-gradient(135deg, #edf6fb, #f7f9fc);
+    border-color: #b6dced;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; div:first-child strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat p {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a:hover,
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a:focus-visible {
+    color: #0c4a6e;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button:hover,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button:focus-visible {
+    background: #075985;
+    border-color: #075985;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column {
+    color: #18212b;
+    background: #f7f9fc;
+    border-left-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header {
+    background: #ffffff;
+    border-bottom-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header span {
+    color: #0369a1;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat {
+    --chat-bg: #ffffff;
+    --chat-panel: #f7f9fc;
+    --chat-border: #dce3eb;
+    --chat-text: #18212b;
+    --chat-muted: #586675;
+    --chat-accent: #0369a1;
+    --chat-accent-dark: #075985;
+    --chat-own: #dbeefa;
+    --chat-other: #f1f5f9;
+    --chat-video-ready: #15803d;
+    --chat-video-error: #b91c1c;
+    background: #ffffff;
+    box-shadow: none;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-item strong,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-quantity {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-photo,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-photo-placeholder {
+    background: #edf2f7;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-composer {
+    background: #f7f9fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message.is-own &gt; .transaction-chat-bubble {
+    background: #dbeefa;
+    border-color: #b6dced;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message-content {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message-content a {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message time {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-attachment-preview,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-voice-composer {
+    color: #344454;
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-connection,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-call-button {
+    background: #f1f5f9;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .login-wrapper,
+html[data-public-theme=&quot;light&quot;] .register-wrapper {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .login-card,
+html[data-public-theme=&quot;light&quot;] .register-card {
+    background: rgba(255, 255, 255, 0.97);
+    border-color: #dce3eb;
+    box-shadow: 0 25px 70px rgba(30, 55, 80, 0.14);
+}
+
+html[data-public-theme=&quot;light&quot;] .login-card h2,
+html[data-public-theme=&quot;light&quot;] .register-card h2,
+html[data-public-theme=&quot;light&quot;] .brand h1,
+html[data-public-theme=&quot;light&quot;] .field label,
+html[data-public-theme=&quot;light&quot;] .upload-content label {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .subtitle,
+html[data-public-theme=&quot;light&quot;] .brand p,
+html[data-public-theme=&quot;light&quot;] .remember,
+html[data-public-theme=&quot;light&quot;] .register-link,
+html[data-public-theme=&quot;light&quot;] .login-link,
+html[data-public-theme=&quot;light&quot;] .terms label,
+html[data-public-theme=&quot;light&quot;] .upload-content p {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .field input,
+html[data-public-theme=&quot;light&quot;] .field select {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #18212b;
+    color-scheme: light;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track {
+    background: #dce4ed;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-label[data-strength=&quot;empty&quot;],
+html[data-public-theme=&quot;light&quot;] .password-policy,
+html[data-public-theme=&quot;light&quot;] .password-criteria {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;weak&quot;] + .password-strength-label {
+    color: #b42318;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;medium&quot;] + .password-strength-label {
+    color: #8a5700;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;strong&quot;] + .password-strength-label,
+html[data-public-theme=&quot;light&quot;] .password-criteria span.is-met {
+    color: #087443;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-form-error {
+    color: #b42318;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-visibility-toggle {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .message.error {
+    background: #fff0f0;
+    border-color: #efc3c3;
+    color: #9b2626;
+}
+
+html[data-public-theme=&quot;light&quot;] .message.success {
+    background: #eaf8ef;
+    border-color: #b7e0c4;
+    color: #17643a;
+}
+
+html[data-public-theme=&quot;light&quot;] .page-back a {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .page-back a:hover {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .avatar-preview {
+    background: #f1f5f9;
+    border-color: #c6d0dc;
+    color: #586675;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html,
+    body,
+    body *,
+    body *::before,
+    body *::after {
+        transition-duration: 0.01ms;
+    }
+}
+
+
+.upload-content { flex: 1; min-width: 0; }
+.upload-content input[type=&quot;file&quot;] {
+    display: block;
+    max-width: 100%;
+    padding: 6px;
+    border: 1px solid var(--line-light, #2c3944);
+    border-radius: 12px;
+    background: var(--panel-2, #11161c);
+    color: var(--soft, #aeb8c2);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.upload-content input[type=&quot;file&quot;]::file-selector-button {
+    min-height: 44px;
+    margin-right: 10px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: #0077ad;
+    color: #ffffff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 160ms ease;
+}
+.upload-content input[type=&quot;file&quot;]:hover::file-selector-button { background: #006596; }
+.upload-content input[type=&quot;file&quot;]:focus-visible {
+    outline: 2px solid #0ea5e9;
+    outline-offset: 3px;
+}
+@media (max-width: 420px) {
+    .profile-upload { align-items: flex-start; gap: 12px; }
+    .avatar-preview { width: 56px; height: 56px; font-size: 22px; }
+    .upload-content input[type=&quot;file&quot;]::file-selector-button { padding: 0 10px; margin-right: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .upload-content input[type=&quot;file&quot;]::file-selector-button { transition: none; }
+}
+
+body{min-height:100%;padding:12px;align-items:flex-start}.register-card{padding:22px}.profile-upload{margin-bottom:0}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;div class=&quot;register-wrapper&quot;&gt;&lt;div class=&quot;register-card&quot;&gt;&lt;h2&gt;Create Your Account&lt;/h2&gt;&lt;p class=&quot;subtitle&quot;&gt;Keep track of your submissions, offers, transactions, and future inquiries in one place.&lt;/p&gt;&lt;form&gt;            &lt;div class=&quot;profile-upload&quot;&gt;
+
+                &lt;div
+                    class=&quot;avatar-preview&quot;
+                    id=&quot;avatarPreview&quot;
+                &gt;
+                    V
+                &lt;/div&gt;
+
+                &lt;div class=&quot;upload-content&quot;&gt;
+
+                    &lt;label for=&quot;profile_picture&quot;&gt;
+                        Profile Picture
+                    &lt;/label&gt;
+
+                    &lt;p id=&quot;profilePictureHelp&quot;&gt;
+                        Optional. JPG, PNG, or WEBP. Max 5MB.
+                    &lt;/p&gt;
+
+                    &lt;input
+                        type=&quot;file&quot;
+                        id=&quot;profile_picture&quot;
+                        name=&quot;profile_picture&quot; aria-describedby=&quot;profilePictureHelp&quot;
+                        accept=&quot;.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp&quot;
+                    &gt;
+
+                &lt;/div&gt;
+
+            &lt;/div&gt;
+
+&lt;/form&gt;&lt;/div&gt;&lt;/div&gt;&lt;script&gt;setTimeout(()=&gt;{const i=document.querySelector(&#x27;input[type=file]&#x27;), b=getComputedStyle(i,&#x27;::file-selector-button&#x27;); document.documentElement.dataset.checked=String(i.getBoundingClientRect().right&lt;=innerWidth &amp;&amp; parseFloat(b.minHeight)&gt;=44);},300);&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;"></iframe></div><div><p>Light / 375px</p><iframe title="Light / 375px" style="width:375px" srcdoc="&lt;!doctype html&gt;&lt;html data-public-theme=&quot;light&quot;&gt;&lt;head&gt;&lt;meta charset=&quot;utf-8&quot;&gt;&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width,initial-scale=1&quot;&gt;&lt;style&gt;* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    min-height: 100vh;
+
+    font-family:
+        Arial,
+        Helvetica,
+        sans-serif;
+
+    background:
+        radial-gradient(
+            circle at top right,
+            rgba(0, 132, 201, 0.18),
+            transparent 35%
+        ),
+        radial-gradient(
+            circle at bottom left,
+            rgba(0, 132, 201, 0.10),
+            transparent 30%
+        ),
+        #090c10;
+
+    color: #ffffff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    padding: 30px 16px;
+}
+
+.register-wrapper {
+    width: 100%;
+    max-width: 520px;
+}
+
+/* =========================================================
+   BACK TO HOME
+   ========================================================= */
+
+.page-back {
+    margin-bottom: 14px;
+}
+
+.page-back a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+
+    color: #6f7c88;
+
+    font-size: 12px;
+    font-weight: 700;
+
+    text-decoration: none;
+
+    transition:
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.page-back a:hover {
+    color: #ffffff;
+    transform: translateX(-3px);
+}
+
+/* =========================================================
+   BRAND
+   ========================================================= */
+
+.brand {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.brand h1 {
+    font-size: 30px;
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.brand p {
+    color: #8f9aa5;
+    margin-top: 7px;
+    font-size: 14px;
+}
+
+/* =========================================================
+   REGISTER CARD
+   ========================================================= */
+
+.register-card {
+    background: rgba(16, 20, 25, 0.96);
+
+    border: 1px solid #242b33;
+    border-radius: 18px;
+
+    padding: 28px;
+
+    box-shadow:
+        0 25px 60px rgba(0, 0, 0, 0.45);
+}
+
+.register-card h2 {
+    font-size: 24px;
+    margin-bottom: 6px;
+}
+
+.subtitle {
+    color: #89949f;
+    font-size: 14px;
+    margin-bottom: 24px;
+    line-height: 1.5;
+}
+
+/* =========================================================
+   MESSAGES
+   ========================================================= */
+
+.message {
+    padding: 12px 14px;
+
+    border-radius: 10px;
+
+    margin-bottom: 18px;
+
+    font-size: 14px;
+}
+
+.message.error {
+    background: rgba(220, 38, 38, 0.12);
+
+    border: 1px solid rgba(220, 38, 38, 0.35);
+
+    color: #ffb4b4;
+}
+
+.message.success {
+    background: rgba(34, 197, 94, 0.12);
+
+    border: 1px solid rgba(34, 197, 94, 0.35);
+
+    color: #b8f5ca;
+}
+
+/* =========================================================
+   PROFILE UPLOAD
+   ========================================================= */
+
+.profile-upload {
+    display: flex;
+    align-items: center;
+
+    gap: 16px;
+
+    margin-bottom: 24px;
+}
+
+.avatar-preview {
+    width: 76px;
+    height: 76px;
+
+    border-radius: 50%;
+
+    border: 2px solid #2c3944;
+
+    background: #11161c;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    overflow: hidden;
+
+    flex-shrink: 0;
+
+    color: #73808c;
+
+    font-size: 28px;
+    font-weight: 700;
+}
+
+.avatar-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.upload-content label {
+    display: inline-block;
+
+    margin-bottom: 6px;
+
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.upload-content p {
+    color: #77838f;
+
+    font-size: 12px;
+
+    margin-bottom: 8px;
+}
+
+.upload-content input {
+    width: 100%;
+
+    color: #aeb8c2;
+
+    font-size: 12px;
+}
+
+/* =========================================================
+   FORM FIELDS
+   ========================================================= */
+
+.field {
+    margin-bottom: 17px;
+}
+
+.field label {
+    display: block;
+
+    margin-bottom: 7px;
+
+    font-size: 13px;
+
+    font-weight: 700;
+}
+
+.field input,
+.field select {
+    width: 100%;
+
+    border: 1px solid #29323b;
+
+    background: #0d1217;
+
+    color: #ffffff;
+
+    border-radius: 10px;
+
+    padding: 12px 13px;
+
+    outline: none;
+
+    font-size: 14px;
+
+    transition:
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+}
+
+.field input:focus,
+.field select:focus {
+    border-color: #0ea5e9;
+
+    box-shadow:
+        0 0 0 3px rgba(14, 165, 233, 0.10);
+}
+
+.hint {
+    color: #67737e;
+
+    font-size: 11px;
+
+    margin-top: 6px;
+
+    line-height: 1.4;
+}
+
+/* =========================================================
+   PASSWORD ROW
+   ========================================================= */
+
+.password-row {
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 12px;
+}
+
+/* =========================================================
+   TERMS
+   ========================================================= */
+
+.terms {
+    display: flex;
+    align-items: flex-start;
+
+    gap: 9px;
+
+    margin: 6px 0 20px;
+}
+
+.terms input {
+    margin-top: 3px;
+
+    accent-color: #0ea5e9;
+}
+
+.terms label {
+    color: #8c98a3;
+
+    font-size: 12px;
+
+    line-height: 1.5;
+}
+
+.terms a {
+    color: #38bdf8;
+
+    text-decoration: none;
+}
+
+.terms a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   SUBMIT BUTTON
+   ========================================================= */
+
+.submit-button {
+    width: 100%;
+
+    border: 0;
+
+    border-radius: 11px;
+
+    padding: 13px 16px;
+
+    background:
+        linear-gradient(
+            135deg,
+            #0ea5e9,
+            #0284c7
+        );
+
+    color: white;
+
+    font-size: 14px;
+
+    font-weight: 800;
+
+    letter-spacing: 0.4px;
+
+    cursor: pointer;
+
+    transition:
+        transform 0.2s ease,
+        filter 0.2s ease;
+}
+
+.submit-button:hover {
+    transform: translateY(-1px);
+
+    filter: brightness(1.07);
+}
+
+/* =========================================================
+   LOGIN LINK
+   ========================================================= */
+
+.login-link {
+    text-align: center;
+
+    margin-top: 20px;
+
+    color: #7f8b96;
+
+    font-size: 13px;
+}
+
+.login-link a {
+    color: #38bdf8;
+
+    font-weight: 700;
+
+    text-decoration: none;
+}
+
+.login-link a:hover {
+    text-decoration: underline;
+}
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 560px) {
+
+    body {
+        padding: 22px 14px;
+    }
+
+    .register-card {
+        padding: 22px 18px;
+    }
+
+    .password-row {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .brand h1 {
+        font-size: 26px;
+    }
+
+    .page-back {
+        margin-bottom: 14px;
+    }
+
+    .page-back a {
+        font-size: 11px;
+    }
+}
+html[data-public-theme=&quot;light&quot;] {
+    color-scheme: light;
+    --bg: #f4f7fa;
+    --bg-soft: #edf2f7;
+    --panel: #ffffff;
+    --panel-2: #f7f9fc;
+    --panel-3: #edf2f7;
+    --line: #dce3eb;
+    --line-light: #c6d0dc;
+    --white: #18212b;
+    --soft: #465565;
+    --muted: #586675;
+    --muted-dark: #718091;
+}
+
+html,
+body,
+body *,
+body *::before,
+body *::after {
+    transition:
+        color 220ms ease,
+        background-color 220ms ease,
+        border-color 220ms ease,
+        box-shadow 220ms ease;
+}
+
+.public-theme-toggle {
+    position: fixed;
+    right: max(12px, env(safe-area-inset-right));
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 20000;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 0 15px;
+    border: 1px solid #34404c;
+    border-radius: 999px;
+    background: rgba(13, 18, 23, 0.96);
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.22);
+    color: #e7edf3;
+    font: inherit;
+    font-size: 12px;
+    font-weight: 750;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+}
+
+.public-theme-toggle:hover {
+    border-color: #0ea5e9;
+    background: #151d25;
+}
+
+.public-theme-toggle [data-theme-icon] {
+    font-size: 17px;
+    line-height: 1;
+}
+
+.tracking-modal-minimized {
+    position: fixed;
+    right: calc(max(12px, env(safe-area-inset-right)) + 132px);
+    bottom: max(12px, env(safe-area-inset-bottom));
+    z-index: 20001;
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 0 16px;
+    color: #e7edf3;
+    background: rgba(13, 18, 23, 0.97);
+    border: 1px solid #34404c;
+    border-radius: 999px;
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.24);
+    font: inherit;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    animation: tracking-modal-minimized-in 0.22s ease-out both;
+}
+
+.tracking-modal-minimized[hidden] {
+    display: none !important;
+}
+
+.tracking-modal-minimized:hover,
+.tracking-modal-minimized:focus-visible {
+    border-color: #0ea5e9;
+    background: #151d25;
+    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.22), 0 8px 26px rgba(0, 0, 0, 0.24);
+    transform: translateY(-2px);
+}
+
+.tracking-modal-minimized &gt; span:first-child {
+    font-size: 16px;
+}
+
+.tracking-modal-unread-badge {
+    position: absolute;
+    top: -7px;
+    right: -7px;
+    display: grid;
+    min-width: 21px;
+    height: 21px;
+    place-items: center;
+    padding: 0 5px;
+    color: #ffffff;
+    background: #ef4444;
+    border: 2px solid #ffffff;
+    border-radius: 999px;
+    box-shadow: 0 2px 8px rgba(127, 29, 29, 0.3);
+    font-size: 10px;
+    font-weight: 900;
+    line-height: 1;
+    animation: tracking-modal-unread-pulse 0.45s ease-out;
+}
+
+.tracking-modal-unread-badge[hidden] {
+    display: none !important;
+}
+
+.tracking-modal-minimized.has-unread-replies .tracking-modal-unread-badge {
+    animation: tracking-modal-unread-pulse 0.45s ease-out;
+}
+
+@keyframes tracking-modal-unread-pulse {
+    0% { transform: scale(0.55); }
+    65% { transform: scale(1.18); }
+    100% { transform: scale(1); }
+}
+
+@keyframes tracking-modal-minimized-in {
+    from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.96);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+body.public-theme-has-chat .floating-messages-launcher {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(66px + env(safe-area-inset-bottom));
+}
+
+html[data-public-theme=&quot;light&quot;] .public-theme-toggle {
+    border-color: #c6d0dc;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 8px 26px rgba(30, 55, 80, 0.14);
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .public-theme-toggle:hover {
+    border-color: #0284c7;
+    background: #f2f8fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized {
+    color: #263746;
+    background: rgba(255, 255, 255, 0.97);
+    border-color: #c6d0dc;
+    box-shadow: 0 8px 26px rgba(30, 55, 80, 0.16);
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized:hover,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-minimized:focus-visible {
+    color: #075985;
+    background: #f2f8fc;
+    border-color: #0284c7;
+}
+
+html[data-public-theme=&quot;light&quot;] .tracking-modal-unread-badge {
+    color: #ffffff;
+    background: #dc2626;
+    border-color: #ffffff;
+}
+
+@media (max-width: 420px) {
+    .tracking-modal-minimized {
+        gap: 5px;
+        padding: 0 12px;
+        font-size: 11px;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .tracking-modal-minimized,
+    .tracking-modal-unread-badge {
+        animation: none;
+        transition: none;
+    }
+}
+
+html[data-public-theme=&quot;light&quot;] body {
+    background: #f4f7fa;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-page {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .site-header {
+    background: rgba(255, 255, 255, 0.96);
+    border-color: #dce3eb;
+    box-shadow: 0 5px 20px rgba(30, 55, 80, 0.06);
+}
+
+html[data-public-theme=&quot;light&quot;] .brand-mark,
+html[data-public-theme=&quot;light&quot;] .brand-name {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .nav-link,
+html[data-public-theme=&quot;light&quot;] .header-back,
+html[data-public-theme=&quot;light&quot;] .footer-link,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item a {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .nav-link:hover,
+html[data-public-theme=&quot;light&quot;] .nav-link.is-active,
+html[data-public-theme=&quot;light&quot;] .footer-link:hover,
+html[data-public-theme=&quot;light&quot;] .footer-contact-item a:hover {
+    color: #0369a1;
+}
+
+@media (max-width: 1080px) {
+    html[data-public-theme=&quot;light&quot;] .nav-menu {
+        background: #ffffff;
+        border-bottom-color: #dce3eb;
+        box-shadow: 0 16px 30px rgba(30, 55, 80, 0.12);
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-link {
+        background: #ffffff;
+        border-bottom-color: #e5ebf1;
+        color: #344454;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-link:hover,
+    html[data-public-theme=&quot;light&quot;] .nav-link:focus-visible,
+    html[data-public-theme=&quot;light&quot;] .nav-link.is-active {
+        background: #f1f7fb;
+        color: #075985;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-actions {
+        border-color: #dce3eb;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-toggle {
+        background: #ffffff;
+        border-color: #c6d0dc;
+        color: #344454;
+    }
+
+    html[data-public-theme=&quot;light&quot;] .nav-toggle-bar {
+        background: #344454;
+    }
+}
+
+html[data-public-theme=&quot;light&quot;] .header-login-btn,
+html[data-public-theme=&quot;light&quot;] .header-account-btn,
+html[data-public-theme=&quot;light&quot;] .header-track-btn,
+html[data-public-theme=&quot;light&quot;] .hero-btn-secondary,
+html[data-public-theme=&quot;light&quot;] .close-form-btn {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .header-login-btn:hover,
+html[data-public-theme=&quot;light&quot;] .header-account-btn:hover,
+html[data-public-theme=&quot;light&quot;] .header-track-btn:hover,
+html[data-public-theme=&quot;light&quot;] .hero-btn-secondary:hover,
+html[data-public-theme=&quot;light&quot;] .close-form-btn:hover {
+    background: #eaf4fa;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .marketing-section,
+html[data-public-theme=&quot;light&quot;] .hero-section {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .section-dot-nav {
+    background: rgba(255, 255, 255, 0.94);
+    border-color: #dce3eb;
+    box-shadow: 0 12px 28px rgba(30, 55, 80, 0.16);
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link {
+    background: #dce3eb;
+    border-color: #b8c5d2;
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link::after {
+    background: rgba(255, 255, 255, 0.98);
+    border-color: #dce3eb;
+    color: #344454;
+    box-shadow: 0 5px 16px rgba(30, 55, 80, 0.12);
+}
+
+html[data-public-theme=&quot;light&quot;] .dot-link:hover,
+html[data-public-theme=&quot;light&quot;] .dot-link:focus-visible,
+html[data-public-theme=&quot;light&quot;] .dot-link.is-active {
+    background: #0284c7;
+    border-color: #0284c7;
+    box-shadow: 0 0 0 4px rgba(2, 132, 199, 0.14);
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-section {
+    background:
+        radial-gradient(circle at 78% 42%, rgba(2, 132, 199, 0.08), transparent 34%),
+        linear-gradient(120deg, #ffffff 0%, #f2f6fa 100%);
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-copy h1,
+html[data-public-theme=&quot;light&quot;] .section-intro h2,
+html[data-public-theme=&quot;light&quot;] .education-card h3,
+html[data-public-theme=&quot;light&quot;] .form-section-header h2,
+html[data-public-theme=&quot;light&quot;] .process-banner strong,
+html[data-public-theme=&quot;light&quot;] .footer-cta-title,
+html[data-public-theme=&quot;light&quot;] .success-screen h1 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-copy h1 span,
+html[data-public-theme=&quot;light&quot;] .section-intro h2 span,
+html[data-public-theme=&quot;light&quot;] .hero-statement span,
+html[data-public-theme=&quot;light&quot;] .hero-statement span:first-child {
+    color: #708090;
+}
+
+html[data-public-theme=&quot;light&quot;] .eyebrow,
+html[data-public-theme=&quot;light&quot;] .section-kicker,
+html[data-public-theme=&quot;light&quot;] .hero-description,
+html[data-public-theme=&quot;light&quot;] .section-intro p,
+html[data-public-theme=&quot;light&quot;] .education-card p,
+html[data-public-theme=&quot;light&quot;] .mini-points span,
+html[data-public-theme=&quot;light&quot;] .process-banner p,
+html[data-public-theme=&quot;light&quot;] .form-section-header p,
+html[data-public-theme=&quot;light&quot;] .footer-tagline,
+html[data-public-theme=&quot;light&quot;] .footer-description {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .hero-meta span,
+html[data-public-theme=&quot;light&quot;] .card-flow span,
+html[data-public-theme=&quot;light&quot;] .process-banner,
+html[data-public-theme=&quot;light&quot;] .education-card,
+html[data-public-theme=&quot;light&quot;] .step-card,
+html[data-public-theme=&quot;light&quot;] .form-block,
+html[data-public-theme=&quot;light&quot;] .item-form-card,
+html[data-public-theme=&quot;light&quot;] .choice-card span,
+html[data-public-theme=&quot;light&quot;] .item-type-choice span,
+html[data-public-theme=&quot;light&quot;] .upload-box,
+html[data-public-theme=&quot;light&quot;] .account-email-note,
+html[data-public-theme=&quot;light&quot;] .account-success-note,
+html[data-public-theme=&quot;light&quot;] .photo-preview {
+    background: #ffffff;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta {
+    background: linear-gradient(180deg, #ffffff 0%, #f4f7fa 100%);
+    border-color: #dce3eb;
+    box-shadow: 0 12px 32px rgba(30, 55, 80, 0.08);
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta h3 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta &gt; span {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary {
+    background: #dce6ee;
+    border-color: #c6d3df;
+    color: #18212b;
+    box-shadow: 0 4px 12px rgba(30, 55, 80, 0.1);
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary:hover,
+html[data-public-theme=&quot;light&quot;] .final-cta .hero-btn-primary:focus-visible {
+    background: #cbd9e4;
+    border-color: #aebfce;
+    color: #111b24;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn {
+    background: #dce6ee;
+    border-color: #aebfce;
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn:hover,
+html[data-public-theme=&quot;light&quot;] .trade-view-all-btn:focus-visible {
+    background: #cbd9e4;
+    border-color: #8fa5b8;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-card {
+    color: #f5f6f8;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-name,
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement strong {
+    color: #f5f6f8;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-condition,
+html[data-public-theme=&quot;light&quot;] .trade-feature-description,
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement span {
+    color: #cbd5df;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-requirement {
+    border-color: rgba(255, 255, 255, 0.16);
+    background: rgba(255, 255, 255, 0.07);
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-feature-card.is-prev,
+html[data-public-theme=&quot;light&quot;] .trade-feature-card.is-next {
+    opacity: 0.9;
+    filter: saturate(0.82) brightness(0.9);
+}
+
+html[data-public-theme=&quot;light&quot;] .education-section,
+html[data-public-theme=&quot;light&quot;] .process-section {
+    background: linear-gradient(180deg, #f7f9fc 0%, #edf2f7 100%);
+}
+
+html[data-public-theme=&quot;light&quot;] .card-index,
+html[data-public-theme=&quot;light&quot;] .card-label,
+html[data-public-theme=&quot;light&quot;] .card-flow b {
+    color: #718091;
+}
+
+html[data-public-theme=&quot;light&quot;] .site-footer {
+    background: #ffffff;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .footer-title,
+html[data-public-theme=&quot;light&quot;] .footer-brand {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .footer-bottom,
+html[data-public-theme=&quot;light&quot;] .footer-grid,
+html[data-public-theme=&quot;light&quot;] .footer-cta {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .submission-form-section {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title,
+html[data-public-theme=&quot;light&quot;] .form-block-title strong,
+html[data-public-theme=&quot;light&quot;] .item-form-header h3,
+html[data-public-theme=&quot;light&quot;] .photo-heading strong,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title small,
+html[data-public-theme=&quot;light&quot;] .form-group label,
+html[data-public-theme=&quot;light&quot;] .form-group label small,
+html[data-public-theme=&quot;light&quot;] .photo-heading &gt; small,
+html[data-public-theme=&quot;light&quot;] .upload-box small,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer span,
+html[data-public-theme=&quot;light&quot;] .submit-area p {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-block-title &gt; span:first-child {
+    background: #eef3f8;
+    border-color: #dce3eb;
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .final-cta .submission-form-section {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer {
+    background: #fff9e8;
+    border-color: #eadcae;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer strong {
+    color: #805700;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-disclaimer span {
+    color: #665b3f;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-group input,
+html[data-public-theme=&quot;light&quot;] .form-group select,
+html[data-public-theme=&quot;light&quot;] .form-group textarea,
+html[data-public-theme=&quot;light&quot;] .price-input input,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field input,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field select,
+html[data-public-theme=&quot;light&quot;] .track-counter-form input {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #18212b;
+    color-scheme: light;
+}
+
+html[data-public-theme=&quot;light&quot;] .form-group select option {
+    background: #ffffff;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .price-input {
+    background: #ffffff;
+    border-color: #c6d0dc;
+}
+
+html[data-public-theme=&quot;light&quot;] .price-input &gt; span {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span {
+    background: #e8f5fc;
+    border-color: #91cce5;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card strong,
+html[data-public-theme=&quot;light&quot;] .item-type-choice strong {
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card small,
+html[data-public-theme=&quot;light&quot;] .item-type-choice small {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span strong,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span strong {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .choice-card input:checked + span small,
+html[data-public-theme=&quot;light&quot;] .item-type-choice input:checked + span small {
+    color: #36566b;
+}
+
+html[data-public-theme=&quot;light&quot;] .submit-btn {
+    background: #dce6ee;
+    border: 1px solid #b8c8d6;
+    color: #263746;
+}
+
+html[data-public-theme=&quot;light&quot;] .submit-btn:hover,
+html[data-public-theme=&quot;light&quot;] .submit-btn:focus-visible {
+    background: #cbd9e4;
+    border-color: #9fb2c2;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .selling-method,
+html[data-public-theme=&quot;light&quot;] .photo-upload-block,
+html[data-public-theme=&quot;light&quot;] .form-disclaimer {
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-banner {
+    background: linear-gradient(135deg, #e8f5fc, #ffffff);
+    border-color: #b6dced;
+    box-shadow: 0 12px 30px rgba(30, 55, 80, 0.08);
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-copy strong,
+html[data-public-theme=&quot;light&quot;] .account-email-note strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-selling-copy small,
+html[data-public-theme=&quot;light&quot;] .account-email-note small,
+html[data-public-theme=&quot;light&quot;] .account-email-note span,
+html[data-public-theme=&quot;light&quot;] .account-success-note span {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .account-banner-link {
+    background: #ffffff;
+    border-color: #b6dced;
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card,
+html[data-public-theme=&quot;light&quot;] .rates-modal-header,
+html[data-public-theme=&quot;light&quot;] .rates-modal-body,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-details,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-card,
+html[data-public-theme=&quot;light&quot;] .trade-modal-card,
+html[data-public-theme=&quot;light&quot;] .trade-request-modal-card {
+    background: #ffffff;
+    border-color: #dce3eb;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card h2 {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-card p {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-kicker,
+html[data-public-theme=&quot;light&quot;] .tracking-modal-field label,
+html[data-public-theme=&quot;light&quot;] .rates-modal-state,
+html[data-public-theme=&quot;light&quot;] .track-result-row strong {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-primary {
+    color: #ffffff;
+    background: linear-gradient(135deg, #0284c7, #0369a1);
+    border-color: #0284c7;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-primary:hover {
+    background: linear-gradient(135deg, #0369a1, #075985);
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-secondary {
+    color: #344454;
+    background: #ffffff;
+    border-color: #c6d0dc;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-secondary:hover {
+    color: #075985;
+    background: #f1f8fc;
+    border-color: #91cce5;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-danger {
+    color: #991b1b;
+    background: #fff1f2;
+    border-color: #fecdd3;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn-danger:hover {
+    background: #ffe4e6;
+}
+
+html[data-public-theme=&quot;light&quot;] .seller-modal-btn:focus-visible {
+    outline: 3px solid rgba(2, 132, 199, 0.35);
+    outline-offset: 3px;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-modal-message.success {
+    background: #edf8f1;
+    border-color: #b8dfc7;
+    color: #245a38;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-modal-message.error {
+    background: #fff1f0;
+    border-color: #efc1bd;
+    color: #8b2f2a;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-group-title,
+html[data-public-theme=&quot;light&quot;] .rates-row-label span,
+html[data-public-theme=&quot;light&quot;] .rates-row-price small,
+html[data-public-theme=&quot;light&quot;] .rates-modal-footnote {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-row {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-row-label strong,
+html[data-public-theme=&quot;light&quot;] .rates-row-price {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .rates-modal-close,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-back,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-close {
+    background: #f1f5f9;
+    border-color: #dce3eb;
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .trade-modal-card-item,
+html[data-public-theme=&quot;light&quot;] .trade-modal-requirement,
+html[data-public-theme=&quot;light&quot;] .track-result-row,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat,
+html[data-public-theme=&quot;light&quot;] .track-counter-form {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row {
+    margin-bottom: 8px;
+    padding: 10px 12px;
+    border: 1px solid #dce3eb;
+    border-radius: 8px;
+    background: #f7f9fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row:last-child {
+    margin-bottom: 0;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-result-row strong {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons button,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions button {
+    background: #e8edf2;
+    border-color: #c6d0dc;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons button:hover,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions button:hover {
+    background: #dce5ec;
+    border-color: #9eafbf;
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons .track-offer-accept,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions .track-offer-accept {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-action-buttons .track-offer-accept:hover,
+html[data-public-theme=&quot;light&quot;] .track-counter-form-actions .track-offer-accept:hover {
+    background: #075985;
+    border-color: #075985;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-offer-actions button:disabled {
+    opacity: 0.6;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat {
+    background: linear-gradient(135deg, #edf6fb, #f7f9fc);
+    border-color: #b6dced;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; div:first-child strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat p {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a:hover,
+html[data-public-theme=&quot;light&quot;] .track-guest-account-links a:focus-visible {
+    color: #0c4a6e;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button {
+    background: #0369a1;
+    border-color: #0369a1;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button:hover,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat &gt; button:focus-visible {
+    background: #075985;
+    border-color: #075985;
+    color: #ffffff;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column {
+    color: #18212b;
+    background: #f7f9fc;
+    border-left-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header {
+    background: #ffffff;
+    border-bottom-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header span {
+    color: #0369a1;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-panel-header strong {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat {
+    --chat-bg: #ffffff;
+    --chat-panel: #f7f9fc;
+    --chat-border: #dce3eb;
+    --chat-text: #18212b;
+    --chat-muted: #586675;
+    --chat-accent: #0369a1;
+    --chat-accent-dark: #075985;
+    --chat-own: #dbeefa;
+    --chat-other: #f1f5f9;
+    --chat-video-ready: #15803d;
+    --chat-video-error: #b91c1c;
+    background: #ffffff;
+    box-shadow: none;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info {
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-item strong,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-quantity {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-photo,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-info-photo-placeholder {
+    background: #edf2f7;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-composer {
+    background: #f7f9fc;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message.is-own &gt; .transaction-chat-bubble {
+    background: #dbeefa;
+    border-color: #b6dced;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message-content {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message-content a {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-message time {
+    color: #465565;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-attachment-preview,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-voice-composer {
+    color: #344454;
+    background: #f7f9fc;
+    border-color: #dce3eb;
+}
+
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-connection,
+html[data-public-theme=&quot;light&quot;] .track-guest-chat-column .transaction-chat-call-button {
+    background: #f1f5f9;
+    border-color: #dce3eb;
+    color: #344454;
+}
+
+html[data-public-theme=&quot;light&quot;] .login-wrapper,
+html[data-public-theme=&quot;light&quot;] .register-wrapper {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .login-card,
+html[data-public-theme=&quot;light&quot;] .register-card {
+    background: rgba(255, 255, 255, 0.97);
+    border-color: #dce3eb;
+    box-shadow: 0 25px 70px rgba(30, 55, 80, 0.14);
+}
+
+html[data-public-theme=&quot;light&quot;] .login-card h2,
+html[data-public-theme=&quot;light&quot;] .register-card h2,
+html[data-public-theme=&quot;light&quot;] .brand h1,
+html[data-public-theme=&quot;light&quot;] .field label,
+html[data-public-theme=&quot;light&quot;] .upload-content label {
+    color: #18212b;
+}
+
+html[data-public-theme=&quot;light&quot;] .subtitle,
+html[data-public-theme=&quot;light&quot;] .brand p,
+html[data-public-theme=&quot;light&quot;] .remember,
+html[data-public-theme=&quot;light&quot;] .register-link,
+html[data-public-theme=&quot;light&quot;] .login-link,
+html[data-public-theme=&quot;light&quot;] .terms label,
+html[data-public-theme=&quot;light&quot;] .upload-content p {
+    color: #586675;
+}
+
+html[data-public-theme=&quot;light&quot;] .field input,
+html[data-public-theme=&quot;light&quot;] .field select {
+    background: #ffffff;
+    border-color: #c6d0dc;
+    color: #18212b;
+    color-scheme: light;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track {
+    background: #dce4ed;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-label[data-strength=&quot;empty&quot;],
+html[data-public-theme=&quot;light&quot;] .password-policy,
+html[data-public-theme=&quot;light&quot;] .password-criteria {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;weak&quot;] + .password-strength-label {
+    color: #b42318;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;medium&quot;] + .password-strength-label {
+    color: #8a5700;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-strength-track[data-strength=&quot;strong&quot;] + .password-strength-label,
+html[data-public-theme=&quot;light&quot;] .password-criteria span.is-met {
+    color: #087443;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-form-error {
+    color: #b42318;
+}
+
+html[data-public-theme=&quot;light&quot;] .password-visibility-toggle {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .message.error {
+    background: #fff0f0;
+    border-color: #efc3c3;
+    color: #9b2626;
+}
+
+html[data-public-theme=&quot;light&quot;] .message.success {
+    background: #eaf8ef;
+    border-color: #b7e0c4;
+    color: #17643a;
+}
+
+html[data-public-theme=&quot;light&quot;] .page-back a {
+    color: #526171;
+}
+
+html[data-public-theme=&quot;light&quot;] .page-back a:hover {
+    color: #075985;
+}
+
+html[data-public-theme=&quot;light&quot;] .avatar-preview {
+    background: #f1f5f9;
+    border-color: #c6d0dc;
+    color: #586675;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    html,
+    body,
+    body *,
+    body *::before,
+    body *::after {
+        transition-duration: 0.01ms;
+    }
+}
+
+
+.upload-content { flex: 1; min-width: 0; }
+.upload-content input[type=&quot;file&quot;] {
+    display: block;
+    max-width: 100%;
+    padding: 6px;
+    border: 1px solid var(--line-light, #2c3944);
+    border-radius: 12px;
+    background: var(--panel-2, #11161c);
+    color: var(--soft, #aeb8c2);
+    font-family: inherit;
+    font-size: 12px;
+    cursor: pointer;
+}
+.upload-content input[type=&quot;file&quot;]::file-selector-button {
+    min-height: 44px;
+    margin-right: 10px;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: #0077ad;
+    color: #ffffff;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background-color 160ms ease;
+}
+.upload-content input[type=&quot;file&quot;]:hover::file-selector-button { background: #006596; }
+.upload-content input[type=&quot;file&quot;]:focus-visible {
+    outline: 2px solid #0ea5e9;
+    outline-offset: 3px;
+}
+@media (max-width: 420px) {
+    .profile-upload { align-items: flex-start; gap: 12px; }
+    .avatar-preview { width: 56px; height: 56px; font-size: 22px; }
+    .upload-content input[type=&quot;file&quot;]::file-selector-button { padding: 0 10px; margin-right: 8px; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .upload-content input[type=&quot;file&quot;]::file-selector-button { transition: none; }
+}
+
+body{min-height:100%;padding:12px;align-items:flex-start}.register-card{padding:22px}.profile-upload{margin-bottom:0}&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;div class=&quot;register-wrapper&quot;&gt;&lt;div class=&quot;register-card&quot;&gt;&lt;h2&gt;Create Your Account&lt;/h2&gt;&lt;p class=&quot;subtitle&quot;&gt;Keep track of your submissions, offers, transactions, and future inquiries in one place.&lt;/p&gt;&lt;form&gt;            &lt;div class=&quot;profile-upload&quot;&gt;
+
+                &lt;div
+                    class=&quot;avatar-preview&quot;
+                    id=&quot;avatarPreview&quot;
+                &gt;
+                    V
+                &lt;/div&gt;
+
+                &lt;div class=&quot;upload-content&quot;&gt;
+
+                    &lt;label for=&quot;profile_picture&quot;&gt;
+                        Profile Picture
+                    &lt;/label&gt;
+
+                    &lt;p id=&quot;profilePictureHelp&quot;&gt;
+                        Optional. JPG, PNG, or WEBP. Max 5MB.
+                    &lt;/p&gt;
+
+                    &lt;input
+                        type=&quot;file&quot;
+                        id=&quot;profile_picture&quot;
+                        name=&quot;profile_picture&quot; aria-describedby=&quot;profilePictureHelp&quot;
+                        accept=&quot;.jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp&quot;
+                    &gt;
+
+                &lt;/div&gt;
+
+            &lt;/div&gt;
+
+&lt;/form&gt;&lt;/div&gt;&lt;/div&gt;&lt;script&gt;setTimeout(()=&gt;{const i=document.querySelector(&#x27;input[type=file]&#x27;), b=getComputedStyle(i,&#x27;::file-selector-button&#x27;); document.documentElement.dataset.checked=String(i.getBoundingClientRect().right&lt;=innerWidth &amp;&amp; parseFloat(b.minHeight)&gt;=44);},300);&lt;/script&gt;&lt;/body&gt;&lt;/html&gt;"></iframe></div></main></body></html>

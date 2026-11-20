@@ -14,6 +14,9 @@ Gamitin ang [[90 System/Templates/Knowledge|Knowledge template]]. Ipa-connect o 
 
 ## Notes
 
+- [[40 Knowledge/Integration Catalog]] — API/library choices, purpose, versions, data flow and limits for relevant agents.
+- [[40 Knowledge/Engineering Lessons]] — evidence-backed do/don't lessons and task links.
+
 - [[40 Knowledge/VNZ-TECH System Map]] — overview ng implemented modules at source evidence.
 - [[40 Knowledge/System Modules/Identity and Accounts|Identity and Accounts]] — [[90 System/Agents/Aegis|Aegis]].
 - [[40 Knowledge/System Modules/Social Login|Social Login]] — [[90 System/Agents/Cipher|Cipher]].

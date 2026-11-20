@@ -2,12 +2,14 @@
 type: system-module
 status: source-reviewed
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-19
 tags: [vnz-tech, system-module]
 owner: "[[90 System/Agents/Aegis]]"
 ---
 
 # Identity and Accounts
+
+Current local behavior: [[90 System/Runs/2026-11-19 213300 Submission Selfie v6|submission selfie v6]], active2026-11-19. Earlier dated ID-review sections below remain history.
 
 Owner: [[90 System/Agents/Aegis|Aegis]]. Review date: **2026-11-14**.
 
@@ -81,3 +83,19 @@ Actual results and scope: [[50 Reviews/VNZ-TECH Implementation Snapshot 2026-11-
 [[90 System/Agents/Cipher|Cipher]] · [[90 System/Agents/Echo|Echo]] · [[90 System/Agents/Lyra|Lyra]] · [[90 System/Agents/Quinn|Quinn]]
 
 [[40 Knowledge/VNZ-TECH System Map]] · [[90 System/Agent Directory]] · [[Home]]
+
+## ID verification v2 - 2026-11-19
+
+ID/selfie v2 is implemented: private encrypted evidence, active-owner/dedicated active-reviewer access, authoritative admin decisions, durable account approval, one-use guest proof and exact signup/email carryover. Source: backend/identity_verification.php, identity_api.php, identity_evidence_cleanup.php and signup/verification hooks. Login/TOTP/remember completion unchanged. Local schema/private config applied; capture disabled pending Windows administrator cleanup setup. No personal ID/device test. See the run for 48 helper, 17 API, 11 signup, 10 email and 10 InnoDB checks.
+
+[[90 System/Runs/2026-11-19 163005 Identity Verification v2]] - [[40 Knowledge/Integration Catalog]] - [[40 Knowledge/Engineering Lessons]]
+
+### Activation follow-up - 2026-11-19 17:07
+
+Earlier disabled/setup-pending state is historical. Owner Administrator setup completed; independent live form/API/private health and successful daily03:00 cleanup readback confirm local activation. No personal ID/device/human-review test or owner acceptance inferred. [[90 System/Runs/2026-11-19 163005 Identity Verification v2]]
+
+## Submission selfie v6 - 2026-11-19 21:53
+
+Current local mode is `face_submission_v6`, activated and live-verified21:50 Asia/Manila. ID enrollment/manual approvals are retired for new submissions; signup/email/login remain separate and existing email claims remain intact. Guest/account sellers take a new selfie per submission. No reference matching, Face++, face template or durable identity approval. Source: backend/submission_security_face.php, identity_automation.php, identity_verification.php and identity_api.php. Nonce/actor/CSRF and server presence gate replace old ID authority; old histories remain historical.
+
+[[90 System/Runs/2026-11-19 213300 Submission Selfie v6]] - [[90 System/Tasks/Records/TASK-20261119-004]] - [[40 Knowledge/Integration Catalog]] - [[40 Knowledge/Engineering Lessons]]

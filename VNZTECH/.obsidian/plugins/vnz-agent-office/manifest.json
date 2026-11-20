@@ -1,0 +1,9 @@
+{
+  "id": "vnz-agent-office",
+  "name": "VNZ Agent Office",
+  "version": "1.1.0",
+  "minAppVersion": "1.4.0",
+  "description": "Company roles, owner approval desk, and recorded task checkpoints for the 20 VNZTECH agents.",
+  "author": "VNZ TECH",
+  "isDesktopOnly": false
+}

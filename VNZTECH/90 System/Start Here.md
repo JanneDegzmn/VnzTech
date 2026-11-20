@@ -2,7 +2,7 @@
 type: guide
 status: active
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-19
 tags: [second-brain]
 ---
 
@@ -29,14 +29,20 @@ May initial daily note sa [[02 Daily/2026-11-14]] at setup checklist sa [[10 Pro
 
 ## Agent team
 
+**Dito sa main chat ka na mag-uutos.** Si Atlas ang mag-a-assign ng relevant roles ayon sa tanong/command at scope. Ikaw ang final approver bago implementation. [[90 System/Company Operations|Company workflow]] · [[Task Center]] · [[90 System/Tasks/Current Task|Current Task]] · [[Approval Inbox]].
+
+Para sa office visual: [[Agent Office]]. Naka-enable na yung **VNZ Agent Office** ayon sa owner screenshot; i-off/on para ma-load yung updated company/task build, saka **Ctrl+P → Open Agent Office**. Clickable directory at recorded checkpoint view ito; hiwalay pa rin yung AI runner.
+
+Default na yung [[90 System/Ponytail|Ponytail workflow]] sa shared vault instructions: relevant notes lang ang babasahin, reuse muna ng existing setup, at concise updates. Gamitin mo pa rin yung usual agent names; walang bagong Obsidian plugin o slash commands na kailangan.
+
 | Pangalan | Role | Trabaho |
 | --- | --- | --- |
-| [[90 System/Agents/Atlas|Atlas]] | Orchestrator | Pumili at mag-coordinate ng roles |
-| [[90 System/Agents/Tala|Tala]] | Capture | I-save ang ideas at raw input |
-| [[90 System/Agents/Lex|Lex]] | Librarian | Organize, connect, at distill notes |
-| [[90 System/Agents/Nova|Nova]] | Researcher | Research na may sources |
-| [[90 System/Agents/Kai|Kai]] | Planner | Outcomes, projects, at next actions |
-| [[90 System/Agents/Sage|Sage]] | Reviewer | Progress, blockers, at reviews |
+| [[90 System/Agents/Atlas|Atlas]] | Delivery Director | Pumili at mag-coordinate ng roles |
+| [[90 System/Agents/Tala|Tala]] | Business Intake Coordinator | I-save ang ideas at raw input |
+| [[90 System/Agents/Lex|Lex]] | Knowledge & Documentation Lead | Organize, connect, at distill notes |
+| [[90 System/Agents/Nova|Nova]] | Research Lead | Research na may sources |
+| [[90 System/Agents/Kai|Kai]] | Lead Systems Analyst | Outcomes, projects, at next actions |
+| [[90 System/Agents/Sage|Sage]] | Governance & Release Reviewer | Progress, blockers, at reviews |
 
 ### VNZ-TECH specialists
 

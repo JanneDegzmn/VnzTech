@@ -2,7 +2,7 @@
 type: index
 status: active
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-19
 tags: []
 ---
 
@@ -11,6 +11,8 @@ tags: []
 Source notes, articles, references, at research findings. Isama ang source URL at access date kung applicable.
 
 ## Reference shelf
+
+- [[30 Resources/Ponytail Source]] — user-supplied 5.3.3 archive, original rules, MIT license, and vault adaptation boundaries.
 
 - [Obsidian Templates documentation](https://obsidian.md/help/plugins/templates)
 - [Obsidian Daily notes documentation](https://obsidian.md/help/plugins/daily-notes)

@@ -2,12 +2,14 @@
 type: system-module
 status: source-reviewed
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-19
 tags: [vnz-tech, system-module]
 owner: "[[90 System/Agents/Forge]]"
 ---
 
 # Backend Architecture
+
+Current local behavior: [[90 System/Runs/2026-11-19 213300 Submission Selfie v6|submission selfie v6]], active2026-11-19. Earlier dated ID-review sections below remain history.
 
 Owner: [[90 System/Agents/Forge|Forge]]. Review date: **2026-11-14**.
 
@@ -50,3 +52,19 @@ Actual results and scope: [[50 Reviews/VNZ-TECH Implementation Snapshot 2026-11-
 [[90 System/Agents/Aegis|Aegis]] · [[90 System/Agents/Vega|Vega]] · [[90 System/Agents/Quinn|Quinn]] · [[90 System/Agents/Atlas|Atlas]]
 
 [[40 Knowledge/VNZ-TECH System Map]] · [[90 System/Agent Directory]] · [[Home]]
+
+## ID verification v2 - 2026-11-19
+
+Identity helper now separates enabled policy from health: an enabled maintenance/storage/config failure blocks requests rather than switching policy off. Private storage must be outside the entire documentroot, not only this checkout. Grant consumption is inside submission transaction; signup reservation/email finalization use caller transactions. Cleanup heartbeat checks actual freshness. New tools handle additive setup/health and reviewed administrator completion; active capture disabled pending a successful local schedule. See shared lessons for boundaries and deployment limits.
+
+[[90 System/Runs/2026-11-19 163005 Identity Verification v2]] - [[40 Knowledge/Integration Catalog]] - [[40 Knowledge/Engineering Lessons]]
+
+### Activation follow-up - 2026-11-19 17:07
+
+Earlier disabled/setup-pending state is historical. Owner Administrator setup completed; independent live form/API/private health and successful daily03:00 cleanup readback confirm local activation. No personal ID/device/human-review test or owner acceptance inferred. [[90 System/Runs/2026-11-19 163005 Identity Verification v2]]
+
+## Submission selfie v6 - 2026-11-19 21:53
+
+v6 separates legacy ID enabled state from mandatory submission selfie mode. Server helper performs bounded single-image presence inference through the fixed Node CPU worker; no browser score or self-comparison authorizes a face check. Checked JPEG/hash, actor/session/context nonce and policy bind transactional Store; raw bytes stay private. nonce API is CSRF-protected and old ID actions retire410. A mode marker prevents silent fallback. No cloud call, new runtime dependency, service or login change.
+
+[[90 System/Runs/2026-11-19 213300 Submission Selfie v6]] - [[90 System/Tasks/Records/TASK-20261119-004]] - [[40 Knowledge/Integration Catalog]] - [[40 Knowledge/Engineering Lessons]]

@@ -152,7 +152,169 @@
         });
     }
 
+    function topbarMode(root) { return root.dataset.placement === 'seller-topbar'; }
+    function sellerWindows(root) { return Array.from(root.querySelectorAll('[data-floating-chat-window]')); }
+    function sellerMenuOpen(root) {
+        return root.classList.contains('is-menu-open') || !root.querySelector('[data-floating-messages-panel]').inert;
+    }
+    function resetSellerMaximize(item) {
+        item.classList.remove('is-maximized', 'is-workspace-list-open');
+        const button = item.querySelector('[data-chat-maximize]');
+        button?.setAttribute('aria-pressed', 'false');
+        button?.setAttribute('aria-label', 'Maximize chat');
+        if (button) { button.title = 'Maximize chat'; button.textContent = '\u26f6'; }
+    }
+    function sellerDockSlots() {
+        // 360px boxes, 12px gaps, and 84px for the rail/outer gutters.
+        return Math.max(1, Math.min(4, Math.floor((document.documentElement.clientWidth - 72) / 372)));
+    }
+    function sellerRailAvatar(item) {
+        const picture = item.querySelector('[data-transaction-chat]')?.dataset.conversationPeerPicture || '';
+        if (!picture.includes('..') && /^(?:\/VNZ-TECH\/|\/)?uploads\/[a-zA-Z0-9_./-]+$/.test(picture)) {
+            return '/VNZ-TECH/' + picture.replace(/^(?:\/VNZ-TECH\/|\/)/, '');
+        }
+        return '';
+    }
+    function sellerRailOption(item, avatar = false) {
+        const option = document.createElement('button');
+        const name = item.querySelector('[data-floating-chat-title]')?.textContent || 'Conversation';
+        option.type = 'button'; option.dataset.chatOverflowKey = item.dataset.dockKey;
+        option.setAttribute('aria-label', 'Open ' + name); option.title = name;
+        if (!avatar) { option.textContent = name; return option; }
+        option.className = 'seller-chat-rail-avatar';
+        const initials = document.createElement('span');
+        initials.textContent = initialsFor(name); initials.setAttribute('aria-hidden', 'true');
+        option.append(initials);
+        const picture = sellerRailAvatar(item);
+        if (picture) {
+            const image = document.createElement('img'); image.src = picture; image.alt = '';
+            image.addEventListener('error', () => image.remove(), {once:true}); option.append(image);
+        }
+        const label = document.createElement('span'); label.className = 'seller-chat-rail-name'; label.textContent = name;
+        option.append(label); return option;
+    }
+
+    function renderSellerDock(root) {
+        const windows = sellerWindows(root).filter(item => !item.classList.contains('is-closing'));
+        const ordered = windows.slice().sort((a,b) => Number(b.dataset.dockOrder || 0) - Number(a.dataset.dockOrder || 0));
+        const eligible = ordered.filter(item => !item.classList.contains('is-minimized'));
+        const fullscreen = eligible.find(item => item.classList.contains('is-maximized'));
+        const visible = fullscreen ? [fullscreen] : eligible.slice(0, sellerDockSlots());
+        sellerWindows(root).forEach(item => {
+            item.hidden = !visible.includes(item);
+            item.style.order = String(visible.indexOf(item));
+        });
+        root.querySelector('[data-floating-chat-windows]').classList.toggle('is-topbar-wide', !!fullscreen);
+        root.dataset.visibleChatCount = String(visible.length);
+        const hidden = ordered.filter(item => !visible.includes(item));
+        const overflow = root.querySelector('[data-chat-overflow]');
+        if (!overflow) return;
+        overflow.hidden = !hidden.length || !!fullscreen;
+        root.classList.toggle('has-chat-overflow', hidden.length > 0 && !fullscreen);
+        overflow.dataset.hiddenChatCount = String(hidden.length);
+        overflow.setAttribute('aria-label', hidden.length + ' other open chats');
+        const availableHeight = Math.max(48, document.documentElement.clientHeight - root.closest('[data-seller-topbar]').getBoundingClientRect().bottom - 24);
+        const slots = Math.max(1, Math.min(6, Math.floor(availableHeight / 58)));
+        const railCount = hidden.length <= slots ? hidden.length : Math.max(0, slots - 1);
+        const remaining = hidden.slice(railCount);
+        const button = overflow.querySelector('[data-chat-overflow-toggle]');
+        button.hidden = remaining.length === 0;
+        button.textContent = '+' + remaining.length;
+        button.setAttribute('aria-label', remaining.length + ' more open chats');
+        const list = overflow.querySelector('[data-chat-overflow-list]');
+        const rail = overflow.querySelector('[data-chat-rail]');
+        // Rebuild only when identity/title/avatar/available rail capacity changes.
+        const signature = railCount + ':' + hidden.map(item => item.dataset.dockKey + ':' + item.querySelector('[data-floating-chat-title]')?.textContent + ':' + sellerRailAvatar(item)).join('|');
+        if (list.dataset.signature !== signature) {
+            list.dataset.signature = signature;
+            list.replaceChildren(); rail.replaceChildren();
+            hidden.slice(0, railCount).forEach(item => rail.append(sellerRailOption(item, true)));
+            remaining.forEach(item => list.append(sellerRailOption(item)));
+        }
+        if (button.hidden) { list.hidden = true; button.setAttribute('aria-expanded', 'false'); }
+        if (overflow.hidden) { list.hidden = true; button.setAttribute('aria-expanded', 'false'); }
+    }
+    function topbarView(root, view) {
+        if (!topbarMode(root)) return;
+        root.dataset.topbarView = view;
+        root.querySelector('[data-floating-messages-toggle]')?.setAttribute('aria-expanded', String(view === 'categories' || view === 'list'));
+        renderSellerDock(root);
+        window.dispatchEvent(new CustomEvent('vnz:seller-chat-state', { detail: { open: view === 'categories' || view === 'list' } }));
+    }
+    function hideTopbarChat(root) {
+        setCategoryMenuOpen(root, false);
+        setPanelOpen(root, false);
+        topbarView(root, 'closed');
+        const overflowList = root.querySelector('[data-chat-overflow-list]');
+        if (overflowList) overflowList.hidden = true;
+        root.querySelector('[data-chat-overflow-toggle]')?.setAttribute('aria-expanded', 'false');
+    }
+    function selectTopbarChat(root, item) {
+        if (!topbarMode(root)) return;
+        const counter = Number(root.dataset.dockCounter || 0) + 1;
+        root.dataset.dockCounter = String(counter);
+        item.dataset.dockOrder = String(counter);
+        if (!item.dataset.dockKey) item.dataset.dockKey = String(counter);
+        if (!item.dataset.originCategory) item.dataset.originCategory = root.dataset.activeCategory || root.dataset.lastChatCategory || 'private';
+        item.classList.remove('is-minimized');
+        sellerWindows(root).forEach(other => {
+            other.classList.toggle('is-topbar-selected', other === item);
+            if (other !== item && other.classList.contains('is-maximized')) resetSellerMaximize(other);
+        });
+        topbarView(root, 'conversation');
+    }
+    function minimizeSellerChat(root, item) {
+        resetSellerMaximize(item);
+        item.classList.add('is-minimized');
+        renderSellerDock(root);
+    }
+    function initSellerOverflow(root) {
+        const overflow = document.createElement('div');
+        overflow.className = 'seller-chat-overflow'; overflow.dataset.chatOverflow = ''; overflow.hidden = true;
+        const button = document.createElement('button');
+        button.type = 'button'; button.dataset.chatOverflowToggle = ''; button.setAttribute('aria-expanded', 'false');
+        button.setAttribute('aria-controls', 'sellerOpenChatList');
+        const list = document.createElement('div');
+        list.id = 'sellerOpenChatList'; list.dataset.chatOverflowList = ''; list.hidden = true;
+        list.setAttribute('role', 'group');
+        list.setAttribute('aria-label', 'Other open chats');
+        const rail = document.createElement('div'); rail.dataset.chatRail = '';
+        rail.setAttribute('role', 'group'); rail.setAttribute('aria-label', 'Open chat shortcuts');
+        overflow.append(rail, button, list); root.append(overflow);
+        let hoverCloseTimer;
+        const open = () => { clearTimeout(hoverCloseTimer); list.hidden = false; button.setAttribute('aria-expanded', 'true'); };
+        button.addEventListener('click', () => { if (list.hidden) open(); else { list.hidden = true; button.setAttribute('aria-expanded', 'false'); } });
+        button.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse' && !button.hidden) open(); });
+        overflow.addEventListener('pointerleave', () => {
+            clearTimeout(hoverCloseTimer);
+            hoverCloseTimer = setTimeout(() => {
+                if (!overflow.matches(':hover') && !overflow.contains(document.activeElement)) { list.hidden = true; button.setAttribute('aria-expanded', 'false'); }
+            }, 180);
+        });
+        button.addEventListener('keydown', event => { if (event.key === 'ArrowDown') { event.preventDefault(); open(); list.querySelector('button')?.focus(); } });
+        list.addEventListener('keydown', event => {
+            const items = Array.from(list.querySelectorAll('button')); const current = items.indexOf(document.activeElement);
+            if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); items[(current + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus(); }
+        });
+        rail.addEventListener('keydown', event => {
+            if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+            const items = Array.from(rail.querySelectorAll('button')); const index = items.indexOf(document.activeElement);
+            event.preventDefault(); items[(index + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length]?.focus();
+        });
+        overflow.addEventListener('click', event => {
+            const option = event.target.closest('[data-chat-overflow-key]');
+            const item = option && sellerWindows(root).find(chat => chat.dataset.dockKey === option.dataset.chatOverflowKey);
+            if (!item) return;
+            selectTopbarChat(root, item); hideTopbarChat(root);
+            const input = item.querySelector('[data-chat-input]');
+            if (input && !input.disabled) input.focus();
+            else item.querySelector('[data-chat-maximize]')?.focus();
+        });
+    }
+
     function setPanelOpen(root, open) {
+        if (open) topbarView(root, 'list');
+        else if (root.dataset.topbarView === 'list') topbarView(root, 'closed');
         const panel = root.querySelector('[data-floating-messages-panel]');
         const closeTimer = panelCloseTimers.get(root);
         if (closeTimer) {
@@ -183,13 +345,16 @@
         const categories = root.querySelector('[data-floating-messages-categories]');
         root.classList.toggle('is-menu-open', open);
         categories.setAttribute('aria-hidden', String(!open));
-        toggle.setAttribute('aria-expanded', String(open));
+        if (open) topbarView(root, 'categories');
+        else if (root.dataset.topbarView === 'categories') topbarView(root, 'closed');
+        toggle.setAttribute('aria-expanded', String(topbarMode(root) ? root.dataset.topbarView !== 'closed' : open));
         categories.querySelectorAll('[data-message-category]').forEach(button => {
             button.tabIndex = open ? 0 : -1;
         });
     }
 
-    function maximumWindows() {
+    function maximumWindows(root = null) {
+        if (root && topbarMode(root)) return 10;
         if (window.innerWidth <= 680) {
             return 1;
         }
@@ -506,6 +671,16 @@
         }
     }
 
+    function sizeSellerContacts(root) {
+        if (!topbarMode(root)) return;
+        const list = root.querySelector('[data-floating-messages-list]');
+        const rows = Array.from(list.children).filter(item => item.matches('.floating-messages-call-row, .floating-messages-conversation'));
+        const last = rows[Math.min(4, rows.length - 1)];
+        if (!last) return;
+        const height = Math.ceil(last.getBoundingClientRect().bottom - list.getBoundingClientRect().top + list.scrollTop + parseFloat(getComputedStyle(list).paddingBottom));
+        list.style.setProperty('--seller-contact-list-height', height + 'px');
+    }
+
     async function readJsonResponse(response) {
         let payload;
         try {
@@ -592,6 +767,7 @@
                 category,
                 tradeRequests
             );
+            if (topbarMode(root)) requestAnimationFrame(() => sizeSellerContacts(root));
         } catch (error) {
             if (
                 root.dataset.activeCategory === category
@@ -606,6 +782,11 @@
     }
 
     function updateWindowVisibility(root) {
+        if (topbarMode(root)) {
+            topbarView(root, root.dataset.topbarView || 'closed');
+            root.classList.remove('is-mobile-chat-open');
+            return;
+        }
         const windows = Array.from(root.querySelectorAll('[data-floating-chat-window]'));
         const visibleLimit = maximumWindows();
         windows.forEach((windowElement, index) => {
@@ -1068,6 +1249,7 @@
                 existing.classList.remove('is-call-active');
                 existing.classList.add('is-call-chat-visible');
             }
+            selectTopbarChat(root, existing);
             existing.hidden = false;
             existing.querySelector('[data-chat-input]')?.focus();
             updateWindowVisibility(root);
@@ -1085,9 +1267,9 @@
 
         const windows = root.querySelector('[data-floating-chat-windows]');
         const windowCount = windows.querySelectorAll('[data-floating-chat-window]').length;
-        if (windowCount >= maximumWindows()) {
+        if (windowCount >= maximumWindows(root)) {
             const errorPanel = root.querySelector('[data-floating-messages-error]');
-            errorPanel.textContent = window.innerWidth <= 680
+            errorPanel.textContent = topbarMode(root) ? 'You have 10 open chats. Close one before opening another.' : window.innerWidth <= 680
                 ? 'Close the current chat window before opening another on this screen.'
                 : 'Close a chat window before opening another.';
             errorPanel.hidden = false;
@@ -1166,7 +1348,14 @@
         actions.append(backButton, maximizeButton, minimizeButton, closeButton);
         header.append(titleGroup, actions);
         windowElement.append(header, sidebar, body);
+        if (topbarMode(root)) {
+            maximizeButton.textContent = '\u26f6';
+            minimizeButton.textContent = '\u2014';
+            closeButton.textContent = '\u00d7';
+            backButton.textContent = '\u2039';
+        }
         windows.prepend(windowElement);
+        selectTopbarChat(root, windowElement);
         updateWindowVisibility(root);
 
         await loadConversationWindow(root, windowElement, details);
@@ -1273,10 +1462,10 @@
 
         if (
             root.querySelectorAll('[data-floating-chat-window]').length
-            >= maximumWindows()
+            >= maximumWindows(root)
         ) {
             const errorPanel = root.querySelector('[data-floating-messages-error]');
-            errorPanel.textContent = window.innerWidth <= 680
+            errorPanel.textContent = topbarMode(root) ? 'You have 10 open chats. Close one before opening another.' : window.innerWidth <= 680
                 ? 'Close the current chat window before opening another on this screen.'
                 : 'Close a chat window before opening another.';
             errorPanel.hidden = false;
@@ -1337,6 +1526,7 @@
     }
 
     async function openCategory(root, category) {
+        if (topbarMode(root)) root.dataset.lastChatCategory = category === 'global' ? 'categories' : category;
         const title = root.querySelector('[data-floating-messages-title]');
         const list = root.querySelector('[data-floating-messages-list]');
         const placeholder = root.querySelector('[data-floating-messages-placeholder]');
@@ -1406,7 +1596,18 @@
         const panel = root.querySelector('[data-floating-messages-panel]');
         const list = root.querySelector('[data-floating-messages-list]');
 
+        if (topbarMode(root)) {
+            root.dataset.topbarView = 'closed';
+            initSellerOverflow(root);
+            root.querySelector('[data-floating-messages-close]').textContent = '\u00d7';
+            const eyebrow = root.querySelector('.floating-messages-panel-header span');
+            if (eyebrow) eyebrow.textContent = 'VNZ TECH \u00b7 MESSAGES';
+            root.addEventListener('vnz:seller-chat-hide', () => hideTopbarChat(root));
+        }
         toggle.addEventListener('click', () => {
+            if (topbarMode(root) && sellerMenuOpen(root)) {
+                hideTopbarChat(root); toggle.focus(); return;
+            }
             const opening = !root.classList.contains('is-menu-open');
             setCategoryMenuOpen(root, opening);
             if (opening) {
@@ -1530,9 +1731,14 @@
             if (maximize) {
                 const windowElement = maximize.closest('[data-floating-chat-window]');
                 const maximized = !windowElement.classList.contains('is-maximized');
+                if (topbarMode(root)) {
+                    root.querySelector('[data-floating-chat-windows]').classList.toggle('is-topbar-wide', maximized);
+                }
                 windowElement.classList.toggle('is-maximized', maximized);
                 windowElement.classList.remove('is-minimized');
-                windowElement.classList.toggle('is-mobile-chat-open', window.innerWidth > 700);
+                windowElement.classList.toggle('is-mobile-chat-open', topbarMode(root) || window.innerWidth > 700);
+                if (topbarMode(root)) windowElement.classList.remove('is-workspace-list-open');
+                if (topbarMode(root)) renderSellerDock(root);
                 maximize.setAttribute('aria-pressed', String(maximized));
                 maximize.setAttribute(
                     'aria-label',
@@ -1542,6 +1748,7 @@
                 maximize.textContent = maximized ? '↙' : '□';
                 const minimize = windowElement.querySelector('[data-chat-minimize]');
                 minimize?.setAttribute('aria-label', 'Minimize chat');
+                if (topbarMode(root)) maximize.textContent = '\u26f6';
                 if (maximized) {
                     refreshWorkspaceSidebar(root, windowElement).catch(error => {
                         const list = windowElement.querySelector('[data-workspace-conversation-list]');
@@ -1558,6 +1765,13 @@
             const workspaceBack = event.target.closest('[data-chat-workspace-back]');
             if (workspaceBack) {
                 const windowElement = workspaceBack.closest('[data-floating-chat-window]');
+                if (topbarMode(root) && windowElement) {
+                    minimizeSellerChat(root, windowElement);
+                    const category = windowElement.dataset.originCategory || 'private';
+                    if (category === 'categories') { setPanelOpen(root, false); setCategoryMenuOpen(root, true); root.querySelector('[data-message-category]')?.focus(); }
+                    else openCategory(root, category);
+                    return;
+                }
                 if (!windowElement) {
                     return;
                 }
@@ -1601,6 +1815,7 @@
                 }
                 refreshUnread(root);
             } else if (minimize) {
+                if (topbarMode(root)) { minimizeSellerChat(root, minimize.closest('[data-floating-chat-window]')); toggle.focus(); return; }
                 const windowElement = minimize.closest('[data-floating-chat-window]');
                 windowElement?.classList.remove('is-maximized', 'is-mobile-chat-open');
                 const maximizeButton = windowElement?.querySelector('[data-chat-maximize]');
@@ -1625,6 +1840,7 @@
         });
 
         document.addEventListener('click', event => {
+            if (topbarMode(root) && !root.contains(event.target)) hideTopbarChat(root);
             if (!root.contains(event.target) && root.classList.contains('is-menu-open')) {
                 setCategoryMenuOpen(root, false);
             }
@@ -1642,6 +1858,13 @@
 
         document.addEventListener('keydown', event => {
             if (event.key === 'Escape') {
+                if (topbarMode(root)) {
+                    const overflowList = root.querySelector('[data-chat-overflow-list]');
+                    if (sellerMenuOpen(root) || (overflowList && !overflowList.hidden)) { hideTopbarChat(root); toggle.focus(); return; }
+                    const fullscreen = root.querySelector('[data-floating-chat-window].is-maximized');
+                    if (fullscreen) { resetSellerMaximize(fullscreen); renderSellerDock(root); fullscreen.querySelector('[data-chat-maximize]')?.focus(); }
+                    return;
+                }
                 if (root.classList.contains('is-menu-open')) {
                     setCategoryMenuOpen(root, false);
                     toggle.focus();
@@ -1662,7 +1885,7 @@
             window.addEventListener(eventName, () => refreshUnread(root, true));
         });
         window.addEventListener('vnz:chat-presence-changed', () => refreshUnread(root));
-        window.addEventListener('resize', () => updateWindowVisibility(root));
+        window.addEventListener('resize', () => { updateWindowVisibility(root); sizeSellerContacts(root); });
         window.addEventListener('vnz:call-request', event => {
             const conversationId = Number(event.detail?.conversationId);
             const mode = event.detail?.mode;

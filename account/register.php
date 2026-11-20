@@ -1,6 +1,9 @@
 <?php
 
 require_once __DIR__ . '/../backend/session.php';
+require_once __DIR__ . '/../backend/csrf.php';
+
+$csrfToken = generateCsrfToken();
 
 $success = isset($_GET['success']) && $_GET['success'] === '1';
 $verification = $_GET['verification'] ?? '';
@@ -119,6 +122,8 @@ if (!is_array($guestRegistrationPrefill)) {
             data-password-strength-form
         >
 
+            <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8') ?>">
+
             <div class="profile-upload">
 
                 <div
@@ -134,7 +139,7 @@ if (!is_array($guestRegistrationPrefill)) {
                         Profile Picture
                     </label>
 
-                    <p>
+                    <p id="profilePictureHelp">
                         Optional. JPG, PNG, or WEBP. Max 5MB.
                     </p>
 
@@ -143,6 +148,7 @@ if (!is_array($guestRegistrationPrefill)) {
                         id="profile_picture"
                         name="profile_picture"
                         accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                        aria-describedby="profilePictureHelp"
                     >
 
                 </div>

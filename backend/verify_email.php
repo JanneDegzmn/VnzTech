@@ -5,6 +5,7 @@ require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/csrf.php';
 require_once __DIR__ . '/guest_submission_link.php';
 require_once __DIR__ . '/email_verification_feedback.php';
+require_once __DIR__ . '/identity_verification.php';
 
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Referrer-Policy: no-referrer');
@@ -128,6 +129,7 @@ try {
     $updateStmt->execute([$userId]);
 
     linkVerifiedGuestSubmissions($pdo, $userId);
+    vnzIdentityFinalizeAccount($pdo, $userId);
 
     $deleteStmt = $pdo->prepare("
         DELETE FROM email_verification_tokens

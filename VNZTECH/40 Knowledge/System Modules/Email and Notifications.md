@@ -2,7 +2,7 @@
 type: system-module
 status: source-reviewed
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-20
 tags: [vnz-tech, system-module]
 owner: "[[90 System/Agents/Beacon]]"
 ---
@@ -60,3 +60,19 @@ Actual results and scope: [[50 Reviews/VNZ-TECH Implementation Snapshot 2026-11-
 [[90 System/Agents/Aegis|Aegis]] · [[90 System/Agents/Cipher|Cipher]] · [[90 System/Agents/Orion|Orion]] · [[90 System/Agents/Rhea|Rhea]]
 
 [[40 Knowledge/VNZ-TECH System Map]] · [[90 System/Agent Directory]] · [[Home]]
+
+## ID verification v2 - 2026-11-19
+
+backend/verify_email.php now finalizes only an exact previously reserved guest identity within the token/user/claim transaction. Pending ID review remains pending; verified email alone never approves ID. Password registration sends mail after account/reservation commit, so SMTP failure cannot delete a committed account/avatar. Eleven signup and ten existing email HTTP fixture checks pass; no live SMTP or real verification token used. Login upgrade remains deferred.
+
+[[90 System/Runs/2026-11-19 163005 Identity Verification v2]] - [[40 Knowledge/Integration Catalog]] - [[40 Knowledge/Engineering Lessons]]
+
+### Activation follow-up - 2026-11-19 17:07
+
+Earlier disabled/setup-pending state is historical. Owner Administrator setup completed; independent live form/API/private health and successful daily03:00 cleanup readback confirm local activation. No personal ID/device/human-review test or owner acceptance inferred. [[90 System/Runs/2026-11-19 163005 Identity Verification v2]]
+
+## Seller bell reader - 2026-11-20
+
+backend/seller_topbar_api.php is a read-only GET endpoint bound to the active seller session; backend/seller_topbar.php selects only that seller's actionable pending admin offers (latest offer sender admin) and unseen accepted/declined admin results. Returns full count and latest20 rows. Badge means outstanding attention, not an invented unread-offer flag. Opening bell does not acknowledge results or mutate records; existing result popup/seen writes remain separate. No email preference/send change or new notification table. One shell-owned30s visibility-aware timer, no overlapping fetch; error/expired state clears stale entries. Profile save refreshes the header reader. Session-expired polling stops.
+
+8 SQLite helper assertions +4 isolated route cases passed for ownership despite injected user_id, inactive/absent session, GET-only and no read acknowledgement. No live seller records read. [[90 System/Tasks/Records/TASK-20261120-010]] - [[90 System/Runs/2026-11-20 092635 Seller Topbar v1]]

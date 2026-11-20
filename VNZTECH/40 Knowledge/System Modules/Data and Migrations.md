@@ -2,12 +2,14 @@
 type: system-module
 status: source-reviewed
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-20
 tags: [vnz-tech, system-module]
 owner: "[[90 System/Agents/Vega]]"
 ---
 
 # Data and Migrations
+
+Current local behavior: [[90 System/Runs/2026-11-19 213300 Submission Selfie v6|submission selfie v6]], active2026-11-19. Earlier dated ID-review sections below remain history.
 
 Owner: [[90 System/Agents/Vega|Vega]]. Review date: **2026-11-14**.
 
@@ -18,6 +20,7 @@ Owner: [[90 System/Agents/Vega|Vega]]. Review date: **2026-11-14**.
 - Guest identity/claim proof, global moderation, and trade-request chat schema changes are present.
 - The recent OAuth identity and transaction delivery migrations are part of the source inventory.
 - PDO connection helpers and transactional workflows refer to the existing operational schema; the repository migrations are not a complete verified database dump.
+- `database/migrations/20261119_add_bulk_submission_format.sql` adds `submissions.bulk_format` and `submission_items.quantity_is_estimated`, both non-null and defaulting to `0` for legacy rows. This distinguishes the new seller account bulk format from legacy wholesale/public records. The migration file exists but **was not applied**; no current database schema/deployment claim is made. Focused compatibility and persistence behavior is covered by the isolated 41-case submission HTTP test. [[90 System/Runs/2026-11-20 003109 Seller Bulk Submission Flow]].
 
 ## Evidence paths
 
@@ -70,3 +73,19 @@ Actual results and scope: [[50 Reviews/VNZ-TECH Implementation Snapshot 2026-11-
 [[90 System/Agents/Forge|Forge]] · [[90 System/Agents/Mira|Mira]] · [[90 System/Agents/Orion|Orion]] · [[90 System/Agents/Quinn|Quinn]]
 
 [[40 Knowledge/VNZ-TECH System Map]] · [[90 System/Agent Directory]] · [[Home]]
+
+## ID verification v2 - 2026-11-19
+
+Applied additive database/migrations/20261119_create_identity_verification.sql locally after private permission-table backup: identity_attempts, identity_bindings, identity_audit and identity_review permission, granted only to active Super Admin. User/submission records not migrated or autoapproved. Private encrypted evidence/key/config are outside webroot and Git; restricted DACL verified. Daily cleanup task registration denied by Windows; rollout disabled, not an applied scheduler. Isolated InnoDB race/rollback/revoke test passes10 checks. Partial schema recovery requires inspection, not blind reapply.
+
+[[90 System/Runs/2026-11-19 163005 Identity Verification v2]] - [[40 Knowledge/Integration Catalog]] - [[40 Knowledge/Engineering Lessons]]
+
+### Activation follow-up - 2026-11-19 17:07
+
+Earlier disabled/setup-pending state is historical. Owner Administrator setup completed; independent live form/API/private health and successful daily03:00 cleanup readback confirm local activation. No personal ID/device/human-review test or owner acceptance inferred. [[90 System/Runs/2026-11-19 163005 Identity Verification v2]]
+
+## Submission selfie v6 - 2026-11-19 21:53
+
+Applied additive submission_security_faces table and vnz_submission_face_terminal_v6 AFTER UPDATE trigger after encrypted private config/schema backup; no existing rows rewritten. Local submissions.id is BIGINT(20) UNSIGNED, so CLI renders its exact type into the new FK column rather than blindly applying INT. Trigger latches first accepted/declined UTC timestamp and30-day purge; seen/notification updates cannot extend it. Same submission transaction + unique nonce enforce binding/replay; cleanup preserves referenced photos and removes expired/orphan evidence. Existing daily03 cleanup remains Ready/enabled.
+
+[[90 System/Runs/2026-11-19 213300 Submission Selfie v6]] - [[90 System/Tasks/Records/TASK-20261119-004]] - [[40 Knowledge/Integration Catalog]] - [[40 Knowledge/Engineering Lessons]]

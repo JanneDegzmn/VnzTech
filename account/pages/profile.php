@@ -528,6 +528,7 @@ $csrfToken = generateCsrfToken();
                 message.textContent =
                     result.message ||
                     'Profile updated successfully.';
+                window.dispatchEvent(new Event('vnz:seller-profile-updated'));
 
 
             } catch (error) {

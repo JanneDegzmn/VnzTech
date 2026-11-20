@@ -459,8 +459,17 @@ function renderItems(items) {
     items.forEach(
         function(item, index) {
 
-            const itemName =
+            const isBulkLot =
+                Boolean(submission.bulk_format);
+
+            const isWholePhone =
                 item.item_type === 'Whole Phone'
+                || item.item_type === 'whole_phone';
+
+            const itemName =
+                isBulkLot
+                    ? (isWholePhone ? 'Phone bulk' : 'Scrap board bulk')
+                    : isWholePhone
 
                     ? (
                         (
@@ -494,9 +503,10 @@ function renderItems(items) {
                             <div>
 
                                 <small>
-                                    ${escapeHtml(
-                                        item.item_type
-                                    )}
+                                    ${isBulkLot
+                                        ? (isWholePhone ? 'Bulk · Phone' : 'Bulk · Scrap board')
+                                        : escapeHtml(item.item_type)
+                                    }
                                 </small>
 
 
@@ -513,7 +523,7 @@ function renderItems(items) {
 
                         <span class="result-quantity">
 
-                            QTY
+                            ${isBulkLot && Number(item.quantity_is_estimated) === 1 ? 'Estimated QTY' : 'QTY'}
                             ${Number(
                                 item.quantity || 0
                             ).toLocaleString()}
@@ -527,7 +537,18 @@ function renderItems(items) {
 
 
                         ${
-                            item.item_type === 'Whole Phone'
+                            isBulkLot
+
+                            ? `
+
+                                <div>
+                                    <small>QUANTITY TYPE</small>
+                                    <strong>${Number(item.quantity_is_estimated) === 1 ? 'Estimated' : 'Exact'}</strong>
+                                </div>
+
+                            `
+
+                            : isWholePhone
 
                             ? `
 
@@ -610,7 +631,7 @@ function renderItems(items) {
                         <div>
 
                             <small>
-                                ASKING PRICE
+                                ${isBulkLot ? 'TOTAL ASKING PRICE FOR THIS LOT' : 'ASKING PRICE'}
                             </small>
 
                             <strong>
@@ -1454,11 +1475,11 @@ function renderResult(data) {
                     <strong>
 
                         ${
-                            submission.selling_method
-                            ===
-                            'wholesale'
-                                ? 'Wholesale'
-                                : 'Per Piece'
+                            submission.bulk_format
+                                ? 'Bulk'
+                                : submission.selling_method === 'wholesale'
+                                    ? 'Wholesale'
+                                    : 'Per Piece'
                         }
 
                     </strong>

@@ -38,7 +38,14 @@ $tradeRequestsStmt = $pdo->prepare("
     FROM trade_requests tr
     INNER JOIN users u ON u.id = tr.user_id
     INNER JOIN trade_items ti ON ti.id = tr.trade_item_id
-    ORDER BY tr.requested_at DESC, tr.id DESC
+    ORDER BY
+        CASE tr.status
+            WHEN 'PENDING' THEN 0
+            WHEN 'APPROVED' THEN 1
+            ELSE 2
+        END ASC,
+        tr.requested_at DESC,
+        tr.id DESC
     LIMIT {$pagination['per_page']} OFFSET {$pagination['offset']}
 ");
 $tradeRequestsStmt->execute();

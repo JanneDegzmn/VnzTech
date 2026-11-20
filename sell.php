@@ -3,6 +3,9 @@
 require_once __DIR__ . '/backend/database.php';
 require_once __DIR__ . '/backend/session.php';
 require_once __DIR__ . '/backend/csrf.php';
+require_once __DIR__ . '/backend/identity_verification.php';
+require_once __DIR__ . '/includes/identity-verification.php';
+require_once __DIR__ . '/includes/submission-face-capture.php';
 
 $tradeCsrfToken = generateCsrfToken();
 
@@ -104,6 +107,13 @@ $openFormRequested =
         src="/VNZ-TECH/assets/js/public-theme.js?v=<?= filemtime(__DIR__ . '/assets/js/public-theme.js') ?>"
         defer
     ></script>
+    <?php if (vnzSubmissionFaceMode()): ?>
+    <link rel="stylesheet" href="/VNZ-TECH/assets/css/submission_face_capture.css?v=<?= filemtime(__DIR__ . '/assets/css/submission_face_capture.css') ?>">
+    <script src="/VNZ-TECH/assets/js/submission-face-capture.js?v=<?= filemtime(__DIR__ . '/assets/js/submission-face-capture.js') ?>" defer></script>
+    <?php else: ?>
+    <link rel="stylesheet" href="/VNZ-TECH/assets/css/identity_verification.css?v=<?= filemtime(__DIR__ . '/assets/css/identity_verification.css') ?>">
+    <script src="/VNZ-TECH/assets/js/identity-verification.js?v=<?= filemtime(__DIR__ . '/assets/js/identity-verification.js') ?>" defer></script>
+    <?php endif; ?>
     <script
         src="/VNZ-TECH/assets/js/transaction-chat.js?v=<?= filemtime(__DIR__ . '/assets/js/transaction-chat.js') ?>"
         defer
@@ -902,6 +912,8 @@ $openFormRequested =
                 value="guest"
             >
 
+            <?php if (vnzSubmissionFaceMode()) { vnzRenderSubmissionFaceCapture('guest', 'en'); } else { vnzRenderIdentityVerification('guest', '', 'en', vnzIdentityEnabled()); } ?>
+
 
             <!-- =================================================
                  SELLER
@@ -1124,6 +1136,8 @@ $openFormRequested =
                     type="submit"
                     class="submit-btn"
                     id="submitBtn"
+                    <?= vnzSubmissionFaceMode() ? '' : 'data-identity-final' ?>
+                    <?= vnzIdentityEnabled() ? 'disabled' : '' ?>
                 >
                     Submit for Review
                     <span>→</span>
@@ -4278,6 +4292,10 @@ if (addItemBtn && form && itemsContainer) {
                 'submitBtn'
             );
 
+
+        if (form.dataset.faceCaptureRequired === '1' && form.dataset.faceCaptureReady !== '1') {
+            return;
+        }
 
         submitBtn.disabled = true;
 

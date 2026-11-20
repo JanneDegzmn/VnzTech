@@ -415,6 +415,7 @@ $stmt = $pdo->prepare("
         user_id,
         seller_address,
         selling_method,
+        bulk_format,
         status,
         seller_notes,
         admin_feedback,
@@ -516,6 +517,7 @@ $itemStmt = $pdo->prepare("
         damage_level,
         board_code,
         quantity,
+        quantity_is_estimated,
         seller_asking_price,
         additional_information
     FROM submission_items
@@ -665,6 +667,9 @@ echo json_encode([
 
         'selling_method' =>
             $submission['selling_method'],
+
+        'bulk_format' =>
+            (bool) $submission['bulk_format'],
 
         'status' =>
             $submission['status'],

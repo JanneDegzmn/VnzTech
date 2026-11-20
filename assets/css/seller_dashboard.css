@@ -780,6 +780,10 @@ textarea {
     font-weight: 900;
 }
 
+.dashboard-profile > img.profile-avatar {
+    object-fit: cover;
+}
+
 .profile-avatar img {
     width: 100%;
     height: 100%;
@@ -3157,6 +3161,23 @@ textarea {
     flex: 1 1 300px;
 }
 
+.seller-2fa-controls .seller-preference-save-button {
+    width: auto;
+}
+
+@media (min-width: 500px) and (max-width: 600px) {
+    .seller-2fa-login-choice {
+        flex-basis: 0;
+        min-width: 0;
+    }
+}
+
+@media (max-width: 499px) {
+    .seller-preference-save-button {
+        width: 100%;
+    }
+}
+
 .seller-2fa-login-choice small {
     display: block;
     margin-top: 6px;
@@ -3759,6 +3780,61 @@ textarea {
         transform 0.2s ease,
         filter 0.2s ease,
         box-shadow 0.2s ease;
+}
+
+.seller-preference-save-button {
+    width: 190px;
+    min-width: 190px;
+}
+
+/* Keep the login action level with its select, not the supporting text. */
+#seller2faLoginRequirementForm .seller-2fa-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 190px;
+    align-items: end;
+}
+
+#seller2faLoginRequirementForm .seller-2fa-login-choice {
+    min-width: 0;
+}
+
+#seller2faLoginRequired {
+    height: 46px;
+    min-height: 46px;
+}
+
+.seller-login-preference-help {
+    display: block;
+    margin-top: 8px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#sellerNotificationForm .profile-form-actions {
+    margin-top: 18px;
+    justify-content: flex-end;
+}
+
+#seller2faLoginRequirementForm .seller-preference-save-button,
+#sellerNotificationForm .seller-preference-save-button {
+    width: 190px;
+    min-width: 190px;
+    min-height: 46px;
+    justify-self: end;
+    white-space: nowrap;
+}
+
+@media (max-width: 499px) {
+    #seller2faLoginRequirementForm .seller-2fa-controls {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #seller2faLoginRequirementForm .seller-preference-save-button,
+    #sellerNotificationForm .seller-preference-save-button {
+        width: 100%;
+        min-width: 0;
+    }
 }
 
 .profile-save-button:hover {
@@ -6288,6 +6364,167 @@ body.seller-modal-open {
 
     .portal-submissions-page .transaction-filter-apply {
         width: 100%;
+    }
+}
+
+/* Sell-item dialog: larger controls and clear bulk-mode grouping. */
+.seller-sell-modal-panel {
+    width: min(1260px, calc(100vw - 28px));
+    height: min(960px, calc(100vh - 28px));
+}
+
+.seller-sell-modal-header {
+    min-height: 64px;
+    height: 64px;
+}
+
+.seller-sell-modal-title {
+    font-size: 14px;
+}
+
+.seller-sell-modal-body {
+    padding: 30px;
+}
+
+.seller-form-wrap {
+    max-width: 1140px;
+}
+
+.seller-sell-modal-close,
+.seller-sell-modal .seller-form-method-label,
+.seller-sell-modal .seller-type-btn,
+.seller-sell-modal .seller-item-remove {
+    min-width: 44px;
+    min-height: 44px;
+}
+
+.seller-sell-modal .seller-form-method-label,
+.seller-sell-modal .seller-type-btn {
+    justify-content: center;
+    padding: 0 16px;
+    font-size: 13px;
+}
+
+.seller-sell-modal .seller-form-group label {
+    font-size: 14px;
+    line-height: 1.4;
+}
+
+.seller-sell-modal .seller-form-intro h2 {
+    font-size: 28px;
+}
+
+.seller-sell-modal .seller-form-intro p,
+.seller-sell-modal .seller-form-section-title,
+.seller-sell-modal .seller-item-title {
+    font-size: 15px;
+}
+
+.seller-sell-modal .seller-account-info-card span,
+.seller-sell-modal .seller-asking-price-group > small,
+.seller-sell-modal .seller-selling-method-help,
+.seller-sell-modal .seller-photo-heading small,
+.seller-sell-modal .seller-form-disclaimer {
+    font-size: 13px;
+}
+
+.seller-sell-modal .seller-account-info-card strong,
+.seller-sell-modal .seller-photo-heading strong {
+    font-size: 14px;
+}
+
+.seller-sell-modal .seller-form-group input:not([type="file"]),
+.seller-sell-modal .seller-form-group select,
+.seller-sell-modal .seller-form-group textarea {
+    min-height: 46px;
+    padding: 10px 12px;
+    font-size: 15px;
+}
+
+.seller-sell-modal .seller-form-group textarea {
+    min-height: 96px;
+}
+
+.seller-sell-modal .seller-item-remove {
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.seller-sell-modal .seller-photo-block > input[type="file"] {
+    min-height: 46px;
+    padding: 8px 10px;
+    font-size: 13px;
+}
+
+.seller-sell-modal .seller-photo-block > input[type="file"]::file-selector-button {
+    padding: 8px 12px;
+    font-size: 13px;
+}
+
+.seller-sell-modal .seller-form-message {
+    font-size: 14px;
+}
+
+.seller-bulk-fields {
+    margin-top: 8px;
+    padding: 16px;
+    border: 1px solid rgba(14, 165, 233, 0.24);
+    border-radius: 12px;
+    background: rgba(14, 165, 233, 0.045);
+}
+
+.seller-sell-modal .seller-add-item,
+.seller-sell-modal .seller-form-submit {
+    min-height: 48px;
+    font-size: 14px;
+}
+
+.seller-sell-modal .seller-form-submit {
+    background: #0369a1;
+}
+
+.seller-sell-modal .seller-form-submit:hover {
+    background: #075985;
+}
+
+.seller-selling-method-help {
+    display: block;
+    margin-top: 8px;
+    color: #94a3b8;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.seller-sell-modal .seller-form-method-option input:focus-visible + .seller-form-method-label,
+.seller-sell-modal .seller-type-btn:focus-visible,
+.seller-sell-modal .seller-item-remove:focus-visible,
+.seller-sell-modal .seller-add-item:focus-visible,
+.seller-sell-modal .seller-form-submit:focus-visible,
+.seller-sell-modal-close:focus-visible {
+    outline: 3px solid #38bdf8;
+    outline-offset: 2px;
+}
+
+.seller-sell-modal .seller-form-group input:focus-visible,
+.seller-sell-modal .seller-form-group select:focus-visible,
+.seller-sell-modal .seller-form-group textarea:focus-visible,
+.seller-sell-modal .seller-photo-block > input[type="file"]:focus-visible {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.28);
+}
+
+@media (max-width: 800px) {
+    .seller-sell-modal-panel {
+        width: 100%;
+        height: 100%;
+    }
+
+    .seller-sell-modal-body {
+        padding: 18px;
+    }
+
+    .seller-bulk-fields {
+        padding: 12px;
     }
 }
 

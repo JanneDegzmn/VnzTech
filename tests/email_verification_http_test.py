@@ -151,6 +151,9 @@ def main():
         "backend/verify_email.php", "backend/session.php", "backend/csrf.php",
         "backend/guest_submission_link.php", "backend/guest_submission_onboarding.php",
         "backend/guest_submission_onboarding_status.php", "backend/email_verification_feedback.php",
+        "backend/identity_verification.php",
+        "backend/identity_automation.php",
+        "backend/submission_security_face.php",
         "account/login.php",
     ]
     for relative in source_files:
@@ -175,6 +178,12 @@ def main():
             target.write_text("", encoding="utf-8")
         db_path = document_root / "fixture.sqlite"
         seed_database(db_path)
+        # This regression checks existing email/submission claims, independently
+        # of the new optional identity module. Never load the host's real config.
+        identity_config = temporary / "identity-disabled.php"
+        identity_config.write_text("<?php return ['enabled' => false];", encoding="utf-8")
+        server_environment = dict(os.environ)
+        server_environment["VNZ_IDENTITY_CONFIG_PATH"] = str(identity_config)
         with socket.socket() as listener:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
@@ -185,7 +194,7 @@ def main():
             server = subprocess.Popen([
                 PHP, "-d", 'session.save_path="' + sessions.as_posix() + '"',
                 "-S", f"127.0.0.1:{port}", "-t", str(document_root)
-            ], cwd=temporary, stdout=server_log, stderr=subprocess.STDOUT)
+            ], cwd=temporary, env=server_environment, stdout=server_log, stderr=subprocess.STDOUT)
             try:
                 opener = build_opener(HTTPCookieProcessor(CookieJar()), NoRedirect())
 

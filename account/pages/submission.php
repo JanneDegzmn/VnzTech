@@ -613,8 +613,16 @@ $initialMobile =
         items.forEach(
             function(item, index) {
 
+                const isBulkLot =
+                    Boolean(submission.bulk_format);
+
+                const isPhoneLot =
+                    isWholePhone(item.item_type);
+
                 const itemName =
-                    isWholePhone(item.item_type)
+                    isBulkLot
+                        ? (isPhoneLot ? 'Phone bulk' : 'Scrap board bulk')
+                        : isPhoneLot
 
                         ? (
                             (
@@ -654,9 +662,10 @@ $initialMobile =
                                 <div>
 
                                     <small>
-                                        ${escapeHtml(
-                                            item.item_type
-                                        )}
+                                        ${isBulkLot
+                                            ? (isPhoneLot ? 'Bulk · Phone' : 'Bulk · Scrap board')
+                                            : escapeHtml(item.item_type)
+                                        }
                                     </small>
 
 
@@ -673,7 +682,7 @@ $initialMobile =
 
                             <span class="result-quantity">
 
-                                QTY
+                                ${isBulkLot && Number(item.quantity_is_estimated) === 1 ? 'Estimated QTY' : 'QTY'}
                                 ${Number(
                                     item.quantity || 0
                                 ).toLocaleString()}
@@ -687,7 +696,18 @@ $initialMobile =
 
 
                             ${
-                                isWholePhone(item.item_type)
+                                isBulkLot
+
+                                ? `
+
+                                    <div>
+                                        <small>QUANTITY TYPE</small>
+                                        <strong>${Number(item.quantity_is_estimated) === 1 ? 'Estimated' : 'Exact'}</strong>
+                                    </div>
+
+                                `
+
+                                : isWholePhone(item.item_type)
 
                                 ? `
 
@@ -767,9 +787,7 @@ $initialMobile =
 
                             <div>
 
-                                <small>
-                                    ASKING PRICE
-                                </small>
+                                <small>${isBulkLot ? 'TOTAL ASKING PRICE FOR THIS LOT' : 'ASKING PRICE'}</small>
 
                                 <strong>
                                     ${money(
@@ -1643,10 +1661,11 @@ $initialMobile =
                         <strong>
 
                             ${
-                                submission.selling_method ===
-                                'wholesale'
-                                    ? 'Wholesale'
-                                    : 'Per Piece'
+                                submission.bulk_format
+                                    ? 'Bulk'
+                                    : submission.selling_method === 'wholesale'
+                                        ? 'Wholesale'
+                                        : 'Per Piece'
                             }
 
                         </strong>

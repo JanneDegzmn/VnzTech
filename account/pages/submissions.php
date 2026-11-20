@@ -360,6 +360,7 @@ try {
             s.reference_number,
             s.status,
             s.selling_method,
+            s.bulk_format,
             s.seller_notes,
             s.admin_feedback,
             s.created_at,
@@ -382,19 +383,21 @@ try {
                 WHERE si.submission_id = s.id
             ) AS total_quantity,
 
+            (
+                SELECT COALESCE(MAX(si.quantity_is_estimated), 0)
+                FROM submission_items si
+                WHERE si.submission_id = s.id
+            ) AS has_estimated_quantity,
+
 
             (
                 SELECT COALESCE(
                     SUM(
-                        si.seller_asking_price
-                        *
-                        GREATEST(
-                            COALESCE(
-                                si.quantity,
-                                1
-                            ),
-                            1
-                        )
+                        CASE
+                            WHEN s.bulk_format = 1
+                            THEN si.seller_asking_price
+                            ELSE si.seller_asking_price * GREATEST(COALESCE(si.quantity, 1), 1)
+                        END
                     ),
                     0
                 )
@@ -406,35 +409,25 @@ try {
             (
                 SELECT GROUP_CONCAT(
                     DISTINCT
-                    CONCAT(
-
-                        si.item_type,
-
-                        CASE
-                            WHEN
-                                si.brand IS NOT NULL
-                                AND si.brand <> ''
-                            THEN
-                                CONCAT(
-                                    ' · ',
-                                    si.brand
-                                )
-                            ELSE ''
-                        END,
-
-                        CASE
-                            WHEN
-                                si.model IS NOT NULL
-                                AND si.model <> ''
-                            THEN
-                                CONCAT(
-                                    ' ',
-                                    si.model
-                                )
-                            ELSE ''
-                        END
-
-                    )
+                    CASE
+                        WHEN s.bulk_format = 1 AND si.item_type IN ('whole_phone', 'Whole Phone')
+                        THEN 'Phone bulk'
+                        WHEN s.bulk_format = 1 AND si.item_type IN ('scrap_board', 'Scrap Board')
+                        THEN 'Scrap board bulk'
+                        ELSE CONCAT(
+                            si.item_type,
+                            CASE
+                                WHEN si.brand IS NOT NULL AND si.brand <> ''
+                                THEN CONCAT(' · ', si.brand)
+                                ELSE ''
+                            END,
+                            CASE
+                                WHEN si.model IS NOT NULL AND si.model <> ''
+                                THEN CONCAT(' ', si.model)
+                                ELSE ''
+                            END
+                        )
+                    END
                     ORDER BY si.id ASC
                     SEPARATOR ', '
                 )
@@ -1225,7 +1218,7 @@ $firstName =
 
                                     <span>
 
-                                        Qty
+                                        <?= !empty($submission['bulk_format']) && !empty($submission['has_estimated_quantity']) ? 'Estimated Qty' : 'Qty' ?>
 
                                         <?= number_format(
                                             (int)
@@ -1244,11 +1237,9 @@ $firstName =
 
                                     <span>
 
-                                        <?= $submission[
-                                            'selling_method'
-                                        ] === 'wholesale'
-                                            ? 'Wholesale'
-                                            : 'Per Piece'
+                                        <?= !empty($submission['bulk_format'])
+                                            ? 'Bulk'
+                                            : ($submission['selling_method'] === 'wholesale' ? 'Wholesale' : 'Per Piece')
                                         ?>
 
                                     </span>

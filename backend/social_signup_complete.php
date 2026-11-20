@@ -8,6 +8,7 @@ require_once __DIR__ . '/email_verification.php';
 require_once __DIR__ . '/chat_presence_store.php';
 require_once __DIR__ . '/social_auth_service.php';
 require_once __DIR__ . '/guest_submission_onboarding.php';
+require_once __DIR__ . '/identity_verification.php';
 
 function vnzSocialSignupError(string $message): never
 {
@@ -122,6 +123,10 @@ try {
         $emailVerifiedAt,
     ]);
     $userId = (int) $pdo->lastInsertId();
+    vnzIdentityReserveGuest($pdo, $userId, $email);
+    if ($emailVerifiedAt !== null) {
+        vnzIdentityFinalizeAccount($pdo, $userId);
+    }
 
     $insertIdentity = $pdo->prepare("
         INSERT INTO user_oauth_accounts (user_id, provider, provider_subject_hash)

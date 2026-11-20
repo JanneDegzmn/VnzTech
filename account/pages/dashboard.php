@@ -197,6 +197,7 @@ try {
             s.reference_number,
             s.status,
             s.selling_method,
+            s.bulk_format,
             s.created_at,
 
             (
@@ -214,7 +215,11 @@ try {
             (
                 SELECT COALESCE(
                     SUM(
-                        si.seller_asking_price * si.quantity
+                        CASE
+                            WHEN s.bulk_format = 1
+                            THEN si.seller_asking_price
+                            ELSE si.seller_asking_price * si.quantity
+                        END
                     ),
                     0
                 )
@@ -492,62 +497,7 @@ $initial = strtoupper(
          HEADER
     ====================================================== -->
 
-    <header class="dashboard-header">
 
-        <div>
-
-            <span class="eyebrow">
-                SELLER PORTAL
-            </span>
-
-            <h1>
-                Welcome back,
-                <?= dashboardEscape($firstName) ?>.
-            </h1>
-
-            <p>
-                Track your submissions, offers,
-                and completed transactions
-                from one place.
-            </p>
-
-        </div>
-
-
-        <div class="dashboard-profile">
-
-            <?php if ($profilePicture !== ''): ?>
-
-                <img
-                    src="<?= dashboardEscape($profilePicture) ?>"
-                    alt="<?= dashboardEscape($fullName) ?>"
-                    class="profile-avatar"
-                >
-
-            <?php else: ?>
-
-                <div class="profile-avatar profile-avatar-fallback">
-                    <?= dashboardEscape($initial) ?>
-                </div>
-
-            <?php endif; ?>
-
-
-            <div class="profile-info">
-
-                <strong>
-                    <?= dashboardEscape($fullName) ?>
-                </strong>
-
-                <span>
-                    <?= dashboardEscape($user['email']) ?>
-                </span>
-
-            </div>
-
-        </div>
-
-    </header>
 
 
     <!-- =====================================================

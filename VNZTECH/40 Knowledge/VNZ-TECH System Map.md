@@ -2,7 +2,7 @@
 type: system-map
 status: source-reviewed
 created: 2026-11-14
-updated: 2026-11-14
+updated: 2026-11-19
 tags: [vnz-tech, system-map]
 ---
 
@@ -11,6 +11,8 @@ tags: [vnz-tech, system-map]
 Source-backed memory ng system, reviewed **2026-11-14**. Ang “implemented” dito ay may existing code path; hiwalay ang tests na pumasa, external configuration, migration application, at actual browser/runtime verification.
 
 ## System at a glance
+
+2026-11-19 ID-verification addition: account-once/guest-per-draft ID+selfie/admin-review source and focused checks complete; additive local identity schema/private storage applied. Local activation verified at17:07 after owner Administrator setup: live form/API enabled, private health and daily03 cleanup pass; personal ID/device review pending. Ownership spans Aegis/Forge/Vega, Iris, Orion and Quinn; login upgrade deferred. Current evidence: [[90 System/Runs/2026-11-19 163005 Identity Verification v2]], [[40 Knowledge/Integration Catalog]], [[40 Knowledge/Engineering Lessons]].
 
 PHP/PDO web application para sa scrap-board/whole-phone submissions, offers, transactions, at trade items. May public selling/tracking pages, seller account portal, admin operations, messaging, at supporting identity/notification modules.
 
@@ -21,6 +23,8 @@ PHP/PDO web application para sa scrap-board/whole-phone submissions, offers, tra
 - Latest observed commit: `e5728d2` dated **2026-11-13**. Delivery changes are also present as uncommitted working-tree edits.
 
 ## Modules and owners
+
+Second-brain operating update **2026-11-19**: the same 20 named owners now have company positions/strategies under [[90 System/Agent Directory]]. The user is CEO/sole final approver; Atlas routes questions/commands to the smallest relevant team. [[90 System/Company Operations]] defines approval and handoffs; [[Task Center]] and [[90 System/Tasks/Current Task]] provide shared checkpoints for this runner/Copilot. This does not re-verify historical PHP module claims below or start autonomous agents.
 
 | Module | Agent | Evidence status |
 | --- | --- | --- |
@@ -75,3 +79,7 @@ The Remember me repair applied the previously missing local token-table migratio
 - Live browser flows, SMTP, realtime connections, calls/media, and full transaction integration still need dedicated verification.
 
 [[90 System/Agent Directory]] · [[30 Resources/VNZ-TECH Source Inventory]] · [[50 Reviews/VNZ-TECH Implementation Snapshot 2026-11-14]] · [[Home]]
+
+## Current submission face flow - 2026-11-19 21:53
+
+Local v6 replaces ID enrollment/admin review with submit-time private selfie and a local one-face check for each guest/account submission. The photo lives inside existing admin submission details under view_submissions; no new admin module or external matching service. Additive photo table/terminal trigger applied, existing daily cleanup reused, live guest/token/retired-ID probes pass. Owner camera/device acceptance remains pending. [[90 System/Runs/2026-11-19 213300 Submission Selfie v6]]

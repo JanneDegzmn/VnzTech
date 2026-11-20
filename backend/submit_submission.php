@@ -4,6 +4,8 @@ require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/email_verification.php';
 require_once __DIR__ . '/offer_response_authorization.php';
+require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/identity_verification.php';
 
 
 /*
@@ -29,7 +31,7 @@ $isLoggedInSeller =
 | The form itself must explicitly declare which context it is:
 |
 |   sell.php (public)                -> submission_source = "guest"
-|   account/pages/submission.php     -> submission_source = "account"
+|   account/dashboard.php           -> submission_source = "account"
 |
 | A request is only ever treated as an account-portal submission
 | when BOTH are true:
@@ -394,6 +396,14 @@ $sellerEmail =
 $sellerEmailVerified =
     false;
 
+// Account intent must never silently degrade into an anonymous submission.
+if ($submissionSource === 'account' && $userId === null) {
+    redirectWithError('Please log in to an active seller account before submitting.');
+}
+if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
+    redirectWithError('Your session expired. Refresh the page and try again.');
+}
+
 
 if (
     $userId !== null
@@ -488,6 +498,19 @@ if (
 $sellingMethod =
     $_POST['selling_method']
     ?? '';
+
+$bulkFormatValue =
+    $_POST['bulk_format'] ?? '0';
+
+if (!is_string($bulkFormatValue) || !in_array($bulkFormatValue, ['0', '1'], true)) {
+    redirectWithError('Invalid submission format.');
+}
+
+$isBulkSubmission = $bulkFormatValue === '1';
+
+if ($isBulkSubmission && ($userId === null || $sellingMethod !== 'wholesale')) {
+    redirectWithError('Bulk submissions are available only from the seller account portal.');
+}
 
 
 $sellerNotes =
@@ -600,6 +623,24 @@ if (
 }
 
 
+// The browser's face result, disabled button, or hidden verified flag is never proof.
+$preparedSubmissionFace = null;
+$submissionFaceFile = null;
+try {
+    if (vnzSubmissionFaceMode()) {
+        $faceUpload = $_FILES['submission_face'] ?? [];
+        if (!is_array($faceUpload) || !is_string($faceUpload['tmp_name'] ?? null) || !is_uploaded_file($faceUpload['tmp_name'])) {
+            throw new DomainException('Take your selfie before submitting. Your photo is required for this submission.');
+        }
+        @set_time_limit(60);
+        $preparedSubmissionFace = vnzSubmissionFacePrepare($pdo, $userId === null ? 'guest' : 'account', $userId, $faceUpload, (string) ($_POST['face_nonce'] ?? ''), ($_POST['face_consent'] ?? '') === '1');
+    } else {
+        vnzIdentityRequireSubmission($pdo, $userId, (string) $sellerEmail, (string) ($_POST['identity_draft'] ?? ''));
+    }
+} catch (Throwable $identityError) {
+    redirectWithError($identityError instanceof DomainException ? $identityError->getMessage() : (vnzSubmissionFaceMode() ? 'Face checking is temporarily unavailable. Please try again later.' : 'Identity verification is temporarily unavailable. Please contact support.'));
+}
+
 /*
 |--------------------------------------------------------------------------
 | UPLOAD CONFIGURATION
@@ -705,6 +746,7 @@ try {
                 seller_email,
                 seller_address,
                 selling_method,
+                bulk_format,
                 status,
                 seller_notes,
                 created_at,
@@ -713,6 +755,7 @@ try {
             )
             VALUES
             (
+                ?,
                 ?,
                 ?,
                 ?,
@@ -745,6 +788,8 @@ try {
 
         $sellingMethod,
 
+        $isBulkSubmission ? 1 : 0,
+
         $sellerNotes
 
     ]);
@@ -752,6 +797,14 @@ try {
 
     $submissionId =
         (int) $pdo->lastInsertId();
+
+    // Recheck under the transaction lock, then consume guest proof atomically.
+    if (vnzSubmissionFaceMode()) {
+        if (!is_array($preparedSubmissionFace)) { throw new RuntimeException('The selfie check is unavailable. Please try again.'); }
+        $submissionFaceFile = vnzSubmissionFaceStore($pdo, $submissionId, $preparedSubmissionFace);
+    } else {
+        vnzIdentityConsumeSubmission($pdo, $userId, (string) $sellerEmail, (string) ($_POST['identity_draft'] ?? ''), $submissionId);
+    }
 
 
     /*
@@ -774,6 +827,7 @@ try {
                 damage_level,
                 board_code,
                 quantity,
+                quantity_is_estimated,
                 seller_asking_price,
                 additional_information,
                 created_at,
@@ -781,6 +835,7 @@ try {
             )
             VALUES
             (
+                ?,
                 ?,
                 ?,
                 ?,
@@ -991,11 +1046,22 @@ try {
         |--------------------------------------------------------------------------
         */
 
-        $quantity =
-            isset(
-                $item['quantity']
+        $quantityValue =
+            $item['quantity'] ?? null;
+
+        if (
+            $isBulkSubmission &&
+            (
+                !is_string($quantityValue) ||
+                !preg_match('/^[0-9]+$/D', $quantityValue)
             )
-                ? (int) $item['quantity']
+        ) {
+            throw new RuntimeException('Enter a whole-number quantity for each bulk lot.');
+        }
+
+        $quantity =
+            is_scalar($quantityValue)
+                ? (int) $quantityValue
                 : 0;
 
 
@@ -1021,6 +1087,16 @@ try {
         }
 
 
+        $quantityIsEstimated = 0;
+        if ($isBulkSubmission) {
+            $quantityEstimateValue = $item['quantity_is_estimated'] ?? null;
+            if (!is_string($quantityEstimateValue) || !in_array($quantityEstimateValue, ['0', '1'], true)) {
+                throw new RuntimeException('Choose whether the bulk quantity is exact or estimated.');
+            }
+            $quantityIsEstimated = (int) $quantityEstimateValue;
+        }
+
+
         /*
         |--------------------------------------------------------------------------
         | CONDITION / DAMAGE LEVEL
@@ -1036,8 +1112,11 @@ try {
 
 
         if (
-            $damageLevel < 1 ||
-            $damageLevel > 5
+            !$isBulkSubmission &&
+            (
+                $damageLevel < 1 ||
+                $damageLevel > 5
+            )
         ) {
 
             throw new RuntimeException(
@@ -1054,6 +1133,7 @@ try {
         */
 
         if (
+            !$isBulkSubmission &&
             $itemType === 'Whole Phone'
         ) {
 
@@ -1077,6 +1157,7 @@ try {
         */
 
         if (
+            !$isBulkSubmission &&
             $itemType === 'Scrap Board'
         ) {
 
@@ -1090,6 +1171,16 @@ try {
 
             }
 
+        }
+
+        if ($isBulkSubmission) {
+            $brand = '';
+            $model = '';
+            $storage = '';
+            $issue = '';
+            $issueDetails = '';
+            $damageLevel = 0;
+            $boardCode = '';
         }
 
 
@@ -1185,6 +1276,8 @@ try {
             $boardCode,
 
             $quantity,
+
+            $quantityIsEstimated,
 
             $askingPrice,
 
@@ -1511,6 +1604,11 @@ try {
     */
 
     $pdo->commit();
+    if ($preparedSubmissionFace !== null) {
+        vnzSubmissionFaceForget($userId === null ? 'guest' : 'account', (string) ($_POST['face_nonce'] ?? ''));
+        unset($preparedSubmissionFace);
+    }
+    $submissionFaceFile = null; // Committed private evidence is never removed by later mail failures.
 
     if (
         $userId === null &&
@@ -1714,6 +1812,11 @@ try {
 
         }
 
+    }
+
+    if (is_string($submissionFaceFile)) {
+        // Remove only the uncommitted selfie created by this request.
+        try { vnzSubmissionFaceRemove($submissionFaceFile); } catch (Throwable $cleanupError) { /* Daily private orphan cleanup retries. */ }
     }
 
 

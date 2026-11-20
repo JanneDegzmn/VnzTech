@@ -254,7 +254,7 @@ html[data-seller-theme="light"] #contentArea input::placeholder,
 html[data-seller-theme="light"] #contentArea textarea::placeholder,
 html[data-seller-theme="light"] .seller-sell-modal input::placeholder,
 html[data-seller-theme="light"] .seller-sell-modal textarea::placeholder {
-    color: #7b8794;
+    color: #657383;
     opacity: 1;
 }
 
@@ -313,6 +313,15 @@ html[data-seller-theme="light"] #contentArea select option {
     color: #17212b;
 }
 
+html[data-seller-theme="light"] .seller-sell-modal .seller-item-card select {
+    color-scheme: light;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-item-card select option {
+    background: #ffffff;
+    color: #17212b;
+}
+
 html[data-seller-theme="light"] .profile-form-group input[type="file"]::file-selector-button {
     background: #eef3f8;
     color: #344454;
@@ -335,6 +344,115 @@ html[data-seller-theme="light"] .seller-sell-modal .seller-account-sync-note {
 
 html[data-seller-theme="light"] .seller-sell-modal .seller-account-info-card strong {
     color: #17212b;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal-title {
+    color: #17212b;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-bulk-fields,
+html[data-seller-theme="light"] .seller-sell-modal .seller-price-input,
+html[data-seller-theme="light"] .seller-sell-modal .seller-photo-preview-item {
+    background: var(--panel-2);
+    border-color: var(--border);
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-price-input input {
+    color: #17212b !important;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-price-input > span,
+html[data-seller-theme="light"] .seller-sell-modal .seller-asking-price-group > small,
+html[data-seller-theme="light"] .seller-selling-method-help {
+    color: #586675;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-method-label,
+html[data-seller-theme="light"] .seller-sell-modal .seller-type-btn,
+html[data-seller-theme="light"] .seller-sell-modal .seller-item-remove,
+html[data-seller-theme="light"] .seller-sell-modal-close {
+    background: var(--panel-2);
+    border-color: var(--border-light);
+    color: #465565;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-method-option input:checked + .seller-form-method-label,
+html[data-seller-theme="light"] .seller-sell-modal .seller-type-btn.active {
+    background: #e8f5fc;
+    border-color: #0284c7;
+    color: #075985;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-item-remove {
+    background: #fff5f5;
+    border-color: #f0c4c4;
+    color: #a32121;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal-close:hover {
+    background: #fff1f1;
+    border-color: #e7b6b6;
+    color: #8d1c1c;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-add-item {
+    background: #f0f9ff;
+    border-color: #93c5e5;
+    color: #075985;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-disclaimer {
+    background: #fff8e8;
+    border-color: #efdba8;
+    color: #5f4b1f;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-message.error {
+    background: #fff1f1;
+    border-color: #e7b6b6;
+    color: #8d1c1c;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-message.success {
+    background: #edf8f1;
+    border-color: #b8dfc7;
+    color: #245a38;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-group input:focus-visible,
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-group select:focus-visible,
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-group textarea:focus-visible,
+html[data-seller-theme="light"] .seller-sell-modal .seller-photo-block > input[type="file"]:focus-visible {
+    border-color: #0369a1 !important;
+    box-shadow: 0 0 0 3px rgba(3, 105, 161, 0.25) !important;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-photo-block > input[type="file"] {
+    background: #ffffff;
+    color: #344454;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-photo-block > input[type="file"]::file-selector-button {
+    background: #eef3f8;
+    border-color: var(--border-light);
+    color: #344454;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-photo-heading strong {
+    color: #344454;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-photo-heading small {
+    color: #586675;
+}
+
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-method-label:focus-visible,
+html[data-seller-theme="light"] .seller-sell-modal .seller-type-btn:focus-visible,
+html[data-seller-theme="light"] .seller-sell-modal .seller-add-item:focus-visible,
+html[data-seller-theme="light"] .seller-sell-modal .seller-form-submit:focus-visible,
+html[data-seller-theme="light"] .seller-sell-modal-close:focus-visible {
+    outline: 3px solid #0369a1;
+    outline-offset: 2px;
 }
 
 html[data-seller-theme="light"] #contentArea .trade-history-page {
@@ -489,8 +607,21 @@ html[data-seller-theme="light"] .profile-message.error {
     color: #9b2626;
 }
 
-html[data-seller-theme="light"] .seller-2fa-disable-button {
-    color: #9b2626;
+html[data-seller-theme] .seller-2fa-disable-button {
+    background: #b42318;
+    border-color: #b42318;
+    color: #ffffff;
+    box-shadow: 0 10px 22px rgba(180, 35, 24, 0.18);
+}
+
+html[data-seller-theme="light"] .seller-2fa-disable-button:focus-visible {
+    outline: 3px solid #0369a1;
+    outline-offset: 3px;
+}
+
+html[data-seller-theme="dark"] .seller-2fa-disable-button:focus-visible {
+    outline: 3px solid #38bdf8;
+    outline-offset: 3px;
 }
 
 html[data-seller-theme="light"] .empty-state-button,

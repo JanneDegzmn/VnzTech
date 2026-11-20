@@ -266,10 +266,10 @@ $verificationNotice =
                             <option value="1" <?= (int) $user['totp_login_required'] === 1 ? 'selected' : '' ?>>Yes, require the 6-digit code</option>
                             <option value="0" <?= (int) $user['totp_login_required'] !== 1 ? 'selected' : '' ?>>No, use password-only login</option>
                         </select>
-                        <small>Your authenticator stays set up for password recovery when login codes are off.</small>
                     </div>
-                    <button class="profile-save-button" type="submit">SAVE LOGIN PREFERENCE</button>
+                    <button class="profile-save-button seller-preference-save-button" type="submit">SAVE LOGIN PREFERENCE</button>
                 </div>
+                <small class="seller-login-preference-help">Your authenticator stays set up for password recovery when login codes are off.</small>
             </form>
         <?php endif; ?>
         <div
@@ -387,7 +387,7 @@ $verificationNotice =
             <div class="profile-form-actions">
                 <button
                     type="submit"
-                    class="profile-save-button"
+                    class="profile-save-button seller-preference-save-button"
                     id="sellerNotificationSubmit"
                 >
                     SAVE PREFERENCES

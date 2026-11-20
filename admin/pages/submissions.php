@@ -97,6 +97,7 @@ $sql = "
         s.seller_mobile,
         s.seller_address,
         s.selling_method,
+        s.bulk_format,
         s.status,
         s.assigned_admin_id,
         s.seller_notes,
@@ -135,8 +136,16 @@ $sql = "
             0
         ) AS total_quantity,
 
+        COALESCE(MAX(si.quantity_is_estimated), 0) AS has_estimated_quantity,
+
         GROUP_CONCAT(
-            DISTINCT si.item_type
+            DISTINCT CASE
+                WHEN s.bulk_format = 1 AND si.item_type IN ('whole_phone', 'Whole Phone')
+                THEN 'Phone bulk'
+                WHEN s.bulk_format = 1 AND si.item_type IN ('scrap_board', 'Scrap Board')
+                THEN 'Scrap board bulk'
+                ELSE si.item_type
+            END
             ORDER BY si.item_type
             SEPARATOR ', '
         ) AS item_types,
@@ -145,14 +154,20 @@ $sql = "
             DISTINCT
             CASE
 
-                WHEN si.item_type = 'Whole Phone'
+                WHEN s.bulk_format = 1 AND si.item_type IN ('whole_phone', 'Whole Phone')
+                THEN 'Phone bulk'
+
+                WHEN s.bulk_format = 1 AND si.item_type IN ('scrap_board', 'Scrap Board')
+                THEN 'Scrap board bulk'
+
+                WHEN si.item_type IN ('whole_phone', 'Whole Phone')
                 THEN CONCAT(
                     COALESCE(NULLIF(si.brand, ''), 'Unknown Brand'),
                     ' ',
                     COALESCE(NULLIF(si.model, ''), 'Unknown Model')
                 )
 
-                WHEN si.item_type = 'Scrap Board'
+                WHEN si.item_type IN ('scrap_board', 'Scrap Board')
                 THEN CONCAT(
                     'Board ',
                     COALESCE(NULLIF(si.board_code, ''), 'Unknown Code')
@@ -297,6 +312,7 @@ $sql .= "
         s.seller_mobile,
         s.seller_address,
         s.selling_method,
+        s.bulk_format,
         s.status,
         s.assigned_admin_id,
         s.seller_notes,
@@ -407,8 +423,12 @@ function submissionStatusClass(string $status): string
 }
 
 
-function sellingMethodLabel(string $method): string
+function sellingMethodLabel(string $method, bool $isBulkFormat = false): string
 {
+    if ($isBulkFormat) {
+        return 'Bulk';
+    }
+
     $labels = [
 
         'per_piece'
@@ -724,7 +744,8 @@ function submissionDate(string $date): string
                         $sellingMethod =
                             sellingMethodLabel(
                                 $submission['selling_method']
-                                ?? ''
+                                ?? '',
+                                !empty($submission['bulk_format'])
                             );
 
                         $quantity =
@@ -732,6 +753,10 @@ function submissionDate(string $date): string
                                 $submission['total_quantity']
                                 ?? 0
                             );
+
+                        $hasEstimatedQuantity =
+                            !empty($submission['bulk_format'])
+                            && !empty($submission['has_estimated_quantity']);
 
                         $askingPrice =
                             (float) (
@@ -833,7 +858,7 @@ function submissionDate(string $date): string
                             <td>
 
                                 <span class="quantity-cell">
-                                    <?= number_format($quantity) ?>
+                                    <?= $hasEstimatedQuantity ? '≈ ' : '' ?><?= number_format($quantity) ?>
                                 </span>
 
                             </td>
