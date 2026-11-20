@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/../backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', false, true, 'submissions');
 header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
 header('Cache-Control: post-check=0, pre-check=0', false);
 header('Pragma: no-cache');
@@ -1159,6 +1162,7 @@ endif;
         defer
     ></script>
 
+<?php $siteStatusArea = 'public'; require __DIR__ . '/../includes/site-status-head.php'; ?>
 </head>
 
 <body>

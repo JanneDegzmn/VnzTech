@@ -23,7 +23,7 @@
             sidebarClose.setAttribute('aria-label', 'Close navigation menu');
             sidebarClose.setAttribute('aria-controls', 'sellerDashboardSidebar');
             sidebarClose.textContent = '\u2630'; sidebarClose.hidden = true;
-            (sidebar.querySelector('.sidebar-brand') || sidebar).append(sidebarClose);
+            (sidebar.querySelector('.sidebar-brand') || sidebar).prepend(sidebarClose);
             sidebarClose.addEventListener('click', () => { if (sidebar.classList.contains('mobile-open')) menu.click(); menu.focus(); });
             let wasOpen = false;
             const syncSidebar = () => {

@@ -1,7 +1,11 @@
 <?php
 
+
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('auto', false, true, 'account_settings');
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
+require_once __DIR__ . '/csrf.php';
 
 header('Content-Type: application/json; charset=UTF-8');
 
@@ -47,6 +51,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 
+if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
+    http_response_code(419);
+    echo json_encode(['success' => false, 'message' => 'Your session has expired. Please refresh and try again.']);
+    exit;
+}
+
 $fullName =
     trim($_POST['full_name'] ?? '');
 
@@ -57,7 +67,7 @@ $address =
     trim($_POST['address'] ?? '');
 
 $language =
-    trim($_POST['language'] ?? 'en');
+    isset($_POST['language']) ? trim((string) $_POST['language']) : null;
 
 
 if ($fullName === '') {
@@ -86,13 +96,15 @@ if ($mobile === '') {
 }
 
 
-if (!in_array(
+if ($language !== null && !in_array(
     $language,
     ['en', 'fil'],
     true
 )) {
 
-    $language = 'en';
+    http_response_code(422);
+    echo json_encode(['success' => false, 'message' => 'Choose a supported language.']);
+    exit;
 
 }
 
@@ -257,7 +269,7 @@ try {
                 full_name = ?,
                 mobile = ?,
                 address = ?,
-                language = ?,
+                language = COALESCE(?, language),
                 profile_picture = ?,
                 updated_at = NOW()
             WHERE id = ?
@@ -280,7 +292,7 @@ try {
                 full_name = ?,
                 mobile = ?,
                 address = ?,
-                language = ?,
+                language = COALESCE(?, language),
                 updated_at = NOW()
             WHERE id = ?
         ");
@@ -308,8 +320,9 @@ try {
     $_SESSION['user_mobile'] =
         $mobile;
 
-    $_SESSION['user_language'] =
-        $language;
+    if ($language !== null) {
+        $_SESSION['user_language'] = $language;
+    }
 
 
     if ($uploadedProfilePath !== null) {

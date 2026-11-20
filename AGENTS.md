@@ -20,6 +20,10 @@ The user explicitly requires all new or modified UI to follow the active light/d
 - Check readable text, semantic status colors, buttons, focus states, backdrops, and small-screen layout in both light and dark modes. Report actual preview coverage and any limits.
 - Record lasting UI decisions and this requirement in the relevant Obsidian notes. Treat theme support as part of completing the requested UI change, without another reminder.
 
+## CSS unit rules
+
+Owner requirement (2026-11-20): use `rem` for text, `%` for layouts, `vw` for full screen sections, and `px` for borders in new or modified UI. Canonical Obsidian guidance: `VNZTECH/40 Knowledge/System Modules/Interface and Portal UX.md`, CSS unit rules. This instruction does not authorize a bulk conversion of existing CSS.
+
 ## Automatic Obsidian updates after coding tasks
 
 The user wants Obsidian kept current without repeating an update request. Apply this default to assistant coding tasks in this repository unless the user overrides it for a particular task.

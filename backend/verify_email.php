@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('auto', false);
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/csrf.php';
@@ -146,7 +149,7 @@ try {
     ) {
         $hasGuestOnboarding = (int) ($_SESSION['guest_submission_onboarding']['seller_id'] ?? 0) === $userId;
         header('Location: ' . $appBasePath . '/account/dashboard.php?page='
-            . ($hasGuestOnboarding ? 'dashboard' : 'settings') . '&verification=success');
+            . ($hasGuestOnboarding ? 'dashboard' : 'profile') . '&verification=success');
         exit;
     }
 

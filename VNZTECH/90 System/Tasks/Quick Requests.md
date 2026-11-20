@@ -22,3 +22,7 @@ One compact row per small read-only question/explanation. If a request grows int
 [[Task Center]] · [[90 System/Tasks/Current Task]]
 
 Correction recorded21:28: Q002 referenced a newer Copilot V6 checkpoint seen earlier; current checkout instead has old V4 task/source and zero-byte V6 artifacts. Do not treat Q002 as implementation or authorization evidence. Current reconciliation: [[90 System/Runs/2026-11-19 212807 Face-Only Submission Revision]].
+
+## Q-20261120-004 CSS unit rules
+
+2026-11-20 15:17 Asia/Manila - Codex. Owner: "Apply these rules in obsidian: rem = text; % = layouts; vw = full screen sections; px = borders." Completed vault/instruction-only maintenance: canonical Interface and Portal UX guidance, repository/vault AGENTS instructions, Iris reference and Engineering Lessons. Checked exact mappings and new note links. No application CSS changes or runtime checks; no coding-ledger entry required. Copilot-owned [[90 System/Tasks/Records/TASK-20261120-015]] and Current Task pointer preserved. Next: use the convention in future approved UI changes.

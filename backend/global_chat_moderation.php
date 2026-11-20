@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('json', true);
 ob_start();
 ini_set('display_errors', '0');
 

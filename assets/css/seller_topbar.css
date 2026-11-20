@@ -1,10 +1,10 @@
 /* Allow sticky header to follow the document, not an overflow-only ancestor. */
 .dashboard-main { overflow-x:visible; padding-top:0; }
-/* Seller shell only: shared admin/public chat keeps its floating layout. */
+/* Portal shell tokens; admin opts into this component, public floating chat stays unchanged. */
 .seller-topbar { --st-surface:var(--panel,#101923); --st-text:var(--text,#eef5fc); --st-muted:var(--muted,#a8bacb); --st-border:var(--border,#2e4153); --st-soft:var(--panel-2,#182633); --st-accent:var(--accent,#39bfff); position:sticky; top:0; z-index:11010; display:flex; align-items:center; justify-content:space-between; gap:20px; padding:18px 22px; margin:0 -24px 26px; background:var(--st-surface); color:var(--st-text); border-bottom:1px solid var(--st-border); }
 [data-seller-theme="light"] .seller-topbar { --st-surface:var(--panel,#fff); --st-text:var(--text,#182c40); --st-muted:var(--muted,#52687c); --st-border:var(--border,#dce6ef); --st-soft:var(--panel-2,#f1f7fb); --st-accent:var(--accent,#007eaf); }
 .seller-topbar-start,.seller-topbar-actions { display:flex; align-items:center; gap:12px; min-width:0; }
-.seller-topbar-icon,.seller-topbar [data-placement="seller-topbar"] .floating-messages-launcher { display:grid; place-items:center; flex:none; width:44px; height:44px; min-width:44px; padding:10px; border:1px solid var(--st-border); border-radius:13px; background:var(--st-soft); color:var(--st-text); box-shadow:none; cursor:pointer; position:relative; inset:auto; transform:none; }
+.seller-topbar-icon,.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-launcher { display:grid; place-items:center; flex:none; width:44px; height:44px; min-width:44px; padding:10px; border:1px solid var(--st-border); border-radius:13px; background:var(--st-soft); color:var(--st-text); box-shadow:none; cursor:pointer; position:relative; inset:auto; transform:none; }
 .seller-topbar-icon svg { width:22px; height:22px; }
 .seller-topbar button:focus-visible,.seller-topbar a:focus-visible { outline:3px solid var(--st-accent); outline-offset:3px; }
 .seller-topbar-badge { position:absolute; top:-5px; right:-5px; min-width:18px; padding:2px 4px; border-radius:20px; font-size:10px; font-weight:800; background:#cf2944; color:white; }
@@ -22,17 +22,17 @@
 .seller-topbar-update-list small { color:var(--st-muted); }
 .seller-topbar-retry { margin:0 18px 18px; padding:10px 16px; border:1px solid var(--st-border); border-radius:9px; background:var(--st-soft); color:var(--st-text); cursor:pointer; }
 .seller-topbar [data-seller-menu-slot] .seller-mobile-menu-button { position:static; margin:0; width:44px; height:44px; background:var(--st-soft); color:var(--st-text); border:1px solid var(--st-border); box-shadow:none; }
-.seller-topbar [data-placement="seller-topbar"] { position:static; z-index:auto; }
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-categories,
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-panel { position:fixed; inset:auto; top:var(--seller-topbar-bottom,90px); right:var(--seller-panel-right,20px); bottom:auto; max-width:calc(100vw - 24px); max-height:calc(100dvh - var(--seller-topbar-bottom,90px) - 12px); transform-origin:top right; }
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-categories { width:240px; padding:8px; border:1px solid var(--st-border); border-radius:14px; background:var(--st-surface); box-shadow:0 16px 45px #0003; flex-direction:column; gap:4px; display:none; }
-.seller-topbar [data-placement="seller-topbar"].is-menu-open .floating-messages-categories { display:flex; pointer-events:auto; animation:seller-panel-down .18s ease-out; }
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-category { display:flex; align-items:center; justify-content:flex-start; gap:12px; width:100%; min-height:48px; border:0; border-radius:9px; padding:10px 12px; background:var(--st-soft); color:var(--st-text); opacity:1; transform:none; transition:none; box-shadow:none; }
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-tooltip { position:static; opacity:1; visibility:visible; transform:none; padding:0; background:transparent; color:inherit; font-size:14px; pointer-events:none; }
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-tooltip::after { display:none; }
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-panel { width:360px; animation:seller-panel-down .18s ease-out; }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-windows { display:block; width:min(420px,calc(100vw - 24px)); }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window { width:100%; height:min(580px,calc(100dvh - var(--seller-topbar-bottom,90px) - 12px)); max-height:calc(100dvh - var(--seller-topbar-bottom,90px) - 12px); animation:seller-panel-down .18s ease-out; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) { position:static; z-index:auto; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-categories,
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-panel { position:fixed; inset:auto; top:var(--seller-topbar-bottom,90px); right:var(--seller-panel-right,20px); bottom:auto; max-width:calc(100vw - 24px); max-height:calc(100dvh - var(--seller-topbar-bottom,90px) - 12px); transform-origin:top right; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-categories { width:240px; padding:8px; border:1px solid var(--st-border); border-radius:14px; background:var(--st-surface); box-shadow:0 16px 45px #0003; flex-direction:column; gap:4px; display:none; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]).is-menu-open .floating-messages-categories { display:flex; pointer-events:auto; animation:seller-panel-down .18s ease-out; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-category { display:flex; align-items:center; justify-content:flex-start; gap:12px; width:100%; min-height:48px; border:0; border-radius:9px; padding:10px 12px; background:var(--st-soft); color:var(--st-text); opacity:1; transform:none; transition:none; box-shadow:none; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-tooltip { position:static; opacity:1; visibility:visible; transform:none; padding:0; background:transparent; color:inherit; font-size:14px; pointer-events:none; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-tooltip::after { display:none; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-panel { width:360px; animation:seller-panel-down .18s ease-out; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-windows { display:block; width:min(420px,calc(100vw - 24px)); }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window { width:100%; height:min(580px,calc(100dvh - var(--seller-topbar-bottom,90px) - 12px)); max-height:calc(100dvh - var(--seller-topbar-bottom,90px) - 12px); animation:seller-panel-down .18s ease-out; }
 @keyframes seller-panel-down { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:translateY(0); } }
 @media(max-width:900px) { .seller-topbar-profile-name { display:none; } .seller-topbar { margin:0 -20px 20px; padding:14px 18px; } }
 @media(max-width:600px) { .seller-topbar { flex-wrap:wrap; gap:12px; margin:0 -16px 18px; padding:12px 16px; } .seller-topbar-start { flex:1 1 100%; } .seller-topbar-actions { width:100%; justify-content:flex-end; } .seller-topbar-profile-name { display:block; max-width:180px; } .seller-topbar h1 { font-size:20px; } }
@@ -43,8 +43,8 @@
 }
 
 
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window-header { min-height:56px; }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window-actions button { width:36px; height:36px; min-width:36px; font-size:20px; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window-header { min-height:56px; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window-actions button { width:36px; height:36px; min-width:36px; font-size:20px; }
 
 /* Keep the full-width header edge and its contents on the dashboard gutters. */
 .dashboard-main { --seller-topbar-gutter:24px; }
@@ -52,14 +52,14 @@
 .seller-topbar-start { flex:1 1 auto; }
 .seller-topbar-actions { flex:0 0 auto; gap:clamp(6px,1vw,12px); }
 .seller-topbar-icon,
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-launcher {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-launcher {
     flex:0 0 44px;
     width:44px;
     min-width:44px;
     height:44px;
 }
 .seller-topbar-icon svg { width:20px; height:20px; stroke-width:1.6; }
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-launcher svg {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-launcher svg {
     width:20px;
     height:20px;
     stroke-width:1.55;
@@ -91,7 +91,7 @@
 html[data-seller-theme] #vnzLoader { z-index:11040; }
 
 /* Category names are inline labels here, including on touch-only devices. */
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-tooltip {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-tooltip {
     display:inline;
     width:auto;
     max-width:none;
@@ -102,7 +102,7 @@ html[data-seller-theme] #vnzLoader { z-index:11040; }
 }
 
 /* Chat v3: selectors drop from the topbar; the conversation docks below. */
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-windows {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-windows {
     position:fixed;
     inset:auto 12px 12px auto;
     z-index:11006;
@@ -110,17 +110,17 @@ html[data-seller-theme] #vnzLoader { z-index:11040; }
     max-width:calc(100vw - 24px);
     max-height:calc(100dvh - var(--seller-topbar-bottom,90px) - 12px);
 }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window {
     animation:seller-chat-rise .18s ease-out;
 }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-windows.is-topbar-wide {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-windows.is-topbar-wide {
     inset:12px;
     width:auto;
     height:calc(100dvh - 24px);
     max-width:none;
     max-height:none;
 }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-maximized {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-maximized {
     position:relative;
     inset:auto;
     display:grid;
@@ -131,46 +131,46 @@ html[data-seller-theme] #vnzLoader { z-index:11040; }
     grid-template-rows:56px minmax(0,1fr);
     animation:none;
 }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-maximized .floating-chat-workspace-sidebar { display:flex; }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-maximized .floating-chat-window-body { display:flex; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-maximized .floating-chat-workspace-sidebar { display:flex; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-maximized .floating-chat-window-body { display:flex; }
 @keyframes seller-chat-rise { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
 @media(max-width:700px) {
-    .seller-topbar [data-placement="seller-topbar"] .floating-chat-windows.is-topbar-wide {
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-windows.is-topbar-wide {
         inset:0;
         height:100dvh;
     }
-    .seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-maximized {
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-maximized {
         grid-template-columns:minmax(0,1fr);
         border-radius:0;
     }
-    .seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-maximized .floating-chat-workspace-sidebar { display:none; }
-    .seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-maximized .floating-chat-window-body { grid-column:1; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-maximized .floating-chat-workspace-sidebar { display:none; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-maximized .floating-chat-window-body { grid-column:1; }
 }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-workspace-list-open .floating-chat-workspace-sidebar { display:flex; flex:1; min-height:0; }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-workspace-list-open .floating-chat-window-body { display:none; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-workspace-list-open .floating-chat-workspace-sidebar { display:flex; flex:1; min-height:0; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-workspace-list-open .floating-chat-window-body { display:none; }
 /* Keep context scrollable on short screens so the composer stays reachable. */
 @media(max-height:600px) {
-    .seller-topbar [data-placement="seller-topbar"] .floating-chat-window .transaction-chat-info {
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window .transaction-chat-info {
         max-height:52px;
         flex-shrink:0;
         overflow:auto;
     }
 }
 @media(max-width:700px) {
-    .seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-maximized .transaction-chat[data-conversation-type="transaction"],
-    .seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-maximized .transaction-chat[data-conversation-class="claimed_submission"] {
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-maximized .transaction-chat[data-conversation-type="transaction"],
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-maximized .transaction-chat[data-conversation-class="claimed_submission"] {
         display:flex;
         flex-direction:column;
     }
-    .seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-maximized .transaction-chat-info {
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-maximized .transaction-chat-info {
         margin:9px 10px 0;
     }
 }
 /* Chat v4: menus and mounted conversations have independent visibility. */
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-panel {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-panel {
     max-height:calc(100dvh - var(--seller-topbar-bottom,90px) - 12px);
 }
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-list {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-list {
     min-height:0;
     grid-auto-rows:max-content;
     max-height:min(var(--seller-contact-list-height,402px),calc(100dvh - var(--seller-topbar-bottom,90px) - 110px));
@@ -178,8 +178,8 @@ html[data-seller-theme] #vnzLoader { z-index:11040; }
     overscroll-behavior:contain;
     scrollbar-width:thin;
 }
-.seller-topbar [data-placement="seller-topbar"] .floating-messages-call-row { min-height:68px; height:68px; }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-windows {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-messages-call-row { min-height:68px; height:68px; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-windows {
     display:flex;
     flex-direction:row-reverse;
     align-items:flex-end;
@@ -188,13 +188,13 @@ html[data-seller-theme] #vnzLoader { z-index:11040; }
     width:max-content;
     max-width:calc(100vw - 24px - var(--seller-chat-overflow-space,0px));
 }
-.seller-topbar [data-placement="seller-topbar"].has-chat-overflow { --seller-chat-overflow-space:60px; }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]).has-chat-overflow { --seller-chat-overflow-space:60px; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window {
     width:min(420px,calc(100vw - 24px - var(--seller-chat-overflow-space,0px)));
 }
-.seller-topbar [data-placement="seller-topbar"][data-visible-chat-count="2"] .floating-chat-window { width:360px; }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-windows.is-topbar-wide { display:block; inset:12px; width:auto; max-width:none; }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-maximized { width:100%; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-visible-chat-count="2"] .floating-chat-window { width:360px; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-windows.is-topbar-wide { display:block; inset:12px; width:auto; max-width:none; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-maximized { width:100%; }
 .seller-chat-overflow { position:fixed; right:12px; bottom:12px; z-index:11007; color:var(--st-text); }
 .seller-chat-overflow > button {
     width:48px; height:48px; border-radius:50%; border:1px solid var(--st-border);
@@ -222,15 +222,15 @@ html[data-seller-theme] #vnzLoader { z-index:11040; }
     .seller-sidebar-close:focus-visible { outline:3px solid var(--accent,#39bfff); outline-offset:2px; }
 }
 @media(max-width:700px) {
-    .seller-topbar [data-placement="seller-topbar"] .floating-chat-windows.is-topbar-wide { inset:0; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-windows.is-topbar-wide { inset:0; }
 }
 /* Chat v5: reference-sized dock windows and a fixed vertical shortcut rail. */
-.seller-topbar [data-placement="seller-topbar"] { --seller-chat-overflow-space:60px; }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window {
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) { --seller-chat-overflow-space:60px; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window {
     width:min(360px,calc(100vw - 84px));
     height:min(500px,calc(100dvh - var(--seller-topbar-bottom,90px) - 12px));
 }
-.seller-topbar [data-placement="seller-topbar"] .floating-chat-window.is-maximized { width:100%; height:100%; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .floating-chat-window.is-maximized { width:100%; height:100%; }
 .seller-chat-overflow { display:flex; flex-direction:column; align-items:center; gap:10px; }
 .seller-chat-overflow [data-chat-rail] { display:flex; flex-direction:column; gap:10px; }
 .seller-chat-rail-avatar {
@@ -251,3 +251,123 @@ html[data-seller-theme] #vnzLoader { z-index:11040; }
 .seller-chat-overflow [data-chat-overflow-list] {
     max-height:min(280px,calc(100dvh - var(--seller-topbar-bottom,90px) - 82px));
 }
+/* Mobile Messages v1: dedicated in-app inbox; desktop docks keep v5 geometry. */
+.seller-mobile-inbox { display:none; }
+@media(max-width:1024px) {
+    html.seller-messages-active, html.seller-messages-active body { overflow:hidden; overscroll-behavior:none; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .seller-mobile-inbox:not([hidden]) {
+        position:fixed; inset:var(--seller-messages-top,0px) 0 auto; z-index:11009;
+        width:100%; height:var(--seller-messages-height,100dvh); max-height:100dvh;
+        box-sizing:border-box; display:flex; flex-direction:column; gap:12px;
+        padding:calc(16px + env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) env(safe-area-inset-bottom) max(16px,env(safe-area-inset-left));
+        background:var(--st-surface); color:var(--st-text); animation:seller-panel-down .18s ease-out;
+    }
+    .seller-inbox-header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex:none; }
+    .seller-topbar .seller-inbox-header h2 { font-size:28px; line-height:1.2; font-weight:800; }
+    .seller-inbox-actions { display:flex; align-items:center; gap:8px; }
+    .seller-mobile-inbox button { font:inherit; color:var(--st-text); cursor:pointer; }
+    .seller-inbox-actions button,.seller-inbox-retry { min-height:44px; border:1px solid var(--st-border); border-radius:12px; padding:8px 12px; background:var(--st-soft); }
+    .seller-inbox-actions button:last-child { width:44px; padding:0; font-size:26px; }
+    .seller-topbar .seller-inbox-search { box-sizing:border-box; flex:none; width:100%; min-height:48px; border:1px solid var(--st-border); border-radius:24px; padding:12px 18px; font:inherit; font-size:16px; color:var(--st-text); background:var(--st-soft); }
+    .seller-inbox-search::placeholder { color:var(--st-muted); opacity:1; }
+    .seller-inbox-people { display:flex; flex:none; gap:16px; overflow-x:auto; padding:2px 0 8px; scrollbar-width:thin; overscroll-behavior:contain; }
+    .seller-inbox-person { width:72px; flex:none; display:flex; flex-direction:column; align-items:center; gap:6px; border:0; padding:0; background:transparent; }
+    .seller-inbox-person > span:last-child { font-size:12px; width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .seller-inbox-avatar { display:grid; place-items:center; position:relative; width:56px; height:56px; flex:none; border-radius:50%; background:var(--st-soft); color:var(--st-accent); font-weight:800; border:1px solid var(--st-border); }
+    .seller-inbox-avatar img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; border-radius:inherit; }
+    .seller-inbox-online { position:absolute; right:0; bottom:0; width:12px; height:12px; border:3px solid var(--st-surface); background:#149967; border-radius:50%; }
+    .seller-inbox-filters { display:flex; flex:none; gap:8px; overflow-x:auto; padding-bottom:4px; scrollbar-width:thin; }
+    .seller-inbox-filters button { min-height:44px; flex:none; border:1px solid var(--st-border); padding:8px 16px; border-radius:24px; background:var(--st-soft); }
+    .seller-inbox-filters button[aria-pressed="true"], .seller-inbox-actions button[aria-pressed="true"] { color:var(--st-accent); border-color:var(--st-accent); font-weight:800; }
+    .seller-inbox-status { flex:none; margin:0; font-size:14px; color:var(--st-muted); }
+    .seller-inbox-status:empty { display:none; }
+    .seller-inbox-list { flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding-bottom:12px; }
+    .seller-inbox-list .seller-inbox-row { display:flex; align-items:center; gap:12px; width:100%; min-height:84px; padding:10px 0; border:0; border-bottom:1px solid var(--st-border); background:transparent; text-align:left; }
+    .seller-inbox-row-text { display:flex; flex-direction:column; gap:5px; flex:1; min-width:0; }
+    .seller-inbox-row-text strong { font-size:16px; font-weight:650; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .seller-inbox-row-text > span { color:var(--st-muted); font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .seller-inbox-row.is-unread strong { font-weight:850; }
+    .seller-inbox-meta { display:flex; flex-direction:column; align-items:flex-end; gap:8px; flex:none; color:var(--st-muted); font-size:11px; }
+    .seller-inbox-unread { border-radius:20px; min-width:22px; padding:3px 5px; text-align:center; background:var(--st-accent); color:var(--st-surface); font-weight:800; }
+    .seller-inbox-empty { color:var(--st-muted); padding:20px 8px; font-size:15px; line-height:1.6; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .floating-chat-windows,
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .floating-chat-windows.is-topbar-wide {
+        display:block; position:fixed; inset:var(--seller-messages-top,0px) 0 auto; width:100%; max-width:none;
+        height:var(--seller-messages-height,100dvh); max-height:100dvh; z-index:11009;
+    }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .floating-chat-window:not([hidden]) {
+        position:relative; inset:auto; display:flex; flex-direction:column; width:100%; max-width:none; height:100%; max-height:none; border-radius:0;
+        box-sizing:border-box; padding-top:env(safe-area-inset-top); padding-bottom:env(safe-area-inset-bottom); animation:none;
+    }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .floating-chat-window-body { display:flex; flex:1; min-height:0; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .floating-chat-workspace-sidebar,
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] [data-chat-maximize],
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] [data-chat-minimize] { display:none; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .transaction-chat { display:flex; flex-direction:column; min-height:0; flex:1; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .transaction-chat-info { flex-shrink:0; max-height:100px; overflow:auto; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] [data-chat-input] { font-size:16px; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .floating-chat-window-header { flex:none; }
+}
+@media(max-width:1024px) and (max-height:560px) {
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .seller-mobile-inbox:not([hidden]) { gap:6px; padding-top:8px; }
+    .seller-mobile-inbox .seller-inbox-people { display:none; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .transaction-chat-info { max-height:52px; }
+}
+
+@media(max-width:1024px) {
+    .seller-mobile-inbox { font-family:system-ui,-apple-system,"Segoe UI",sans-serif; }
+    .seller-mobile-inbox .seller-inbox-people,.seller-mobile-inbox .seller-inbox-filters { scrollbar-width:none; }
+    .seller-mobile-inbox .seller-inbox-people::-webkit-scrollbar,.seller-mobile-inbox .seller-inbox-filters::-webkit-scrollbar { display:none; }
+    .seller-inbox-list { scrollbar-width:thin; }
+}
+@media(max-width:1024px) and (max-height:400px) {
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .transaction-chat-info { display:none; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .transaction-chat-status { padding-block:2px; font-size:11px; line-height:16px; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .transaction-chat-composer { display:flex; flex-wrap:wrap; align-items:center; gap:6px; padding:6px 8px; flex-shrink:0; max-height:45dvh; overflow-y:auto; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .transaction-chat-composer-input-row { flex:1; min-width:0; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .transaction-chat-composer-footer { margin:0; padding:0; flex:none; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .transaction-chat-composer-footer > span { display:none; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] [data-chat-input] { height:44px; min-height:44px; max-height:70px; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .transaction-chat-message-area { min-height:40px; }
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"])[data-mobile-messages-view="conversation"] .transaction-chat-messages { min-height:0; }
+}
+/* Alignment + Chat Space v2: seller context is opt-in, preserving message space. */
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .transaction-chat:has(> .seller-chat-context) { display:flex; flex-direction:column; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .seller-chat-context { flex:none; margin:4px 10px; min-height:0; border:1px solid var(--st-border); border-radius:10px; background:var(--st-soft); color:var(--st-text); }
+.seller-chat-context > summary { cursor:pointer; padding:10px 12px; min-height:40px; box-sizing:border-box; font-size:13px; font-weight:700; }
+.seller-chat-context > summary:focus-visible { outline:3px solid var(--st-accent); outline-offset:2px; border-radius:8px; }
+.seller-chat-context-body { max-height:min(220px,35dvh); overflow:auto; overscroll-behavior:contain; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .transaction-chat .seller-chat-context .transaction-chat-info { display:block; margin:0 8px 8px; max-height:none; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .transaction-chat-scroll-latest { left:50%; right:auto; transform:translateX(-50%); display:grid; place-items:center; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .transaction-chat-scroll-latest[hidden] { display:none; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .transaction-chat-scroll-latest svg { display:block; margin:0; flex:none; }
+@media(max-width:760px) {
+    .dashboard-sidebar .sidebar-brand { padding-left:68px; padding-right:14px; }
+    .seller-sidebar-close:not([hidden]) { left:12px; right:auto; }
+}
+@media(max-width:1024px) and (max-height:400px) {
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .seller-chat-context { margin-block:0; }
+    .seller-chat-context > summary { min-height:32px; padding-block:6px; }
+}
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .transaction-chat-messages { min-height:0; gap:6px; }
+.seller-chat-context-body { max-height:min(140px,22dvh); }
+@media(max-width:1024px) and (max-height:400px) {
+    .seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .seller-chat-context { position:relative; }
+    .seller-chat-context[open] .seller-chat-context-body { position:absolute; top:100%; left:0; right:0; z-index:8; max-height:55dvh; border:1px solid var(--st-border); border-radius:8px; background:var(--st-surface); box-shadow:0 6px 18px #0003; }
+}
+/* One context scroll region, with no visible scrollbars in either portal. */
+.seller-chat-context-body { scrollbar-width:none; }
+.seller-chat-context-body::-webkit-scrollbar { display:none; }
+.seller-chat-context-body:focus-visible { outline:2px solid var(--st-accent,#39bfff);outline-offset:-2px; }
+.seller-chat-context-body .transaction-chat-info,
+.seller-chat-context-body .transaction-chat-info-body,
+.seller-chat-context-body .transaction-chat-info-items { overflow:visible;max-height:none; }
+.seller-topbar :is([data-placement="seller-topbar"],[data-placement="admin-topbar"]) .transaction-chat .seller-chat-context .transaction-chat-info { overflow:visible;max-height:none; }
+.submission-card .submission-next-step { margin:12px 0; padding:0 20px; font-size:14px; line-height:1.5; color:var(--muted,currentColor); }
+/* Header Alignment v1: use the same border-box row in the seller shell. */
+.dashboard-layout { --portal-header-height:85px; }
+.dashboard-sidebar .sidebar-brand,
+.dashboard-main > .seller-topbar:not(.admin-topbar) {
+    box-sizing:border-box; height:var(--portal-header-height,85px); min-height:var(--portal-header-height,85px); flex-shrink:0;
+}
+.dashboard-main > .seller-topbar:not(.admin-topbar) { padding-block:0; }

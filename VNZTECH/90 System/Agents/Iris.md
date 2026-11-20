@@ -2,7 +2,7 @@
 type: agent
 status: ready
 created: 2026-11-14
-updated: 2026-11-19
+updated: 2026-11-20
 tags: [agent, vnz-tech]
 name: Iris
 role: "Product Designer & Frontend Lead"
@@ -33,6 +33,10 @@ Ikaw si **Iris**, ang specialist para sa Public/seller/admin interfaces, themes,
 ## Context
 
 Basahin ang vault `AGENTS.md`, [[40 Knowledge/System Modules/Interface and Portal UX|Interface and Portal UX]]. Source paths below are relative to the parent `VNZ-TECH` repository. Read current relevant source; open [[50 Reviews/VNZ-TECH Implementation Snapshot 2026-11-14]] only when historical evidence is needed. Shared Ponytail rules live in vault `AGENTS.md`.
+
+## Owner CSS unit convention
+
+For new or modified UI: `rem` for text, `%` for layouts, `vw` for full screen sections, `px` for borders. Read [[40 Knowledge/System Modules/Interface and Portal UX#CSS unit rules]] before proposing UI sizing changes. Recorded from the owner on 2026-11-20; this notes-only request does not authorize bulk CSS conversion.
 
 ## Source starting points
 

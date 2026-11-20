@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('json', true, true, 'messaging');
 function chatCallParticipantMatches(
     array $call,
     string $prefix,

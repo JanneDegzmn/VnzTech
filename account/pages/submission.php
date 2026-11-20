@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/../../backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', false, true, 'submissions');
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/csrf.php';

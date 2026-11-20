@@ -16,6 +16,13 @@ tags: [tasks, dashboard]
 
 | Task | Recorded status | Approval / writer | Next |
 | --- | --- | --- | --- |
+| [[90 System/Tasks/Records/TASK-20261120-021|Seller Security action sizing and icon]] | v1.0 implementation and focused checks complete; owner review pending; two stale legacy tests disclosed | Owner: `approve_v1_0=true` / Copilot SDK in VS Code (Atlas/Iris) | Refresh Seller Security and review compact actions and gray module icon; acceptance pending |
+| [[90 System/Tasks/Records/TASK-20261120-020|Admin transaction modal layering]] | v1.0 implementation and focused checks complete; owner review pending | Owner: `approve_v1_0=true` / Copilot SDK in VS Code (Atlas/Iris) | Refresh Admin Transactions and review dimmed shell/modal layering; acceptance pending |
+| [[90 System/Tasks/Records/TASK-20261120-019|Admin Site Updates header refinement]] | v1.4 implementation and focused checks complete; owner review pending | Owner: “Approved.” / Copilot SDK in VS Code (Atlas/Iris) | Refresh Site Updates and review the header; acceptance pending |
+| [[90 System/Tasks/Records/TASK-20261120-018|Admin light theme and maintenance action]] | v1.3 implementation and focused checks complete; owner review pending | Owner-approved v1.3 / Copilot SDK in VS Code (Atlas/Iris) | Refresh the five affected Admin pages and Site Updates; review the light surfaces and single stateful button |
+| [[90 System/Tasks/Records/TASK-20261120-017|Admin Site Updates and chat palettes]] | v1.0-v1.2 implementation and focused checks complete; owner review pending | Owner-approved v1.0/v1.1/v1.2 (`panels_only`) / Copilot SDK in VS Code (Atlas/Iris) | Refresh Site Updates/Admin chats and review; no live provider, maintenance activation, or deployment check |
+| [[90 System/Tasks/Records/TASK-20261120-016|Site Updates and Account UX]] | Plan v1 in progress; v1.3-R2 implemented/verified, owner review pending | Owner-approved v1/v1.1/v1.2/v1.3-R2 / Copilot SDK in VS Code (Atlas/Iris) | Owner reviews v1.3-R2; then reconcile remaining Plan v1 work. Maintenance stays inactive; activation/deployment excluded |
+| [[90 System/Tasks/Records/TASK-20261120-015|Admin moderation settings UI]] | v1-v4 implementation/checks complete; owner review pending | Owner-approved v1-v4 / Copilot SDK in VS Code (Atlas/Iris) | Review the added gap below Update password; v3 owner acceptance remains pending |
 | [[90 System/Tasks/Records/TASK-20261120-010|Seller topbar, notifications and chat]] | V5 reference layout verified;755 full checks pass | Owner: I-apply ang Chat v5 / Codex; acceptance pending | Ctrl+F5 size/organization preview; live phone/provider/call acceptance separate |
 | [[90 System/Tasks/Records/TASK-20261120-009|Seller Preference Button Alignment]] | Latest inline dropdown/save and footer correction complete;232 checks pass | Existing approved v1 + owner placement correction / Codex | Refresh Settings; review both controls; owner acceptance pending |
 | [[90 System/Tasks/Records/TASK-20261120-008|Admin Trade Requests Pending-First Ordering]] | Source and focused ordering regression/PHP lint complete; owner review pending | Owner-approved v1 / Copilot SDK in VS Code | Owner reviews pending-first order; status actions and notification counts unchanged |
@@ -62,3 +69,38 @@ Imported from existing coding/run notes. These are source reports, not fresh ver
 ## Git credential cleanup v1 - 2026-11-20T11:24:01+08:00
 
 Local credential cleanup v1 approved with owner "alright"; backup and source/history checks complete. No push; private config update/Facebook rotation remain. [[90 System/Tasks/Records/TASK-20261120-011]].
+
+
+## Mobile Messages inbox - 2026-11-20T11:32:05+08:00
+
+[[90 System/Tasks/Records/TASK-20261120-012]] ? Mobile/tablet Messenger-style inbox v1 proposed; owner approval pending, desktop unchanged; no application edits.
+
+
+## Mobile Messages v1 - 2026-11-20T11:49:24+08:00
+
+[[90 System/Tasks/Records/TASK-20261120-012|TASK-20261120-012]] Mobile Messages v1 approved/implemented/verified;216 mobile/tablet +223 regression checks PASS, three previews inspected. Owner Ctrl+F5 phone/tablet preview next; no live device/provider claim.
+
+
+### Alignment + Chat Space v2 - 2026-11-20T13:52:53+08:00
+
+[[90 System/Tasks/Records/TASK-20261120-012]] v2 alignment/context-space approved and ready for review:77 new +216 mobile +223 regression assertions PASS; two previews inspected. No live provider/device acceptance.
+
+
+## Admin UX and queue proposal - 2026-11-20T14:20:21+08:00
+
+[[90 System/Tasks/Records/TASK-20261120-013]] awaiting owner approval; read-only intake complete, no application edits. Previous TASK012 ready for review preserved.
+
+
+## Admin UX + Queue v1 - 2026-11-20T14:43:32+08:00
+
+[[90 System/Tasks/Records/TASK-20261120-013|TASK-20261120-013]] approved Admin UX + Queue v1 implemented/verified;185 admin +235 queue SQL +41 endpoint/controller +16 next-step assertions, seller77/216/223 regressions PASS. Four previews inspected. Owner review next; no real MySQL load/device acceptance.
+
+
+## Header Alignment v1 - 2026-11-20T14:51:56+08:00
+
+[[90 System/Tasks/Records/TASK-20261120-014]] approved, in progress; source intake complete, existing task histories/dirty work preserved.
+
+
+## Header Alignment v1 - 2026-11-20T14:55:00+08:00
+
+[[90 System/Tasks/Records/TASK-20261120-014]] implemented/verified;85px aligned seller/admin headers and neutral admin palette.215/226/225 browser assertions PASS; owner Ctrl+F5 review next.

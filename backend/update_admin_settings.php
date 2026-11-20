@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('json', true);
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/auth.php';
@@ -33,17 +36,17 @@ if (!verifyCsrfToken($_POST['csrf_token'] ?? null)) {
 
 $action = trim((string) ($_POST['action'] ?? ''));
 
-if (
-    $action !== 'set_2fa_login_requirement'
-    && !hasPermission('manage_settings')
-) {
-    adminSettingsResponse(false, 'You do not have permission to manage settings.', 403);
-}
-
 $currentAdmin = getCurrentAdmin();
 
 if (!$currentAdmin) {
     adminSettingsResponse(false, 'Your admin account is no longer active.', 401);
+}
+
+// These actions affect only the active account resolved from this session.
+// Submitted account/role IDs are deliberately never used.
+$selfServiceActions = ['profile', 'password', 'setup_2fa', 'confirm_2fa', 'disable_2fa', 'set_2fa_login_requirement'];
+if (!in_array($action, $selfServiceActions, true)) {
+    adminSettingsResponse(false, 'Unknown account action.', 400);
 }
 
 $adminId = (int) $currentAdmin['id'];

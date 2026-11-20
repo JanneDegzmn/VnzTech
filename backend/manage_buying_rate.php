@@ -1,4 +1,7 @@
 <?php
+
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('json', true);
 /*
 |--------------------------------------------------------------------------
 | VNZ TECH - Manage Buying Rate (Admin)

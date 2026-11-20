@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/../backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', true);
 require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/auth.php';
@@ -72,8 +75,12 @@ $csrfToken = generateCsrfToken();
         defer
     ></script>
 
+    <link rel="stylesheet" href="/VNZ-TECH/assets/css/seller_topbar.css?v=<?= filemtime(__DIR__ . '/../assets/css/seller_topbar.css') ?>">
+    <link rel="stylesheet" href="/VNZ-TECH/assets/css/admin_topbar.css?v=<?= filemtime(__DIR__ . '/../assets/css/admin_topbar.css') ?>">
+    <script src="/VNZ-TECH/assets/js/admin-topbar.js?v=<?= filemtime(__DIR__ . '/../assets/js/admin-topbar.js') ?>" defer></script>
     <?php include __DIR__ . '/../includes/loader-head.php'; ?>
 
+<?php $siteStatusArea = 'admin'; require __DIR__ . '/../includes/site-status-head.php'; ?>
 </head>
 
 
@@ -350,23 +357,17 @@ $csrfToken = generateCsrfToken();
             <?php endif; ?>
 
 
-            <?php if (hasPermission('manage_settings')): ?>
-
-                <button
-                    type="button"
-                    class="nav-item"
-                    data-page="settings"
-                >
-
-                    <span class="nav-icon">⚙</span>
-
-                    <span class="nav-text">
-                        Settings
-                    </span>
-
-                </button>
-
+            <?php if (hasPermission('manage_announcements') || hasPermission('manage_maintenance')): ?>
+                <button type="button" class="nav-item" data-page="announcements"><span class="nav-icon site-updates-nav-icon" aria-hidden="true">&#128227;</span><span class="nav-text">Site Updates</span></button>
             <?php endif; ?>
+            <?php if (hasPermission('manage_settings')): ?>
+                <button type="button" class="nav-item" data-page="moderation"><span class="nav-icon" aria-hidden="true">&#9873;</span><span class="nav-text">Chat Moderation</span></button>
+                <button type="button" class="nav-item" data-page="activity"><span class="nav-icon" aria-hidden="true">&#9776;</span><span class="nav-text">Activity Log</span></button>
+            <?php endif; ?>
+            <div class="nav-section-title">ACCOUNT</div>
+            <button type="button" class="nav-item" data-page="profile"><span class="nav-icon" aria-hidden="true">&#9675;</span><span class="nav-text">Profile</span></button>
+            <button type="button" class="nav-item" data-page="security"><span class="nav-icon" aria-hidden="true">&#9906;</span><span class="nav-text">Security</span></button>
+            <button type="button" class="nav-item" data-page="settings"><span class="nav-icon" aria-hidden="true">&#9881;</span><span class="nav-text">Settings</span></button>
 
         </nav>
 
@@ -493,7 +494,7 @@ $csrfToken = generateCsrfToken();
              TOP BAR
         ================================================== -->
 
-        <header class="topbar">
+        <header class="topbar seller-topbar admin-topbar" data-admin-topbar data-seller-topbar>
 
             <div class="topbar-left">
 
@@ -524,19 +525,7 @@ $csrfToken = generateCsrfToken();
             </div>
 
 
-            <div class="topbar-right">
-
-                <div class="topbar-user">
-
-                    <?= htmlspecialchars(
-                        $currentAdmin['first_name'],
-                        ENT_QUOTES,
-                        'UTF-8'
-                    ) ?>
-
-                </div>
-
-            </div>
+            <?php require __DIR__ . '/../includes/admin-topbar-tools.php'; ?>
 
         </header>
 
@@ -897,7 +886,12 @@ document.addEventListener(
 
             reports: 'Reports',
 
-            settings: 'Settings'
+            settings: 'Settings',
+            profile: 'Profile',
+            security: 'Security',
+            moderation: 'Chat Moderation',
+            activity: 'Activity Log',
+            announcements: 'Announcements & Maintenance'
 
         };
 
@@ -1047,6 +1041,15 @@ document.addEventListener(
             params = {},
             paginationTop = null
         ) {
+            // Preserve bookmarks to the former combined Settings sections.
+            if (page === 'settings') {
+                const section = String(params.section || window.location.hash.slice(1)).toLowerCase();
+                if (/profile/.test(section)) page = 'profile';
+                else if (/security|password|2fa|authenticator/.test(section)) page = 'security';
+                else if (/moderation|globalchat/.test(section)) page = 'moderation';
+                else if (/activity/.test(section)) page = 'activity';
+            }
+            if (!Object.prototype.hasOwnProperty.call(pageTitles, page)) page = 'dashboard';
 
             const focusedElement = contentArea.contains(document.activeElement)
                 ? document.activeElement
@@ -1554,6 +1557,10 @@ document.addEventListener(
         window.addEventListener(
             'popstate',
             function (event) {
+            const messageRoot = document.querySelector('[data-floating-messages]');
+            if (event.state?.vnzMessages || messageRoot?.dataset.mobileHistoryPending === 'true'
+                || (innerWidth <= 1024 && messageRoot?.dataset.mobileMessagesView && messageRoot.dataset.mobileMessagesView !== 'closed')) return;
+
 
                 const state =
                     event.state;
@@ -1699,9 +1706,7 @@ document.addEventListener(
 
 </script>
 
-<?php if (hasPermission('view_submissions')): ?>
-    <?php require __DIR__ . '/../includes/floating-messages.php'; ?>
-<?php endif; ?>
+
 
 </body>
 

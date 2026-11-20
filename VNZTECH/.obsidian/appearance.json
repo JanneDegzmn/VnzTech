@@ -1,5 +1,6 @@
 {
   "showRibbon": false,
   "theme": "obsidian",
-  "accentColor": ""
+  "accentColor": "",
+  "cssTheme": "Soft Paper"
 }

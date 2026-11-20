@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('json', true, true, 'messaging');
 ob_start();
 ini_set('display_errors', '0');
 header('Cache-Control: private, no-store');

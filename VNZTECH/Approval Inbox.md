@@ -12,6 +12,8 @@ tags: [approvals, tasks]
 
 ## Waiting for owner decision
 
+**Site Updates and Account UX v1 - pending:** [[90 System/Tasks/Records/TASK-20261120-016|Full scope/checks/local setup/recovery]]. New announcements/maintenance module, consistent Profile/Security/Settings, separate Chat Moderation/Activity Log, precise self-service admin permissions, additive local migration/private state/default-off, theme/mobile checks and Obsidian knowledge. No implementation authorization yet.
+
 **Chat v5 explicitly approved:** owner **"I-apply ang Chat v5"** in this chat. screenshot-reference size/organization: about360x500px normal docks/12px gaps, responsive up to4 desktop/1 phone, bounded vertical avatar/initial rail with +N selector. VNZ theme and v4 behavior preserved. [[90 System/Tasks/Records/TASK-20261120-010|Concrete v5 scope/checks]]. Size/slot/rail implementation/checks/docs complete;755 full browser assertions pass. Owner result acceptance pending.
 
 **Chat v4 explicitly approved:** owner **"I-apply ang Chat v4"** in this chat. five visible contact rows + scrolling, Back to originating topbar list, visible sidebar burger/close, persistent conversations on outside click,2 desktop docks/1 small-screen dock plus selectable overflow;10 mounted-chat cap. [[90 System/Tasks/Records/TASK-20261120-010|Concrete v4 plan/checks]]. Implementation/checks/docs complete;621 full +187 focused fixture assertions pass. Owner result acceptance pending.
@@ -44,6 +46,10 @@ The earlier company/task-memory setup v2 remains approved and ready for review/a
 
 | Task / proposal | Implementation approval | Result acceptance | Source |
 | --- | --- | --- | --- |
+| [[90 System/Tasks/Records/TASK-20261120-018|Admin light theme and maintenance action — v1.3]] | Owner selected `approve_v1_3=true` for the combined Admin light-theme/one-button scope | Implementation/checks complete; visual/result acceptance pending | [[Decision Log#Decision Log|DEC-20261120-011]] |
+| [[90 System/Tasks/Records/TASK-20261120-017|Admin Site Updates and chat palettes — v1.2]] | v1.2 selected with `chat_palette_scope=panels_only` and `approve_v1_2=true` | Implementation/checks complete; owner result acceptance pending | [[Decision Log#Decision Log|DEC-20261120-010]] |
+| [[90 System/Tasks/Records/TASK-20261120-017|Admin Site Updates tabs, icon, and light theme — v1.1]] | v1.0 owner **"Alright approved."**; v1.1 amendment **"oo saka may iaadd pako"** (additional scope later consolidated in v1.2) | Implementation/checks complete; owner result acceptance pending | [[Decision Log#Decision Log|DEC-20261120-009]] |
+| [[90 System/Tasks/Records/TASK-20261120-017|Admin Site Updates tabs and icon — v1.0]] | **"Alright approved."** in response to exact v1.0 approval form | Implementation/checks complete; owner result acceptance pending | [[Decision Log#Decision Log|DEC-20261120-008]] |
 | [[90 System/Tasks/Records/TASK-20261120-007|Seller 2FA disable button contrast — v1]] | Approved by owner selection: Approve Plan v1 | Pending; 8 seller theme/contrast/focus browser checks pass | [[Decision Log#Decision Log|DEC-20261120-001]] |
 | [[90 System/Tasks/Records/TASK-20261120-009|Seller preference-button alignment — v1]] | Owner selected Approve Plan v1 in this conversation; exact reply time unavailable | Width and action-row placement refined after owner feedback; 136 browser checks pass; result acceptance pending | [[Decision Log#Decision Log|DEC-20261120-003]] |
 | [[90 System/Tasks/Records/TASK-20261120-008|Admin Trade Requests pending-first ordering — v1]] | Owner selected `approve_pending_first` in this conversation | Pending; query-order fixture and PHP lint pass | [[Decision Log#Decision Log|DEC-20261120-002]] |
@@ -58,3 +64,8 @@ The earlier company/task-memory setup v2 remains approved and ready for review/a
 For future proposals, add a linked row here. Record actual owner response in the canonical task, then update this index and [[Decision Log]]. Do not mark the owner accepted a result merely because tests passed. Approval notes are a workflow record, not a tool-security lock.
 
 [[Task Center]] · [[90 System/Company Operations]] · [[Home]]
+
+
+## Admin UX + Queue v1 - 2026-11-20T14:43:32+08:00
+
+[[90 System/Tasks/Records/TASK-20261120-013]] Owner **"Alright apply it now safely."** explicitly approved Admin UX + Queue v1 in conversation; recording time above, exact message time unavailable. Implementation/checks/docs complete, result acceptance pending. No automatic assignment, live decisions, schema/provider/config/push/deploy approval inferred.

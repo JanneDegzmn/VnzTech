@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/../backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', false, true, 'seller_portal');
 require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/csrf.php';
@@ -144,7 +147,8 @@ $allowedPages = [
     'profile',
     'transactions',
     'transaction',
-    'settings'
+    'settings',
+    'security'
 ];
 
 
@@ -177,6 +181,7 @@ $pageTitles = [
     'profile' => 'Profile',
     'transactions' => 'Transactions',
     'transaction' => 'Transaction Details',
+    'security' => 'Security',
     'settings' => 'Settings'
 ];
 
@@ -263,6 +268,7 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
         href="/VNZ-TECH/assets/css/seller_alert.css?v=<?= filemtime(__DIR__ . '/../assets/css/seller_alert.css') ?>"
     >
     <link rel="stylesheet" href="/VNZ-TECH/assets/css/seller_topbar.css?v=<?= filemtime(__DIR__ . '/../assets/css/seller_topbar.css') ?>">
+    <link rel="stylesheet" href="/VNZ-TECH/assets/css/seller_account.css?v=<?= filemtime(__DIR__ . '/../assets/css/seller_account.css') ?>">
     <script src="/VNZ-TECH/assets/js/seller-topbar.js?v=<?= filemtime(__DIR__ . '/../assets/js/seller-topbar.js') ?>" defer></script>
     <script
         src="/VNZ-TECH/assets/js/transaction-chat.js?v=<?= filemtime(__DIR__ . '/../assets/js/transaction-chat.js') ?>"
@@ -295,6 +301,7 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
         }
     </script>
 
+<?php $siteStatusArea = 'seller'; require __DIR__ . '/../includes/site-status-head.php'; ?>
 </head>
 
 
@@ -326,7 +333,7 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
                     <button type="button" data-seller-2fa-login-choice="1">Require code every login</button>
                 <?php else: ?>
                     <button type="button" class="seller-2fa-reminder-later" data-seller-2fa-remind-later>Remind me later</button>
-                    <a href="/VNZ-TECH/account/dashboard.php?page=settings" data-seller-2fa-setup>Set up 2FA</a>
+                    <a href="/VNZ-TECH/account/dashboard.php?page=security" data-seller-2fa-setup>Set up 2FA</a>
                 <?php endif; ?>
             </div>
         </section>
@@ -531,6 +538,8 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
 
             </button>
 
+
+            <button type="button" class="nav-item <?= $page === 'security' ? 'active' : '' ?>" data-page="security"><span class="nav-icon" aria-hidden="true">&#128274;</span><span>Security</span></button>
 
             <button
                 type="button"
@@ -1230,6 +1239,9 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
         transaction:
             'Transaction Details',
 
+        security:
+            'Security',
+
         settings:
             'Settings'
 
@@ -1770,6 +1782,41 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
             if (
                 !response.ok
             ) {
+                if (
+                    response.status === 503 &&
+                    response.headers.get('Content-Type')?.includes('application/json')
+                ) {
+                    try {
+                        const status =
+                            await response.clone().json();
+
+                        if (
+                            status.code === 'maintenance'
+                        ) {
+                            const maintenanceError =
+                                new Error(
+                                    status.message ||
+                                    'This service is temporarily paused.'
+                                );
+
+                            maintenanceError.code =
+                                'maintenance';
+
+                            throw maintenanceError;
+                        }
+                    } catch (error) {
+                        if (
+                            error.code === 'maintenance'
+                        ) {
+                            throw error;
+                        }
+
+                        console.error(
+                            'Could not read the maintenance response.',
+                            error
+                        );
+                    }
+                }
 
                 throw new Error(
                     'HTTP error: ' +
@@ -1898,32 +1945,82 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
             }
 
 
-            console.error(
-                error
-            );
+            if (
+                error.code !== 'maintenance'
+            ) {
+                console.error(
+                    error
+                );
+            }
 
 
-            contentArea.innerHTML = `
-                <div class="portal-error">
+            if (
+                error.code === 'maintenance'
+            ) {
+                const panel =
+                    document.createElement('div');
 
-                    <h2>
-                        Unable to load this page
-                    </h2>
+                panel.className =
+                    'portal-error portal-maintenance';
 
-                    <p>
-                        Something went wrong while loading
-                        this section.
-                    </p>
+                const heading =
+                    document.createElement('h2');
 
-                    <button
-                        type="button"
-                        onclick="window.loadSellerPage('dashboard')"
-                    >
-                        Back to Dashboard
-                    </button>
+                heading.textContent =
+                    'This service is temporarily paused';
 
-                </div>
-            `;
+                const message =
+                    document.createElement('p');
+
+                message.textContent =
+                    error.message;
+
+                const back =
+                    document.createElement('button');
+
+                back.type =
+                    'button';
+
+                back.textContent =
+                    'Back to Dashboard';
+
+                back.addEventListener(
+                    'click',
+                    () => loadPage('dashboard')
+                );
+
+                panel.append(
+                    heading,
+                    message,
+                    back
+                );
+
+                contentArea.replaceChildren(
+                    panel
+                );
+            } else {
+                contentArea.innerHTML = `
+                    <div class="portal-error">
+
+                        <h2>
+                            Unable to load this page
+                        </h2>
+
+                        <p>
+                            Something went wrong while loading
+                            this section.
+                        </p>
+
+                        <button
+                            type="button"
+                            onclick="window.loadSellerPage('dashboard')"
+                        >
+                            Back to Dashboard
+                        </button>
+
+                    </div>
+                `;
+            }
 
             finishPageTransition();
 
@@ -2054,7 +2151,11 @@ $guestSubmissionOnboarding = vnzGuestSubmissionOnboardingForSeller($_SESSION, $s
 
     window.addEventListener(
         'popstate',
-        function () {
+        function (event) {
+            const messageRoot = document.querySelector('[data-floating-messages]');
+            if (event.state?.vnzMessages || messageRoot?.dataset.mobileHistoryPending === 'true'
+                || (innerWidth <= 1024 && messageRoot?.dataset.mobileMessagesView && messageRoot.dataset.mobileMessagesView !== 'closed')) return;
+
 
             const urlParams =
                 new URLSearchParams(

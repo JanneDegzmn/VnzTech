@@ -27,3 +27,6 @@ node_modules/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Local Site Updates readiness; private state and backups live outside htdocs
+/backend/site_status_ready.flag

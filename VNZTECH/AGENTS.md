@@ -19,6 +19,10 @@ This is the Obsidian vault inside the PHP repository. Paths below are vault-rela
 - Batch independent reads with bounded output; avoid whole-vault dumps and repeated unchanged reads. Delegate useful independent tasks with narrow context and separate file ownership. One writer merges shared notes.
 - Keep updates/handoffs short: outcome, paths, actual checks, material limits, and next action if needed. Details: [[90 System/Ponytail]]. Savings are a goal, not an assumed measurement. This guidance installs no native commands, hooks, compression, or Obsidian AI plugin.
 
+## CSS unit rules
+
+Owner requirement (2026-11-20): `rem` = text; `%` = layouts; `vw` = full screen sections; `px` = borders. Apply to new or modified UI; read [[40 Knowledge/System Modules/Interface and Portal UX#CSS unit rules]]. Existing CSS is not automatically converted by this documentation update.
+
 ## Completion and evidence
 
 - Owner requires shared learning after tasks: consult/update the relevant entries in [[40 Knowledge/Integration Catalog]] and [[40 Knowledge/Engineering Lessons]]. Record API purpose/version/license/data flow/limits/actual checks and practical do/don't lessons with source/task evidence. Link affected role/module notes, avoid copying whole histories or unverified claims. All roles reuse this shared memory; it does not retrain a model. Keep secrets/IDs/biometrics out.

@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/../backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', false);
 require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/csrf.php';
 
@@ -73,6 +76,7 @@ if (!is_array($guestRegistrationPrefill)) {
         defer
     ></script>
 
+<?php $siteStatusArea = 'public'; require __DIR__ . '/../includes/site-status-head.php'; ?>
 </head>
 
 <body>

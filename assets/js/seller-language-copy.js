@@ -178,7 +178,7 @@
         'Authenticator setup started.': 'Puwede mo nang i-set up yung authenticator.',
         'Authenticator setup expired. Start setup again.': 'Nag-expire yung setup. I-start mo ulit.',
         'That code is invalid or expired. Check your authenticator and try again.': 'Hindi tama o expired na yung code. Check mo yung authenticator, tapos try ulit.',
-        'Two-factor authentication is already enabled. Refresh Settings.': 'Naka-on na yung 2FA. I-refresh mo yung Settings.',
+        'Two-factor authentication is already enabled. Refresh Security.': 'Naka-on na yung 2FA. I-refresh mo yung Settings.',
         'Two-factor authentication is now enabled.': 'Naka-on na yung 2FA mo.',
         'Two-factor authentication is not enabled.': 'Hindi naka-on yung 2FA mo.',
         'The authenticator code is invalid, expired, or already used.': 'Hindi tama, expired na, o nagamit na yung authenticator code.',

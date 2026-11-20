@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('auto', false, true, 'submissions');
 require_once __DIR__ . '/email_verification_feedback.php';
 
 /** Presentation state only. This marker never authorizes a submission claim. */

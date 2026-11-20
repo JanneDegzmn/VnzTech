@@ -1,4 +1,14 @@
 <?php
+
+require_once __DIR__ . '/site_status.php';
+$action = (string) ($_POST['action'] ?? $_GET['action'] ?? 'status');
+if (in_array($action, ['evidence', 'review'], true)) {
+    vnzEnforceSiteMaintenance('auto', true);
+} elseif (in_array($action, ['face_token', 'status', 'submit'], true)) {
+    vnzEnforceSiteMaintenance('auto', false, true, 'submissions');
+} else {
+    vnzEnforceSiteMaintenance('auto', false);
+}
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
 require_once __DIR__ . '/csrf.php';
@@ -8,7 +18,6 @@ header('Cache-Control: no-store, private, max-age=0');
 header('Pragma: no-cache');
 header('X-Content-Type-Options: nosniff');
 header('Referrer-Policy: no-referrer');
-$action = (string) ($_POST['action'] ?? $_GET['action'] ?? 'status');
 try {
     if (vnzSubmissionFaceMode()) {
         header('Content-Type: application/json; charset=utf-8');

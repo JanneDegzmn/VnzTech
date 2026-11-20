@@ -1,4 +1,7 @@
 <?php
+
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('auto', false);
 /*
 |--------------------------------------------------------------------------
 | VNZ TECH - Public Buying Rates

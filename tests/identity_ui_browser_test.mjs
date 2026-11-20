@@ -55,6 +55,8 @@ compiled.adminAuto = render(`require ${quote(retiredFixturePath)};`);
 assert.ok(!compiled.adminAuto.includes('data-identity-evidence'));
 const dashboardSource = await readFile(join(root, 'admin/dashboard.php'), 'utf8');
 assert.ok(dashboardSource.includes('if (!vnzSubmissionFaceMode() && !vnzIdentityAutomatic() && vnzIdentityReviewer($pdo))'), 'Face-only and automatic navigation retire manual review before permission query');
+assert.match(dashboardSource, /class="nav-section-title">ACCOUNT<\/div>/, 'Account category uses the shared Admin section style');
+assert.doesNotMatch(dashboardSource, /nav-section-label/, 'No unstyled Admin section label remains');
 assert.ok(dashboardSource.includes("page === 'identity_verifications' && response.status === 410"), 'Retired review URL renders its themed explanation through the actual dashboard loader');
 let status = 'not_started';
 let unavailable = false;

@@ -1,5 +1,8 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', false);
+
 
 require_once __DIR__ . '/../backend/database.php';
 require_once __DIR__ . '/../backend/session.php';
@@ -132,6 +135,7 @@ if ($validTokenFormat && http_response_code() !== 500) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Password | VNZ TECH</title>
     <link rel="stylesheet" href="/VNZ-TECH/assets/css/seller_login.css?v=20261006-seller-2fa">
+<?php $siteStatusArea = 'public'; require __DIR__ . '/../includes/site-status-head.php'; ?>
 </head>
 <body>
 <?php include __DIR__ . '/../includes/loader-body.php'; ?>

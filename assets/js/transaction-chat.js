@@ -5743,7 +5743,23 @@
         start();
     }
 
+    // Maintenance closes active media/realtime leases without removing draft text nodes.
+    window.addEventListener('vnz:maintenance', () => {
+        for (const [widget, cleanup] of [...activeChats]) {
+            cleanup();
+            widget.querySelectorAll('input,textarea,button,select').forEach(control => { control.disabled = true; });
+            widget.dataset.maintenancePaused = 'true';
+        }
+    });
+    window.addEventListener('vnz:maintenance-ended', () => {
+        document.querySelectorAll('[data-maintenance-paused]').forEach(widget => {
+            const status = widget.querySelector('[data-chat-status]');
+            if (status) status.textContent = 'Service restored. Refresh this page when ready to reconnect chat; unsent text remains here.';
+        });
+    });
+
     function scan(root = document) {
+        if (window.VNZSiteStatus?.suspended) return;
         if (root.matches?.('[data-transaction-chat]')) {
             initChat(root);
         }

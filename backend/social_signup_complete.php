@@ -1,5 +1,8 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('auto', false);
+
 
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';

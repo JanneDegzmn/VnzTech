@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/../backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', true, true, 'messaging');
 require_once __DIR__ . '/../backend/chat_scaledrone.php';
 
 $transactionChatWindowId = filter_input(

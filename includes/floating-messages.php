@@ -18,7 +18,7 @@ try {
 ?>
 <div
     class="floating-messages-root"
-    data-placement="<?= ($floatingMessagesPlacement ?? '') === 'seller-topbar' && ($floatingMessagesActor['actor_type'] ?? '') === 'seller' ? 'seller-topbar' : 'floating' ?>"
+    data-placement="<?= (($floatingMessagesPlacement ?? '') === 'seller-topbar' && ($floatingMessagesActor['actor_type'] ?? '') === 'seller') ? 'seller-topbar' : ((($floatingMessagesPlacement ?? '') === 'admin-topbar' && ($floatingMessagesActor['actor_type'] ?? '') === 'admin') ? 'admin-topbar' : 'floating') ?>"
     data-floating-messages
     data-actor-type="<?= htmlspecialchars($floatingMessagesActor['actor_type'], ENT_QUOTES, 'UTF-8') ?>"
     data-actor-id="<?= (int) $floatingMessagesActor['actor_id'] ?>"

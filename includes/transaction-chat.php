@@ -260,6 +260,14 @@ foreach ($transactionChatItems as $transactionChatItem) {
     </button>
     <?php endif; ?>
 
+    <?php $sellerChatHasContext = in_array(($transactionChatActor['actor_type'] ?? ''), ['seller', 'admin'], true)
+        && (is_array($transactionChatTradeRequestData) || $transactionChatHasContext); ?>
+    <?php if ($sellerChatHasContext): ?>
+    <details class="seller-chat-context">
+        <summary>View submission info</summary>
+        <div class="seller-chat-context-body" tabindex="0" role="region" aria-label="Submission information">
+    <?php endif; ?>
+
     <?php if (is_array($transactionChatTradeRequestData)): ?>
         <?php
         $tradeItemImagePath = (string) ($transactionChatTradeRequestData['item_image_path'] ?? '');
@@ -415,6 +423,11 @@ foreach ($transactionChatItems as $transactionChatItem) {
             </div>
         </div>
     </section>
+    <?php endif; ?>
+
+    <?php if ($sellerChatHasContext): ?>
+        </div>
+    </details>
     <?php endif; ?>
 
     <div

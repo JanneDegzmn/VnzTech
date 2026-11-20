@@ -1,9 +1,13 @@
 <?php
 
+
+require_once __DIR__ . '/../../backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', true);
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/auth.php';
 require_once __DIR__ . '/../../backend/pagination.php';
+require_once __DIR__ . '/../../backend/admin_submission_queue.php';
 
 requireAdminLogin();
 
@@ -47,6 +51,12 @@ $search = trim($_GET['search'] ?? '');
 $statusFilter = trim($_GET['status'] ?? '');
 $itemTypeFilter = trim($_GET['item_type'] ?? '');
 $pagination = vnzPaginationState(12);
+$queueState = vnzAdminQueueState($_GET);
+$queueGroups = vnzAdminQueueGroups();
+// Polling never acknowledges arrivals or changes review state.
+$queueSnapshot = $pdo->query('SELECT COALESCE(MAX(id), 0) AS max_id, COUNT(*) AS total FROM submissions')->fetch(PDO::FETCH_ASSOC);
+$queueBaseline = (int) $queueSnapshot['max_id'];
+$queueOpeningTotal = (int) $queueSnapshot['total'];
 
 
 /*
@@ -207,6 +217,11 @@ $sql = "
 $params = [];
 $countSql = 'SELECT COUNT(*) FROM submissions s WHERE 1 = 1';
 $countParams = [];
+[$queueClause, $queueParams] = vnzAdminQueueClause($queueState, (int) $_SESSION['admin_id']);
+$sql .= $queueClause;
+$countSql .= $queueClause;
+array_push($params, ...$queueParams);
+array_push($countParams, ...$queueParams);
 
 
 /*
@@ -320,8 +335,8 @@ $sql .= "
         s.created_at,
         s.updated_at
 
-    ORDER BY s.created_at DESC
 ";
+$sql .= vnzAdminQueueOrder($queueState);
 $sql .= ' LIMIT ' . $pagination['per_page']
     . ' OFFSET ' . $pagination['offset'];
 
@@ -341,7 +356,10 @@ $paginationHtml = vnzRenderPagination(
     array_filter([
         'search' => $search,
         'status' => $statusFilter,
-        'item_type' => $itemTypeFilter
+        'item_type' => $itemTypeFilter,
+        'queue' => $queueState['queue'],
+        'assignment' => $queueState['assignment'],
+        'sort' => $queueState['sort']
     ], static fn ($value): bool => $value !== ''),
     'submissions',
     'admin',
@@ -511,7 +529,7 @@ function submissionDate(string $date): string
             </span>
 
             <strong>
-                <?= number_format(count($submissions)) ?>
+                <?= number_format($pagination['total']) ?>
             </strong>
 
         </div>
@@ -523,6 +541,23 @@ function submissionDate(string $date): string
     <!-- =====================================================
          FILTER BAR
     ====================================================== -->
+
+    <div data-admin-submission-queue data-after="<?= $queueBaseline ?>"
+         data-opening-total="<?= $queueOpeningTotal ?>"
+         data-queue="<?= htmlspecialchars($queueState['queue']) ?>"
+         data-list-page="<?= (int) $pagination['page'] ?>">
+        <div class="submissions-filter-card" role="group" aria-label="Submission queue">
+            <?php foreach (['' => ['label' => 'All']] + $queueGroups as $key => $group): ?>
+                <button type="button" class="clear-submission-filters" data-queue-filter="<?= htmlspecialchars($key) ?>"
+                        aria-pressed="<?= $queueState['queue'] === $key ? 'true' : 'false' ?>"><?= htmlspecialchars($group['label']) ?></button>
+            <?php endforeach; ?>
+        </div>
+        <div class="submissions-filter-card" data-queue-update-banner hidden>
+            <span role="status" data-queue-update-message></span>
+            <button type="button" class="clear-submission-filters" data-queue-refresh>Refresh list</button>
+        </div>
+        <p style="margin: 12px 0; font-size: .875rem;">Waiting seller shows the latest pending admin offer; seller counter-offers return to Under review. Done reflects the submission decision, not payment or delivery.</p>
+    </div>
 
     <div class="submissions-filter-card">
 
@@ -591,6 +626,19 @@ function submissionDate(string $date): string
         </select>
 
 
+        <label>Assignment
+            <select id="submissionAssignmentFilter" class="submission-filter-select">
+                <?php foreach (['all' => 'All requests', 'mine' => 'My assigned', 'unassigned' => 'Unassigned'] as $key => $label): ?>
+                    <option value="<?= $key ?>" <?= $queueState['assignment'] === $key ? 'selected' : '' ?>><?= $label ?></option>
+                <?php endforeach; ?>
+            </select>
+        </label>
+        <label>Order
+            <select id="submissionSortFilter" class="submission-filter-select">
+                <option value="newest" <?= $queueState['sort'] === 'newest' ? 'selected' : '' ?>>Newest first</option>
+                <option value="oldest" <?= $queueState['sort'] === 'oldest' ? 'selected' : '' ?>>Oldest first</option>
+            </select>
+        </label>
         <button
             type="button"
             id="clearSubmissionFilters"
@@ -1013,6 +1061,9 @@ function submissionDate(string $date): string
                 search: searchInput?.value.trim() || '',
                 status: statusFilter?.value || '',
                 item_type: itemTypeFilter?.value || '',
+                queue: document.querySelector('[data-admin-submission-queue]')?.dataset.queue || '',
+                assignment: document.getElementById('submissionAssignmentFilter')?.value || 'all',
+                sort: document.getElementById('submissionSortFilter')?.value || 'newest',
                 list_page: 1
             });
         }, 250);
@@ -1045,7 +1096,10 @@ function submissionDate(string $date): string
 
         statusFilter.addEventListener(
             'change',
-            applyFilters
+            function () {
+                document.querySelector('[data-admin-submission-queue]').dataset.queue = '';
+                applyFilters();
+            }
         );
 
     }
@@ -1091,6 +1145,9 @@ function submissionDate(string $date): string
                     itemTypeFilter.value = '';
                 }
 
+                document.querySelector('[data-admin-submission-queue]').dataset.queue = '';
+                document.getElementById('submissionAssignmentFilter').value = 'all';
+                document.getElementById('submissionSortFilter').value = 'newest';
                 applyFilters();
 
             }
@@ -1138,3 +1195,4 @@ function submissionDate(string $date): string
 })();
 
 </script>
+<script src="/VNZ-TECH/assets/js/admin-submission-queue.js?v=<?= filemtime(__DIR__ . '/../../assets/js/admin-submission-queue.js') ?>"></script>

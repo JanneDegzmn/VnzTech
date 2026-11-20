@@ -486,6 +486,7 @@ if ($successMessage) {
         href="/VNZ-TECH/assets/css/admin_login.css?v=<?= filemtime(__DIR__ . '/../assets/css/admin_login.css') ?>"
     >
 
+<?php $siteStatusArea = 'admin'; require __DIR__ . '/../includes/site-status-head.php'; ?>
 </head>
 
 

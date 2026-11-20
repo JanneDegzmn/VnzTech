@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/../../backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', false, true, 'submissions');
 header(
     'Cache-Control: no-store, no-cache, must-revalidate, max-age=0'
 );
@@ -15,6 +18,7 @@ header(
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/pagination.php';
+require_once __DIR__ . '/../../backend/seller_submission_next_step.php';
 
 
 /*
@@ -1164,6 +1168,8 @@ $firstName =
 
                         </div>
 
+
+                        <p class="submission-next-step"><strong>Next step:</strong> <?= submissionEscape(vnzSellerSubmissionNextStep($submission)) ?></p>
 
                         <div class="submission-card-body">
 

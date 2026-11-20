@@ -152,7 +152,220 @@
         });
     }
 
-    function topbarMode(root) { return root.dataset.placement === 'seller-topbar'; }
+    function topbarMode(root) { return ['seller-topbar','admin-topbar'].includes(root.dataset.placement); }
+    const mobileInboxes = new WeakMap();
+    function mobileMessages(root) { return topbarMode(root) && matchMedia('(max-width:1024px)').matches; }
+    function inboxNode(tag, className, text) {
+        const node = document.createElement(tag); node.className = className || '';
+        if (text !== undefined) node.textContent = text;
+        return node;
+    }
+    function mobileView(root, view, record = true) {
+        const state = mobileInboxes.get(root);
+        if (!state) return;
+        if (view === 'closed' && state.opening) state.openingCancelled = true;
+        state.view = view;
+        root.dataset.mobileMessagesView = view;
+        state.panel.hidden = !mobileMessages(root) || view !== 'inbox';
+        const active = mobileMessages(root) && view !== 'closed';
+        document.documentElement.classList.toggle('seller-messages-active', active);
+        root.querySelector('[data-floating-messages-toggle]').setAttribute('aria-expanded', String(active));
+        if (record && mobileMessages(root)) {
+            const owned = history.state?.vnzMessages === state.token;
+            if (view === 'closed') {
+                if (owned) {state.historyPending = true; root.dataset.mobileHistoryPending = 'true'; history.go(-Number(history.state.depth || 1));}
+            } else {
+                const depth = view === 'conversation' ? 2 : 1;
+                const entry = { ...history.state, vnzMessages: state.token, view, depth };
+                if (!owned && depth === 2) {
+                    history.pushState({...entry, view:'inbox', depth:1}, '');
+                    history.pushState(entry, '');
+                } else if (owned && history.state.depth === depth) history.replaceState(entry, '');
+                else if (owned && depth === 1) history.back();
+                else history.pushState(entry, '');
+            }
+        }
+        renderSellerDock(root);
+        window.dispatchEvent(new CustomEvent('vnz:seller-chat-state', {detail:{open:active}}));
+    }
+    function mobileAvatar(name, picture, online = false) {
+        const avatar = inboxNode('span', 'seller-inbox-avatar', initialsFor(name));
+        avatar.setAttribute('aria-hidden', 'true');
+        if (picture && !picture.includes('..') && /^(?:\/VNZ-TECH\/|\/)?uploads\/[a-zA-Z0-9_./-]+$/.test(picture)) {
+            const img = document.createElement('img'); img.alt = '';
+            img.src = '/VNZ-TECH/' + picture.replace(/^(?:\/VNZ-TECH\/|\/)/, '');
+            img.addEventListener('error', () => img.remove(), {once:true}); avatar.append(img);
+        }
+        if (online) avatar.append(inboxNode('i', 'seller-inbox-online'));
+        return avatar;
+    }
+    function renderMobileInbox(root) {
+        const state = mobileInboxes.get(root); if (!state) return;
+        const scroll = state.list.scrollTop;
+        const contactsById = new Map(state.contacts.filter(c => c.conversation_id).map(c => [Number(c.conversation_id), c]));
+        const tradeIds = new Set(state.trades.map(t => Number(t.conversation_id)).filter(Boolean));
+        let items = state.conversations.filter(c => !tradeIds.has(Number(c.conversation_id))).map(c => {
+            const contact = contactsById.get(Number(c.conversation_id));
+            const category = root.dataset.actorType === 'admin' && c.guest_submission && c.conversation_class !== 'claimed_submission' ? 'guest-sellers' : c.conversation_type === 'global' ? 'global'
+                : ['transaction','claimed_submission'].includes(c.conversation_class) || c.conversation_type === 'transaction' ? 'contacts' : 'private';
+            return {...c, name:c.display_name || contact?.display_name || 'Conversation', category,
+                picture:contact?.profile_picture || '', preview:c.last_message || contact?.last_message || c.transaction_reference || '', kind:'conversation'};
+        });
+        items.push(...state.trades.map(t => ({...t, name:t.trade_item_name || t.request_reference || 'Trade request',
+            preview:t.last_message || t.request_reference || '', category:'trade-requests', kind:'trade'})));
+        if (state.people) items = state.contacts.map(c => ({...c, name:c.display_name || 'Contact', preview:c.last_message || 'Start a conversation', category:'private', kind:'contact'}));
+        const query = state.search.value.trim().toLocaleLowerCase();
+        if (query && !state.people && state.filter === 'all') {
+            const existing = new Set(items.map(c => Number(c.conversation_id)));
+            items.push(...state.contacts.filter(c => !c.conversation_id || !existing.has(Number(c.conversation_id))).map(c => ({...c,name:c.display_name || 'Contact',preview:'Start a conversation',kind:'contact',category:'private'})));
+        }
+        items = items.filter(c => (!query || (c.name+' '+c.preview).toLocaleLowerCase().includes(query))
+            && (state.people || state.filter === 'all' || (state.filter === 'unread' ? Number(c.unread_count) > 0 : c.category === state.filter)));
+        if (!state.people) items.sort((a,b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')) || Number(b.conversation_id || 0)-Number(a.conversation_id || 0));
+        state.list.replaceChildren();
+        state.filters.querySelectorAll('button').forEach(b => b.setAttribute('aria-pressed', String(!state.people && b.dataset.inboxFilter === state.filter)));
+        state.peopleButton.setAttribute('aria-pressed', String(state.people));
+        state.heading.textContent = state.people ? 'New message' : 'Messages';
+        items.forEach(item => {
+            const row = inboxNode('button', 'seller-inbox-row'); row.type = 'button';
+            row.dataset.inboxConversation = String(item.conversation_id || 'new');
+            const text = inboxNode('span', 'seller-inbox-row-text');
+            text.append(inboxNode('strong', '', item.name), inboxNode('span', '', item.preview || (item.category === 'global' ? 'Global conversation' : 'Open conversation')));
+            const meta = inboxNode('span', 'seller-inbox-meta');
+            if (item.updated_at) {
+                const date = new Date(String(item.updated_at).replace(' ', 'T'));
+                if (!Number.isNaN(date.getTime())) {
+                    const time = inboxNode('time', '', new Intl.DateTimeFormat(undefined,{month:'short',day:'numeric'}).format(date));
+                    time.dateTime = date.toISOString(); meta.append(time);
+                }
+            }
+            if (Number(item.unread_count) > 0) {
+                row.classList.add('is-unread'); meta.append(inboxNode('span', 'seller-inbox-unread', unreadLabel(Number(item.unread_count))));
+                row.setAttribute('aria-label', item.name + ', ' + Number(item.unread_count) + ' unread messages');
+            }
+            row.append(mobileAvatar(item.name, item.picture || item.profile_picture), text, meta);
+            row.addEventListener('click', () => openMobileConversation(root, item, row)); state.list.append(row);
+        });
+        if (!items.length && !state.loading && !query && !state.people && state.filter === 'global') {
+            const global = inboxNode('button','seller-inbox-retry','Open Global Chat'); global.type = 'button';
+            global.addEventListener('click', () => openMobileConversation(root,{kind:'global'},global)); state.list.append(global);
+        }
+        if (!items.length && !state.loading) state.list.append(inboxNode('p','seller-inbox-empty', query ? 'Walang tumugma sa search mo.' : 'Wala pang chats dito. Tap New message para magsimula.'));
+        state.list.scrollTop = scroll;
+        const peopleScroll = state.peopleStrip.scrollLeft;
+        state.peopleStrip.replaceChildren();
+        state.contacts.slice(0,30).forEach(contact => {
+            const online = contact.presence?.participants?.some(p => p.is_online === true);
+            const button = inboxNode('button','seller-inbox-person'); button.type = 'button';
+            button.setAttribute('aria-label', (contact.display_name || 'Contact') + (online ? ', online' : ''));
+            button.append(mobileAvatar(contact.display_name, contact.profile_picture, online), inboxNode('span','',contact.display_name || 'Contact'));
+            button.addEventListener('click', () => openMobileConversation(root, {...contact,kind:'contact',name:contact.display_name}, button));
+            state.peopleStrip.append(button);
+        });
+        state.peopleStrip.hidden = !state.contacts.length || state.people;
+        state.peopleStrip.scrollLeft = peopleScroll;
+    }
+    async function refreshMobileInbox(root) {
+        const state = mobileInboxes.get(root); if (!state || state.loading) return;
+        state.loading = true; state.status.textContent = 'Loading messages...'; state.retry.hidden = true;
+        state.list.setAttribute('aria-busy', 'true');
+        const results = await Promise.allSettled([
+            getJson('/VNZ-TECH/backend/chat_conversations.php?action=list'),
+            getJson('/VNZ-TECH/backend/chat_conversations.php?action=contacts&category=private'),
+            root.querySelector('[data-message-category="trade-requests"]') ? getJson('/VNZ-TECH/backend/chat_conversations.php?action=trade_requests') : Promise.resolve({trade_requests:[]})
+        ]);
+        for (const [index,key] of ['conversations','contacts','trades'].entries()) {
+            if (results[index].status === 'fulfilled') {
+                const data = results[index].value[key === 'trades' ? 'trade_requests' : key];
+                state[key] = Array.isArray(data) ? data : [];
+            }
+        }
+        state.loading = false; state.list.setAttribute('aria-busy','false');
+        const failed = results.some(r => r.status === 'rejected');
+        state.status.textContent = failed ? 'May chats na hindi ma-load. Try again.' : '';
+        state.retry.hidden = !failed; renderMobileInbox(root);
+    }
+    function openMobileInbox(root, record = true) {
+        setCategoryMenuOpen(root, false); setPanelOpen(root, false);
+        const state = mobileInboxes.get(root); if (!state) return;
+        mobileView(root, 'inbox', record); renderMobileInbox(root); refreshMobileInbox(root);
+        state.heading.focus({preventScroll:true});
+    }
+    async function openMobileConversation(root, item, button) {
+        const state = mobileInboxes.get(root); if (state.opening) return;
+        state.opening = true; state.openingCancelled = false; button.setAttribute('aria-busy','true'); state.status.textContent = 'Opening conversation...';
+        try {
+            if (item.kind === 'global') await openDirectConversation(root,'global');
+            else if (item.kind === 'trade') await openTradeRequestConversation(root, Number(item.trade_request_id));
+            else if (item.kind === 'contact') await openDirectConversation(root, 'private', {actor_type:item.actor_type, actor_id:Number(item.actor_id)});
+            else await openFloatingWindow(root, {conversationType:item.conversation_type, conversationId:Number(item.conversation_id), transactionId:Number(item.transaction_id || 0), displayName:item.name});
+            if (state.view === 'conversation') state.status.textContent = '';
+            if (state.view === 'conversation') root.querySelector('[data-floating-chat-window]:not([hidden]) [data-chat-workspace-back]')?.focus();
+        } catch (error) { state.status.textContent = error.message || 'Unable to open conversation.'; }
+        finally { state.opening = false; button.removeAttribute('aria-busy'); }
+    }
+    function initMobileInbox(root) {
+        const panel = inboxNode('section','seller-mobile-inbox'); panel.hidden = true;
+        panel.dataset.mobileInbox = ''; panel.setAttribute('role','dialog'); panel.setAttribute('aria-modal','true'); panel.setAttribute('aria-label','Messages');
+        const header = inboxNode('header','seller-inbox-header');
+        const heading = inboxNode('h2','','Messages'); heading.tabIndex = -1; const actions = inboxNode('div','seller-inbox-actions');
+        const peopleButton = inboxNode('button','','New message'); peopleButton.type = 'button'; peopleButton.setAttribute('aria-pressed','false');
+        const close = inboxNode('button','','\u00d7'); close.type = 'button'; close.setAttribute('aria-label','Close messages');
+        actions.append(peopleButton,close); header.append(heading,actions);
+        const search = inboxNode('input','seller-inbox-search'); search.type = 'search'; search.placeholder = 'Search messages or people'; search.setAttribute('aria-label','Search loaded messages or people');
+        const peopleStrip = inboxNode('nav','seller-inbox-people'); peopleStrip.setAttribute('aria-label','Available people');
+        const filters = inboxNode('nav','seller-inbox-filters'); filters.setAttribute('aria-label','Filter chats');
+        const categories = [['all','All'],['unread','Unread'],['private','Private'],['contacts',root.dataset.actorType === 'admin' ? 'Seller requests' : 'Admin'],['guest-sellers','Guests'],['trade-requests','Trades'],['global','Global']];
+        categories.forEach(([key,label]) => {
+            if (!['all','unread'].includes(key) && !root.querySelector(`[data-message-category="${key}"]`)) return;
+            const button = inboxNode('button','',label); button.type = 'button'; button.dataset.inboxFilter = key;
+            button.addEventListener('click', () => {state.people = false; state.filter = key; state.list.scrollTop = 0; renderMobileInbox(root);}); filters.append(button);
+        });
+        const status = inboxNode('p','seller-inbox-status'); status.setAttribute('role','status');
+        const retry = inboxNode('button','seller-inbox-retry','Try again'); retry.type = 'button'; retry.hidden = true;
+        const list = inboxNode('div','seller-inbox-list'); list.setAttribute('aria-label','Conversations');
+        panel.append(header,search,peopleStrip,filters,status,retry,list); root.append(panel);
+        const state = {panel,heading,search,peopleStrip,filters,status,retry,list,peopleButton,view:'closed',filter:'all',people:false,contacts:[],conversations:[],trades:[],token:'vnz-'+Date.now()};
+        mobileInboxes.set(root,state);
+        search.addEventListener('input', () => {state.list.scrollTop = 0; renderMobileInbox(root);});
+        peopleButton.addEventListener('click', () => {state.people = !state.people; renderMobileInbox(root); search.focus();});
+        retry.addEventListener('click', () => refreshMobileInbox(root));
+        close.addEventListener('click', () => {mobileView(root,'closed'); root.querySelector('[data-floating-messages-toggle]').focus();});
+        window.addEventListener('popstate', event => {
+            const owned = history.state?.vnzMessages === state.token;
+            if (!owned && state.view === 'closed' && !state.historyPending) return;
+            event.stopImmediatePropagation();
+            state.historyPending = false;
+            delete root.dataset.mobileHistoryPending;
+            const view = owned ? history.state.view : 'closed';
+            if (view === 'inbox' && mobileMessages(root)) openMobileInbox(root,false); else mobileView(root,view,false);
+        }, true);
+        const syncViewport = () => {
+            const vp = window.visualViewport;
+            root.style.setProperty('--seller-messages-height', (vp?.height || innerHeight)+'px');
+            root.style.setProperty('--seller-messages-top', (vp?.offsetTop || 0)+'px');
+        };
+        syncViewport(); window.visualViewport?.addEventListener('resize',syncViewport); window.visualViewport?.addEventListener('scroll',syncViewport);
+        state.wasMobile = mobileMessages(root);
+        window.addEventListener('resize', () => {
+            const nowMobile = mobileMessages(root);
+            if (nowMobile && !state.wasMobile && state.view === 'closed' && sellerWindows(root).some(item => !item.classList.contains('is-minimized') && !item.classList.contains('is-closing'))) mobileView(root,'conversation');
+            state.wasMobile = nowMobile;
+            syncViewport(); state.panel.hidden = !mobileMessages(root) || state.view !== 'inbox';
+            document.documentElement.classList.toggle('seller-messages-active',mobileMessages(root) && state.view !== 'closed');
+            renderSellerDock(root);
+        });
+        document.addEventListener('keydown', event => {
+            if (!mobileMessages(root) || state.view === 'closed') return;
+            if (event.key === 'Escape') {event.preventDefault(); event.stopImmediatePropagation(); if(state.view === 'conversation') openMobileInbox(root); else {mobileView(root,'closed'); root.querySelector('[data-floating-messages-toggle]').focus();} return;}
+            if (event.key !== 'Tab') return;
+            const host = state.view === 'inbox' ? panel : root.querySelector('[data-floating-chat-window]:not([hidden])');
+            const buttons = Array.from(host?.querySelectorAll('button:not([disabled]), input:not([disabled]), textarea:not([disabled]), a[href], [tabindex="0"]') || []).filter(n => !n.closest('[hidden],[inert]') && n.getClientRects().length);
+            const first=buttons[0], last=buttons[buttons.length-1];
+            if (event.shiftKey && (document.activeElement===first || !host?.contains(document.activeElement))) {event.preventDefault();last?.focus();}
+            else if (!event.shiftKey && (document.activeElement===last || !host?.contains(document.activeElement))) {event.preventDefault();first?.focus();}
+        },true);
+    }
     function sellerWindows(root) { return Array.from(root.querySelectorAll('[data-floating-chat-window]')); }
     function sellerMenuOpen(root) {
         return root.classList.contains('is-menu-open') || !root.querySelector('[data-floating-messages-panel]').inert;
@@ -199,9 +412,13 @@
         const ordered = windows.slice().sort((a,b) => Number(b.dataset.dockOrder || 0) - Number(a.dataset.dockOrder || 0));
         const eligible = ordered.filter(item => !item.classList.contains('is-minimized'));
         const fullscreen = eligible.find(item => item.classList.contains('is-maximized'));
-        const visible = fullscreen ? [fullscreen] : eligible.slice(0, sellerDockSlots());
+        const mobile = mobileMessages(root);
+        const mobileState = mobileInboxes.get(root);
+        const visible = mobile ? (mobileState?.view === 'conversation' ? eligible.slice(0,1) : []) : fullscreen ? [fullscreen] : eligible.slice(0, sellerDockSlots());
         sellerWindows(root).forEach(item => {
             item.hidden = !visible.includes(item);
+            if (mobile && visible.includes(item)) {item.setAttribute('role','dialog'); item.setAttribute('aria-modal','true'); item.setAttribute('aria-label',item.querySelector('[data-floating-chat-title]')?.textContent || 'Conversation');}
+            else {item.removeAttribute('role'); item.removeAttribute('aria-modal'); item.removeAttribute('aria-label');}
             item.style.order = String(visible.indexOf(item));
         });
         root.querySelector('[data-floating-chat-windows]').classList.toggle('is-topbar-wide', !!fullscreen);
@@ -209,7 +426,7 @@
         const hidden = ordered.filter(item => !visible.includes(item));
         const overflow = root.querySelector('[data-chat-overflow]');
         if (!overflow) return;
-        overflow.hidden = !hidden.length || !!fullscreen;
+        overflow.hidden = mobile || !hidden.length || !!fullscreen;
         root.classList.toggle('has-chat-overflow', hidden.length > 0 && !fullscreen);
         overflow.dataset.hiddenChatCount = String(hidden.length);
         overflow.setAttribute('aria-label', hidden.length + ' other open chats');
@@ -237,7 +454,7 @@
     function topbarView(root, view) {
         if (!topbarMode(root)) return;
         root.dataset.topbarView = view;
-        root.querySelector('[data-floating-messages-toggle]')?.setAttribute('aria-expanded', String(view === 'categories' || view === 'list'));
+        root.querySelector('[data-floating-messages-toggle]')?.setAttribute('aria-expanded', String(mobileMessages(root) ? mobileInboxes.get(root)?.view !== 'closed' : view === 'categories' || view === 'list'));
         renderSellerDock(root);
         window.dispatchEvent(new CustomEvent('vnz:seller-chat-state', { detail: { open: view === 'categories' || view === 'list' } }));
     }
@@ -251,6 +468,7 @@
     }
     function selectTopbarChat(root, item) {
         if (!topbarMode(root)) return;
+        if (mobileMessages(root) && mobileInboxes.get(root)?.openingCancelled && mobileInboxes.get(root)?.opening) {item.classList.add('is-minimized'); return;}
         const counter = Number(root.dataset.dockCounter || 0) + 1;
         root.dataset.dockCounter = String(counter);
         item.dataset.dockOrder = String(counter);
@@ -261,6 +479,7 @@
             other.classList.toggle('is-topbar-selected', other === item);
             if (other !== item && other.classList.contains('is-maximized')) resetSellerMaximize(other);
         });
+        if (mobileMessages(root)) mobileView(root, 'conversation');
         topbarView(root, 'conversation');
     }
     function minimizeSellerChat(root, item) {
@@ -391,6 +610,7 @@
                 root.dataset.conversations = JSON.stringify(conversations);
                 updateUnreadBadges(root, conversations, pulse, tradeRequests);
                 updateConversationPresence(root, conversations);
+                if (mobileMessages(root) && mobileInboxes.get(root)?.view === 'inbox') refreshMobileInbox(root);
                 const panel = root.querySelector('[data-floating-messages-panel]');
                 const category = root.dataset.activeCategory;
                 if (!panel.hidden && category) {
@@ -1268,6 +1488,7 @@
         const windows = root.querySelector('[data-floating-chat-windows]');
         const windowCount = windows.querySelectorAll('[data-floating-chat-window]').length;
         if (windowCount >= maximumWindows(root)) {
+            if (mobileMessages(root)) {mobileInboxes.get(root).status.textContent = 'You have 10 open chats. Close one before opening another.'; return;}
             const errorPanel = root.querySelector('[data-floating-messages-error]');
             errorPanel.textContent = topbarMode(root) ? 'You have 10 open chats. Close one before opening another.' : window.innerWidth <= 680
                 ? 'Close the current chat window before opening another on this screen.'
@@ -1599,12 +1820,14 @@
         if (topbarMode(root)) {
             root.dataset.topbarView = 'closed';
             initSellerOverflow(root);
+            initMobileInbox(root);
             root.querySelector('[data-floating-messages-close]').textContent = '\u00d7';
             const eyebrow = root.querySelector('.floating-messages-panel-header span');
             if (eyebrow) eyebrow.textContent = 'VNZ TECH \u00b7 MESSAGES';
             root.addEventListener('vnz:seller-chat-hide', () => hideTopbarChat(root));
         }
         toggle.addEventListener('click', () => {
+            if (mobileMessages(root)) {openMobileInbox(root); return;}
             if (topbarMode(root) && sellerMenuOpen(root)) {
                 hideTopbarChat(root); toggle.focus(); return;
             }
@@ -1765,6 +1988,7 @@
             const workspaceBack = event.target.closest('[data-chat-workspace-back]');
             if (workspaceBack) {
                 const windowElement = workspaceBack.closest('[data-floating-chat-window]');
+                if (mobileMessages(root) && windowElement) {openMobileInbox(root); return;}
                 if (topbarMode(root) && windowElement) {
                     minimizeSellerChat(root, windowElement);
                     const category = windowElement.dataset.originCategory || 'private';
@@ -1803,6 +2027,7 @@
             const close = event.target.closest('[data-chat-close]');
             const minimize = event.target.closest('[data-chat-minimize]');
             if (close) {
+                if (mobileMessages(root)) openMobileInbox(root);
                 const windowElement = close.closest('[data-floating-chat-window]');
                 preserveCallOwners(root, windowElement);
                 windowElement?.classList.add('is-closing');
@@ -1815,6 +2040,7 @@
                 }
                 refreshUnread(root);
             } else if (minimize) {
+                if (mobileMessages(root)) {openMobileInbox(root); return;}
                 if (topbarMode(root)) { minimizeSellerChat(root, minimize.closest('[data-floating-chat-window]')); toggle.focus(); return; }
                 const windowElement = minimize.closest('[data-floating-chat-window]');
                 windowElement?.classList.remove('is-maximized', 'is-mobile-chat-open');

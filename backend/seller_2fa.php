@@ -1,5 +1,8 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('auto', false, true, 'account_settings');
+
 
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';
@@ -131,7 +134,7 @@ try {
         $updateStmt->execute([$secret, $counter, $userId]);
         if ($updateStmt->rowCount() !== 1) {
             $pdo->rollBack();
-            sellerTwoFactorResponse(false, 'Two-factor authentication is already enabled. Refresh Settings.', 409);
+            sellerTwoFactorResponse(false, 'Two-factor authentication is already enabled. Refresh Security.', 409);
         }
         $pdo->commit();
         unset($_SESSION['seller_2fa_setup_secret'], $_SESSION['seller_2fa_setup_started_at']);

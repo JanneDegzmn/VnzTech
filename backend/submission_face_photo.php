@@ -1,4 +1,7 @@
 <?php
+
+require_once __DIR__ . '/site_status.php';
+vnzEnforceSiteMaintenance('json', true);
 /** Private submission selfie; authority comes from current database permissions. */
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/session.php';

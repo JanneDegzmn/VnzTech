@@ -1,0 +1,451 @@
+{
+  "routes": {
+    "backend/login.php": [
+      "auto",
+      false
+    ],
+    "backend/register.php": [
+      "auto",
+      false
+    ],
+    "backend/verify_seller_2fa.php": [
+      "auto",
+      false
+    ],
+    "backend/social_auth.php": [
+      "auto",
+      false
+    ],
+    "backend/social_signup_complete.php": [
+      "auto",
+      false
+    ],
+    "backend/update_profile.php": [
+      "auto",
+      false
+    ],
+    "backend/update_password.php": [
+      "auto",
+      false
+    ],
+    "backend/update_seller_language.php": [
+      "auto",
+      false
+    ],
+    "backend/update_seller_notification_preferences.php": [
+      "auto",
+      false
+    ],
+    "backend/seller_2fa.php": [
+      "auto",
+      false
+    ],
+    "backend/request_email_verification.php": [
+      "auto",
+      false
+    ],
+    "backend/verify_email.php": [
+      "auto",
+      false
+    ],
+    "backend/submit_submission.php": [
+      "auto",
+      false
+    ],
+    "backend/identity_api.php": [
+      "auto",
+      false
+    ],
+    "backend/get_unseen_results.php": [
+      "auto",
+      false
+    ],
+    "backend/get_public_rates.php": [
+      "auto",
+      false
+    ],
+    "backend/mark_result_seen.php": [
+      "auto",
+      false
+    ],
+    "backend/seller_topbar_api.php": [
+      "auto",
+      false
+    ],
+    "backend/counter_offer.php": [
+      "auto",
+      false
+    ],
+    "backend/respond_offer.php": [
+      "auto",
+      false
+    ],
+    "backend/trade_requests.php": [
+      "auto",
+      false
+    ],
+    "backend/track_submission.php": [
+      "auto",
+      false
+    ],
+    "backend/guest_submission_claim.php": [
+      "auto",
+      false
+    ],
+    "backend/guest_submission_onboarding.php": [
+      "auto",
+      false
+    ],
+    "backend/guest_submission_onboarding_status.php": [
+      "auto",
+      false
+    ],
+    "backend/admin_respond_offer.php": [
+      "json",
+      true
+    ],
+    "backend/admin_respond_submission.php": [
+      "json",
+      true
+    ],
+    "backend/admin_submission_queue_updates.php": [
+      "json",
+      true
+    ],
+    "backend/admin_topbar_updates.php": [
+      "json",
+      true
+    ],
+    "backend/get_unseen_admin_counts.php": [
+      "json",
+      true
+    ],
+    "backend/mark_admin_notifications_seen.php": [
+      "json",
+      true
+    ],
+    "backend/send_offer.php": [
+      "json",
+      true
+    ],
+    "backend/update_admin_settings.php": [
+      "json",
+      true
+    ],
+    "backend/manage_buying_rate.php": [
+      "json",
+      true
+    ],
+    "backend/manage_trade.php": [
+      "json",
+      true
+    ],
+    "backend/global_chat_moderation.php": [
+      "json",
+      true
+    ],
+    "backend/submission_face_photo.php": [
+      "json",
+      true
+    ],
+    "backend/chat_messages.php": [
+      "json",
+      true
+    ],
+    "backend/chat_conversations.php": [
+      "json",
+      true
+    ],
+    "backend/chat_call_signal.php": [
+      "json",
+      true
+    ],
+    "backend/chat_call_sessions.php": [
+      "json",
+      true
+    ],
+    "backend/chat_attachment.php": [
+      "json",
+      true
+    ],
+    "backend/chat_presence.php": [
+      "json",
+      true
+    ],
+    "backend/chat_scaledrone_auth.php": [
+      "json",
+      true
+    ],
+    "index.php": [
+      "auto",
+      false
+    ],
+    "sell.php": [
+      "auto",
+      false
+    ],
+    "seller/tracking.php": [
+      "auto",
+      false
+    ],
+    "account/login.php": [
+      "auto",
+      false
+    ],
+    "account/register.php": [
+      "auto",
+      false
+    ],
+    "account/forgot_password.php": [
+      "auto",
+      false
+    ],
+    "account/reset_password.php": [
+      "auto",
+      false
+    ],
+    "account/social_signup.php": [
+      "auto",
+      false
+    ],
+    "account/dashboard.php": [
+      "auto",
+      false
+    ],
+    "account/submissions.php": [
+      "auto",
+      false
+    ],
+    "account/pages/dashboard.php": [
+      "auto",
+      false
+    ],
+    "account/pages/offers.php": [
+      "auto",
+      false
+    ],
+    "account/pages/profile.php": [
+      "auto",
+      false
+    ],
+    "account/pages/security.php": [
+      "auto",
+      false
+    ],
+    "account/pages/settings.php": [
+      "auto",
+      false
+    ],
+    "account/pages/submission.php": [
+      "auto",
+      false
+    ],
+    "account/pages/submissions.php": [
+      "auto",
+      false
+    ],
+    "account/pages/trade_history.php": [
+      "auto",
+      false
+    ],
+    "account/pages/transaction-chat-window.php": [
+      "auto",
+      false
+    ],
+    "account/pages/transaction.php": [
+      "auto",
+      false
+    ],
+    "account/pages/transactions.php": [
+      "auto",
+      false
+    ],
+    "admin/pages/activity.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/announcements.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/buying_rates.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/dashboard.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/identity_verifications.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/moderation.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/offers.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/profile.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/reports.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/security.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/settings.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/submissions.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/submission_review.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/trade_items.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/trade_requests.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/transaction-chat-window.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/transactions.php": [
+      "auto",
+      true
+    ],
+    "admin/pages/transaction_review.php": [
+      "auto",
+      true
+    ],
+    "admin/dashboard.php": [
+      "auto",
+      true
+    ],
+    "announcements.php": [
+      "auto",
+      false
+    ],
+    "backend/setup_super_admin.php": [
+      "auto",
+      false
+    ],
+    "includes/transaction-chat-window.php": [
+      "auto",
+      true
+    ]
+  },
+  "action_scopes": {
+    "backend/identity_api.php": {
+      "seller": [
+        "face_token",
+        "status",
+        "submit"
+      ],
+      "admin": [
+        "evidence",
+        "review"
+      ],
+      "service_mode": "submissions",
+      "fallback": "public"
+    }
+  },
+  "seller_routes": [
+    "backend/update_profile.php",
+    "backend/update_password.php",
+    "backend/update_seller_language.php",
+    "backend/update_seller_notification_preferences.php",
+    "backend/seller_2fa.php",
+    "backend/submit_submission.php",
+    "backend/get_unseen_results.php",
+    "backend/mark_result_seen.php",
+    "backend/seller_topbar_api.php",
+    "backend/counter_offer.php",
+    "backend/respond_offer.php",
+    "backend/trade_requests.php",
+    "backend/guest_submission_claim.php",
+    "backend/guest_submission_onboarding.php",
+    "backend/guest_submission_onboarding_status.php",
+    "account/dashboard.php",
+    "account/submissions.php",
+    "account/pages/dashboard.php",
+    "account/pages/offers.php",
+    "account/pages/profile.php",
+    "account/pages/security.php",
+    "account/pages/settings.php",
+    "account/pages/submission.php",
+    "account/pages/submissions.php",
+    "account/pages/trade_history.php",
+    "account/pages/transaction-chat-window.php",
+    "account/pages/transaction.php",
+    "account/pages/transactions.php"
+  ],
+  "seller_service_scopes": {
+    "backend/update_profile.php": "account_settings",
+    "backend/update_password.php": "account_settings",
+    "backend/update_seller_language.php": "account_settings",
+    "backend/update_seller_notification_preferences.php": "account_settings",
+    "backend/seller_2fa.php": "account_settings",
+    "backend/submit_submission.php": "submissions",
+    "backend/get_unseen_results.php": "submissions",
+    "backend/mark_result_seen.php": "submissions",
+    "backend/seller_topbar_api.php": "seller_portal",
+    "backend/counter_offer.php": "offers_trades",
+    "backend/respond_offer.php": "offers_trades",
+    "backend/trade_requests.php": "offers_trades",
+    "backend/guest_submission_claim.php": "submissions",
+    "backend/guest_submission_onboarding.php": "submissions",
+    "backend/guest_submission_onboarding_status.php": "submissions",
+    "account/dashboard.php": "seller_portal",
+    "account/submissions.php": "submissions",
+    "account/pages/dashboard.php": "seller_portal",
+    "account/pages/offers.php": "offers_trades",
+    "account/pages/profile.php": "account_settings",
+    "account/pages/security.php": "account_settings",
+    "account/pages/settings.php": "account_settings",
+    "account/pages/submission.php": "submissions",
+    "account/pages/submissions.php": "submissions",
+    "account/pages/trade_history.php": "offers_trades",
+    "account/pages/transaction-chat-window.php": "messaging",
+    "account/pages/transaction.php": "offers_trades",
+    "account/pages/transactions.php": "offers_trades"
+  },
+  "shared_service_scopes": {
+    "backend/chat_attachment.php": "messaging",
+    "backend/chat_call_sessions.php": "messaging",
+    "backend/chat_call_signal.php": "messaging",
+    "backend/chat_conversations.php": "messaging",
+    "backend/chat_messages.php": "messaging",
+    "backend/chat_presence.php": "messaging",
+    "backend/chat_scaledrone_auth.php": "messaging",
+    "includes/transaction-chat-window.php": "messaging"
+  },
+  "public_service_scopes": {
+    "sell.php": "sell_page"
+  },
+  "empty_nonfeatures": [
+    "backend/propose_transaction_delivery.php",
+    "backend/admin_respond_transaction_delivery.php"
+  ],
+  "exceptions": {
+    "admin/login.php": "Existing admin login/TOTP/reset only",
+    "admin/logout.php": "Logout remains available",
+    "account/logout.php": "Logout remains available",
+    "backend/site_status_updates.php": "Public read-only snapshot status",
+    "backend/admin_site_status.php": "Own active-admin JSON guard"
+  }
+}

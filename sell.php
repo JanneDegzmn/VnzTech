@@ -1,5 +1,8 @@
 <?php
 
+
+require_once __DIR__ . '/backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', false, false, 'sell_page');
 require_once __DIR__ . '/backend/database.php';
 require_once __DIR__ . '/backend/session.php';
 require_once __DIR__ . '/backend/csrf.php';
@@ -121,6 +124,7 @@ $openFormRequested =
 
 
 
+<?php $siteStatusArea = 'public'; require __DIR__ . '/includes/site-status-head.php'; ?>
 </head>
 
 

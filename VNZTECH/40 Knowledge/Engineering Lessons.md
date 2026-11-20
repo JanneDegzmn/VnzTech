@@ -10,6 +10,12 @@ tags: [engineering, agents, lessons]
 
 Shared learning memory, requested by the owner on 2026-11-19. Keep practical lessons with evidence, affected roles and remaining limits. New evidence can correct an old conclusion; avoid invented success, universal rules from one fixture, or private user data. Current implementation/checkpoints remain in [[Task Center]].
 
+## Admin theme tokens in shared module wrappers - 2026-11-20
+
+- **Do:** override both scoped surface tokens and `color-scheme` when a shared Admin wrapper is reused by pages with light and dark themes. Checking only the page background misses nested cards, inputs, and native controls that retain a dark palette.
+- **Do:** assert computed card, text, table, form-control and status colors after the production CSS cascade; exercise the same stateful control before and after the state change.
+- **Evidence:** TASK-20261120-018: 211 Account/Activity Log + 388 Chat Moderation + 875 Site Updates/maintenance assertions pass across themes/responsive widths; synthetic fixtures/previews only. [[90 System/Tasks/Records/TASK-20261120-018]] · [[90 System/Runs/2026-11-20 204827 Admin Light Theme and Maintenance Toggle v1.3]].
+
 ## Identity and review boundaries — TASK-20261119-004
 
 - **Do:** authorize submission from server state tied to the actor, immutable evidence and an authorized reviewer. **Avoid:** accepting a browser score/descriptor/`verified=true` as proof. Client checks can be bypassed. Roles: Aegis/Forge/Quinn. [OWASP validation](https://cheatsheetseries.owasp.org/cheatsheets/Input_Validation_Cheat_Sheet.html).
@@ -34,6 +40,12 @@ Shared learning memory, requested by the owner on 2026-11-19. Keep practical les
 ### Preference placement correction - 2026-11-20 08:29
 
 Latest owner wants login save beside its select, overriding the earlier separate-row preference above. Keep helper text outside the aligned controls; equal button widths alone do not align a select with a button. Test actual form markup and intermediate widths:542px exposed scoped login width190 versus generic mobile footer width498. Use narrow form selectors with consistent breakpoints/heights, keep mobile stretch, and verify the footer's right alignment as well as its width.232 actual-form/CSS checks pass; source/evidence: [[90 System/Tasks/Records/TASK-20261120-009]].
+
+## Page-scoped compact action sizing - 2026-11-20
+
+- **Do:** add a page-specific root class when one Seller module needs a different action width; do not weaken the shared Settings preference sizing. Measure rendered text/intrinsic width, not only the declared width. A first Security content-fit attempt still rendered at199.06px because the 12.8px label and spacing exceeded the 190px fixed width. Compact, readable local type/spacing brought it below190px without wrapping; preserve control height and explicitly test both sides of the500px breakpoint.
+- **Evidence:** Seller Security and Settings assertions pass across light/dark at375/499/500/542/768/1440px; Settings keeps its190px desktop/full-width mobile action. 448 current-source synthetic browser checks pass; live account/device verification remains untested.
+- **Source/task:** [[90 System/Tasks/Records/TASK-20261120-021]] · [[90 System/Runs/2026-11-20 215336 Seller Security UI v1.0]] · `account/pages/security.php` · `assets/css/seller_account.css` · `tests/seller_account_ux_browser_test.mjs`.
 
 ## Implementation findings — 2026-11-19
 
@@ -185,3 +197,82 @@ Evidence:755 full assertions, three inspected reference previews; code/checks an
 ## Git credential cleanup v1 - 2026-11-20T11:24:01+08:00
 
 Use placeholder names, never real credentials, as setup-template replacement keys. Check keys against example template. Fixing current files alone leaves secrets in earlier commits. Back up before approved rewriting; preserve unrelated files/refs and scan without printing values. Backups/other refs retain old secrets: do not upload backup or push all refs. Rotate provider secrets separately; rewriting history does not rotate them. [[90 System/Tasks/Records/TASK-20261120-011]].
+
+
+## Mobile Messages v1 - 2026-11-20T11:49:24+08:00
+
+Separate mobile navigation state from mounted chat lifetime; switching inbox/conversation or resizing must retain widget nodes/drafts/call ownership. Bound history entries and honor explicit close even when open POST resolves late. Focus heading when opening inbox to avoid triggering phone keyboard; trap focus in visible dialog and restore launcher on close. Size against visual viewport/safe areas. Very short heights need compact composer and context collapse; passing normal portrait bounds did not catch a zero-height message area at812x260. Test actual widget content, not empty boxes. Reuse authorized existing fields; omit unavailable timestamps/previews/presence rather than fabricate data. Safe local avatar allowlist and textContent keep untrusted labels out of HTML. Four source/test files only, no provider/API change. [[90 System/Tasks/Records/TASK-20261120-012]] - [[90 System/Runs/2026-11-20 114924 Mobile Messages Inbox v1]].
+
+
+### Alignment + Chat Space v2 - 2026-11-20T13:52:53+08:00
+
+Use native details/summary for simple read-only context disclosure: accessible keyboard toggle without new controller/listener/API, initially closed to prioritize messages. Keep the original authorized context markup intact and bound expanded height. Preserve textarea/widget identity while opening/closing. Count actual reply rectangles within the message viewport; configured chat height alone does not prove five replies fit. Message size/media and keyboard height limit that target. Test helpers must still match synthetic content after replacing fixture messages; a text-marker mismatch is a test defect. Center absolute controls relative to their intended container, reserve branding padding when moving a sidebar close button, and verify the SVG center too. PASS:77 new actual-component browser assertions across1200x800,375x812,768x1024,1024x768 light/dark (native disclosure/click/Enter, five short replies, draft and message/composer preservation, centered arrow/SVG, left burger/close);216 mobile/tablet regression assertions including812x260;223 existing topbar/desktop regressions. PHP syntax, two JS syntax checks and admin PHP widget unchanged-info guard PASS. Two inspected previews: light desktop and dark phone collapsed-info conversation. No live seller messages/calls/provider, physical devices/keyboard or screen-reader acceptance. [[90 System/Tasks/Records/TASK-20261120-012]].
+
+
+## Admin UX + Queue v1 - 2026-11-20T14:43:32+08:00
+
+Separate in-app message history from dashboard page history: an earlier shell popstate listener can reload the page before the chat listener. Guard shell loaders using message history/current view/pending-close state; testing shared widget alone did not expose that integration. Use actual role-specific header/widget and preserve restrictions when moving a conditional launcher. Hidden scrollbar must retain one focusable scroll region; override more specific old overflow rules so nested scrolling does not survive. Verify actual light/dark queue controls, not only JS events. Submission status offer_sent can mean latest seller counter-offer: inspect latest offer sender/status before labelling Waiting seller or next action. MAX(id) alone misses late lower-ID commits; total-growth snapshot improves insert-only advisory but concurrent deletion still defeats exact arrival counts. Preserve drafts with a banner/explicit refresh; do not auto-refresh review or claim load guarantees from synthetic bursts. No automatic agent training: these linked notes are shared reusable memory. PASS:185 actual admin-component/endpoint/browser assertions on320/375/768/1024/1440 light/dark;235 SQLite query/pagination/synthetic-burst assertions;41 permission endpoint/controller assertions;16 pure seller next-step assertions; seller regressions77 chat-space +216 mobile/tablet +223 topbar/desktop assertions. PHP lint11 application files and JS syntax5 checks; existing admin decision beginTransaction/FOR UPDATE/status-validation ordering preserved by source check. Four final previews inspected: light375 queue/header, dark1440 multi-chat, light/dark375 inbox. Synthetic data/services only; no live account/provider/message/call writes, real MySQL concurrency/load test, physical phone/keyboard or screen-reader acceptance. [[90 System/Tasks/Records/TASK-20261120-013]] - [[90 System/Runs/2026-11-20 144332 Admin UX Queue v1]].
+
+
+## Header Alignment v1 - 2026-11-20T14:55:00+08:00
+
+Match brand/header border-box heights and prevent flex shrinking; padding alone does not guarantee a continuous separator. Use the same theme-aware border color across both rows. Keep popup positioning based on actual measured header bounds and verify phone/tablet plus desktop. A reused component can carry foreign surface colors: override with active area neutral dark/existing light palette. PASS:215 admin,226 seller mobile/tablet,225 topbar regression assertions using actual header/widget assets and synthetic data. Header-specific checks cover85px row heights/bottom-edge alignment, matching admin border colors and neutral dark/existing light surfaces at320/375/768/1024/1440 (seller adds812 landscape/1200 desktop). Three previews inspected: dark admin1440, light admin375, light seller1200. Three test JS syntax and changed-line Git whitespace PASS. No live provider/call/device/physical-keyboard or screen-reader acceptance; no backend/schema/config/push/deploy changes. [[90 System/Tasks/Records/TASK-20261120-014]].
+
+## Owner CSS unit convention - 2026-11-20
+
+Owner specifies `rem` for text, `%` for layouts, `vw` for full screen sections, and `px` for borders. Iris and other UI runners must consult [[40 Knowledge/System Modules/Interface and Portal UX#CSS unit rules]] before sizing new or modified UI. Do preserve existing unrelated CSS and verify responsive/theme behavior within the approved coding scope; do not claim this notes-only update converted or audited the application. Evidence: [[90 System/Tasks/Quick Requests#Q-20261120-004 CSS unit rules]].
+
+## Admin moderation settings layout - 2026-11-20
+
+For long configuration lists beside a short review queue, avoid independent capped scroll regions when the page itself can scroll. Use top-aligned columns so the shorter column does not become an empty-height panel; keep one-column breakpoints and responsive form columns explicit. Test the actual dashboard + operations + theme styles with synthetic content at narrow, breakpoint, and desktop widths in both themes. Assert scroll behavior, contrast, focus, and control sizing, then inspect screenshots; computed styles alone did not reveal the fixture's missing production font until the admin dashboard stylesheet was included. Evidence:130 browser assertions, four previews; no live account/device claims. [[90 System/Tasks/Records/TASK-20261120-015]] - [[90 System/Runs/2026-11-20 153700 Admin Moderation UI v1]].
+
+## Admin Settings client-side pagination and palette - 2026-11-20
+
+When an existing endpoint already returns a complete manageable list, paginating after the current client-side filter can improve navigation without changing backend semantics; explicitly state that payload size is unchanged. Reset to page one on search, hide controls for zero/one result page, clamp after deletions, and verify real Tab traversal through native buttons. Scope shared color tokens to the target page and test theme-specific overrides with the actual production wrapper hierarchy; a fixture whose ID/class nesting differs can falsely fail overrides. Evidence:178 browser assertions across five widths and both themes, four previews, plus PHP lint and the pure moderation regression. Synthetic content only. [[90 System/Tasks/Records/TASK-20261120-015]] - [[90 System/Runs/2026-11-20 161822 Admin Settings UI v2]].
+
+## Admin Settings black cards, spacing and three-item pages - 2026-11-20
+
+For page-specific black card styling under a global light theme, override not just surfaces and controls but also high-specificity inherited heading, label, and metadata rules; computed colors and contrast assertions caught unreadable inherited text. Keep the scope rooted in the target Settings page and verify an outside-page surface remains unaffected. When reducing client-side page size, verify page-count changes and last-page deletion clamping with enough fixture rows to cross multiple pages; include a distinct password full-width and section-gap assertion. Evidence:318 synthetic browser assertions across five widths and both selector modes; six previews, PHP/JS syntax, pure moderation regression and whitespace pass. [[90 System/Tasks/Records/TASK-20261120-015]] - [[90 System/Runs/2026-11-20 163311 Admin Settings UI v3]].
+
+## Seller-only maintenance boundaries and dialog focus - 2026-11-20
+
+- **Do:** classify each guarded route explicitly. A seller-only mode should be an opt-in on seller pages/actions, not a global switch that also blocks login, public browsing, guest tracking, or Admin. Keep server-side checks authoritative for direct requests; the client overlay is UX, not the security boundary.
+- **Do:** test the full route inventory and distinguish public reachability, seller blocking, and authenticated Admin bypass in isolated HTTP tests. When adding links to a blocking dialog, cycle keyboard focus across every link/button and measure the visible focus/contrast in both themes.
+- **Evidence:** 87 inventory entries / 28 seller-only routes plus one mixed-action identity API; 25 isolated guard checks; 331 browser assertions and four inspected responsive/theme previews. No active maintenance, live account, or screen-reader result. [[90 System/Tasks/Records/TASK-20261120-016]] · [[90 System/Runs/2026-11-20 175641 Branded Seller Maintenance Follow-up]].
+
+## PHP include scope and shared PDO - 2026-11-20
+
+- **Do:** account for the caller's variable scope when a PHP bootstrap is first `require`d from inside a function. If included code initializes a handle that helper functions read through `global`, explicitly bind that global before the include or load the bootstrap at global scope.
+- **Avoid:** assuming `require_once` always initializes global variables; included files execute in the scope of the call site.
+- **Evidence:** the Admin maintenance path initially included `auth.php` from `vnzEnforceSiteMaintenance()` and produced a null `$pdo`; an isolated HTTP fixture using the real auth helper and SQLite failed before the fix and passed afterward. This does not establish live-DB behavior. [[90 System/Tasks/Records/TASK-20261120-016]] · [[90 System/Runs/2026-11-20 180944 Admin Maintenance PDO Scope Fix]].
+
+## Single-card grids and shell-level status UI - 2026-11-20
+
+- **Do:** inspect the outer layout as well as the card itself. A single child in a two-column grid may remain only half-width; use a page-scoped one-column wrapper when the page content should stretch, while retaining intentional inner grids and breakpoint behavior.
+- **Do:** keep operational status discoverable in its dedicated management view when a persistent global banner distracts from routine Admin work. Remove only the shell presentation, not status controls, enforcement, public announcements, or seller behavior.
+- **Do:** measure spacing and verify the existing surface in both theme selectors; a request for more width/spacing does not authorize a new background palette.
+- **Evidence:** TASK-20261120-016 Admin UI v1.2: 388 Moderation, 127 account/Profile, 337 site-status, 263 Site Updates browser assertions and six synthetic previews. No live account/device or maintenance activation. [[90 System/Tasks/Records/TASK-20261120-016]] · [[90 System/Runs/2026-11-20 184244 Admin UI Full-Width v1.2]].
+
+## Explicit maintenance scopes and Admin theme specificity - 2026-11-20
+
+- **Do:** make service choices map to actual server-enforced page/action scopes; keep the browser overlay as presentation, not the access boundary. Test selected and unaffected scopes, mixed Admin/seller endpoints, public browsing, and authenticated Admin access. Default missing mode in legacy state to the previous seller-only behavior rather than unexpectedly blocking the public Sell page.
+- **Do:** when adding black Admin panels, check specificity against global light-theme `#contentArea` rules for headings, labels and paragraphs; compute contrast on the rendered surface, not only on the new selector.
+- **Do:** for full-screen pages with vertical scrolling, compare document `scrollWidth` with `clientWidth`; `100vw` can include the scrollbar width and create a horizontal scroll even when an `innerWidth` assertion appears clear.
+- **Evidence:** TASK-20261120-016 v1.3-R2: 103 service, 36 isolated HTTP, 263 route/source, 609 site-status, and 533 Admin Site Updates assertions pass; 87 guarded-route PHP lints pass. The rendered public Sell maintenance view was checked in sell-page-only and all-services modes. No live DB/account or maintenance activation. [[90 System/Tasks/Records/TASK-20261120-016]] · [[90 System/Runs/2026-11-20 193429 Admin Site Updates and Service Modes v1.3-R2]].
+
+## Theme-aware Admin panels and cascade checks - 2026-11-20
+
+- **Do:** scope a shared chat-widget palette by the authenticated Admin topbar placement; keep Seller/Public selectors and semantic bubble/action colors out of the override.
+- **Do:** assert computed theme surfaces for the real rendered components, including disabled/active controls and dialog keyboard focus. Existing global `#contentArea` and generic button rules can out-rank attribute-only styles; target the actual button element/state when needed. Allow the shared color transition to finish before asserting the final computed status colors.
+- **Evidence:** TASK-20261120-017: 815 Site Updates and 225 Admin chat assertions pass across light/dark and responsive widths; synthetic fixtures/previews only, no live Admin/provider verification. [[90 System/Tasks/Records/TASK-20261120-017]] · [[90 System/Runs/2026-11-20 202901 Admin Site Updates and Chat Palettes v1.2]].
+
+## Reuse the established Admin page header - 2026-11-20
+
+- **Do:** when matching another Admin module's title hierarchy, reuse its existing header markup/class and stylesheet instead of approximating typography with a second local header. Keep the requested page-specific eyebrow and confirm the real fixture loads both shared and scoped CSS.
+- **Do:** regression-check branding removal, computed type hierarchy, theme contrast, and overflow at narrow and desktop widths; inspect representative light/dark previews.
+- **Evidence:** TASK-20261120-019: 1,037 actual-page Site Updates browser assertions pass across light/dark, 375/768/1440px, and permission combinations; three synthetic previews inspected. No live Admin/device acceptance. [[90 System/Tasks/Records/TASK-20261120-019]] · [[90 System/Runs/2026-11-20 211328 Admin Site Updates Header Refinement v1.4]].
+
+## Admin modal layers must exceed shell layers - 2026-11-20
+
+- **Do:** verify overlay stacking against every fixed/sticky shell sibling, not only the modal's local `z-index`. Assert viewport bounds and use element hit-testing over the topbar/sidebar to prove the backdrop actually covers them.
+- **Evidence:** TASK-20261120-020: transaction modal's old `9999` layer was below the `11010` Admin topbar and `11030` sidebar. The Admin-scoped `11035` override passes 81 light/dark responsive viewport, paint-order and close assertions; three synthetic previews inspected. No live Admin/device acceptance. [[90 System/Tasks/Records/TASK-20261120-020]] · [[90 System/Runs/2026-11-20 212655 Admin Transaction Modal Layering v1.0]].

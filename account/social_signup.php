@@ -1,5 +1,8 @@
 <?php
 declare(strict_types=1);
+require_once __DIR__ . '/../backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', false);
+
 
 require_once __DIR__ . '/../backend/session.php';
 require_once __DIR__ . '/../backend/csrf.php';
@@ -43,6 +46,7 @@ $csrfToken = generateCsrfToken();
     <link rel="stylesheet" href="/VNZ-TECH/assets/css/terms_modal.css?v=<?= filemtime(__DIR__ . '/../assets/css/terms_modal.css') ?>">
     <link rel="stylesheet" href="/VNZ-TECH/assets/css/password_visibility.css?v=<?= filemtime(__DIR__ . '/../assets/css/password_visibility.css') ?>">
     <script src="/VNZ-TECH/assets/js/public-theme.js?v=<?= filemtime(__DIR__ . '/../assets/js/public-theme.js') ?>" defer></script>
+<?php $siteStatusArea = 'public'; require __DIR__ . '/../includes/site-status-head.php'; ?>
 </head>
 <body>
 <div class="register-wrapper">

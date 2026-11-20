@@ -42,12 +42,14 @@ const visibleContent = () => run(`(() => {
 })()`);
 
 try{
- const widths=process.env.VNZ_TOPBAR_FOCUSED==='1'?[375]:[1200,768,600,440,375,320];
+ // Mobile/tablet now use the inbox suite in seller_mobile_messages_browser_test.mjs.
+ const widths=[1200];
  for(const width of widths)for(const theme of ['light','dark']){
   await client.call('Emulation.setDeviceMetricsOverride',{width,height:width<=440?667:800,deviceScaleFactor:1,mobile:width<761});
   await client.call('Emulation.setTouchEmulationEnabled',{enabled:width<=440,maxTouchPoints:1});
   await client.navigate(`http://127.0.0.1:${server.address().port}/`);await delay(250);
   await run(`document.documentElement.dataset.sellerTheme=${JSON.stringify(theme)}`);
+  check(await run(`(()=>{const h=document.querySelector('[data-seller-topbar]').getBoundingClientRect(),b=document.querySelector('.sidebar-brand').getBoundingClientRect();return Math.abs(h.height-85)<1&&Math.abs(b.height-85)<1&&Math.abs(h.bottom-b.bottom)<1})()`),'Seller header and branding share 85px aligned border');
   check(await run(`document.querySelectorAll('[data-floating-messages-toggle]').length===1`),'One launcher');
   check(await run(`getComputedStyle(document.querySelector('[data-floating-messages-toggle]')).position==='relative'`),'Topbar launcher not fixed at bottom');
   check(await run(`document.documentElement.scrollWidth<=innerWidth`),'No horizontal overflow');
@@ -170,7 +172,7 @@ try{
 
  // Chat v4 multi-window lifecycle uses separate real widget instances and synthetic endpoints.
  mode='ok';language='en';
- for(const width of [1200,375]) for(const theme of ['light','dark']) {
+ for(const width of [1200]) for(const theme of ['light','dark']) {
   await client.call('Emulation.setDeviceMetricsOverride',{width,height:width<900?667:800,deviceScaleFactor:1,mobile:width<900});
   await client.call('Emulation.setTouchEmulationEnabled',{enabled:width<900,maxTouchPoints:1});
   await client.navigate(`http://127.0.0.1:${server.address().port}/`);await delay(250);
@@ -256,7 +258,7 @@ try{
  }
 
  // Reference layout v5: observable geometry, rail avatars/+N and resize retention.
- for(const [width,expectedSlots] of [[1200,2],[1440,3],[1760,4],[1920,4],[768,1],[375,1],[320,1]]) for(const theme of ['light','dark']) {
+ for(const [width,expectedSlots] of [[1200,2],[1440,3],[1760,4],[1920,4]]) for(const theme of ['light','dark']) {
   const height=width===1760?643:width<900?667:800;
   await client.call('Emulation.setDeviceMetricsOverride',{width,height,deviceScaleFactor:1,mobile:width<=768});
   await client.call('Emulation.setTouchEmulationEnabled',{enabled:width<900,maxTouchPoints:1});
@@ -288,7 +290,7 @@ try{
    await run(`window.referenceNodes=Array.from(document.querySelectorAll('[data-floating-chat-window]'));`);
    await client.call('Emulation.setDeviceMetricsOverride',{width:375,height:480,deviceScaleFactor:1,mobile:true});await delay(200);
    check(await run(`document.querySelectorAll('[data-floating-chat-window]:not([hidden])').length===1 && window.referenceNodes.every(n=>n.isConnected && n.querySelector('[data-chat-input]').value==='Reference draft '+n.dataset.transactionId)`),'Resize to phone retains all widgets and drafts');
-   check(await run(`(()=>{const rail=document.querySelector('[data-chat-overflow]').getBoundingClientRect();return rail.top>=document.querySelector('[data-seller-topbar]').getBoundingClientRect().bottom && rail.bottom<=innerHeight;})()`),'Rail stays bounded on a short phone viewport');
+   check(await run(`document.querySelector('[data-chat-overflow]').hidden`),'Mobile conversation hides desktop overflow rail');
    check(await visibleContent(),'Short reference layout retains message/composer visibility');
    await client.call('Emulation.setDeviceMetricsOverride',{width:1920,height:800,deviceScaleFactor:1,mobile:false});await delay(200);
    check(await run(`document.querySelectorAll('[data-floating-chat-window]:not([hidden])').length===4 && window.referenceNodes.every(n=>n.isConnected)`),'Resize back restores four desktop slots without duplicate widgets');

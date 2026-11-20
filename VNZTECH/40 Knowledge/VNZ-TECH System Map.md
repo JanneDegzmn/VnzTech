@@ -2,7 +2,7 @@
 type: system-map
 status: source-reviewed
 created: 2026-11-14
-updated: 2026-11-19
+updated: 2026-11-20
 tags: [vnz-tech, system-map]
 ---
 
@@ -15,6 +15,8 @@ Source-backed memory ng system, reviewed **2026-11-14**. Ang “implemented” d
 2026-11-19 ID-verification addition: account-once/guest-per-draft ID+selfie/admin-review source and focused checks complete; additive local identity schema/private storage applied. Local activation verified at17:07 after owner Administrator setup: live form/API enabled, private health and daily03 cleanup pass; personal ID/device review pending. Ownership spans Aegis/Forge/Vega, Iris, Orion and Quinn; login upgrade deferred. Current evidence: [[90 System/Runs/2026-11-19 163005 Identity Verification v2]], [[40 Knowledge/Integration Catalog]], [[40 Knowledge/Engineering Lessons]].
 
 PHP/PDO web application para sa scrap-board/whole-phone submissions, offers, transactions, at trade items. May public selling/tracking pages, seller account portal, admin operations, messaging, at supporting identity/notification modules.
+
+2026-11-20 Site Updates maintenance v1.1 follow-up: source now gates explicitly classified seller workflows while leaving public routes available and retaining the validated Admin bypass, including action-specific handling for the shared identity API. Route/guard/service/browser fixtures pass; maintenance activation, setup/migration and deployment were not part of this follow-up. [[90 System/Tasks/Records/TASK-20261120-016]] · [[90 System/Runs/2026-11-20 175641 Branded Seller Maintenance Follow-up]].
 
 - Repository: `C:\xampp\htdocs\VNZ-TECH`
 - Obsidian vault: `C:\xampp\htdocs\VNZ-TECH\VNZTECH`
@@ -36,7 +38,7 @@ Second-brain operating update **2026-11-19**: the same 20 named owners now have 
 | [[40 Knowledge/System Modules/Transactions and Delivery|Transactions and Delivery]] | [[90 System/Agents/Mira|Mira]] | Source + passing helper test; uncommitted |
 | [[40 Knowledge/System Modules/Trades and Catalog|Trades and Catalog]] | [[90 System/Agents/Flint|Flint]] | Source reviewed; runtime unverified |
 | [[40 Knowledge/System Modules/Buying Rates|Buying Rates]] | [[90 System/Agents/Peso|Peso]] | Source reviewed; runtime unverified |
-| [[40 Knowledge/System Modules/Admin Operations and Reports|Admin Operations and Reports]] | [[90 System/Agents/Rhea|Rhea]] | Source reviewed; runtime unverified |
+| [[40 Knowledge/System Modules/Admin Operations and Reports|Admin Operations and Reports]] | [[90 System/Agents/Rhea|Rhea]] | Source + seller-only maintenance fixture checks pass; activation/runtime unverified |
 | [[40 Knowledge/System Modules/Email and Notifications|Email and Notifications]] | [[90 System/Agents/Beacon|Beacon]] | Source reviewed; runtime unverified |
 | [[40 Knowledge/System Modules/Data and Migrations|Data and Migrations]] | [[90 System/Agents/Vega|Vega]] | Local remember-token migration applied; other deployment state unverified |
 | [[40 Knowledge/System Modules/Interface and Portal UX|Interface and Portal UX]] | [[90 System/Agents/Iris|Iris]] | Claim/approval/dialog fixtures pass; active light/dark theme required |

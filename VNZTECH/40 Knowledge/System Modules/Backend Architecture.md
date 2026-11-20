@@ -2,7 +2,7 @@
 type: system-module
 status: source-reviewed
 created: 2026-11-14
-updated: 2026-11-19
+updated: 2026-11-20
 tags: [vnz-tech, system-module]
 owner: "[[90 System/Agents/Forge]]"
 ---
@@ -68,3 +68,15 @@ Earlier disabled/setup-pending state is historical. Owner Administrator setup co
 v6 separates legacy ID enabled state from mandatory submission selfie mode. Server helper performs bounded single-image presence inference through the fixed Node CPU worker; no browser score or self-comparison authorizes a face check. Checked JPEG/hash, actor/session/context nonce and policy bind transactional Store; raw bytes stay private. nonce API is CSRF-protected and old ID actions retire410. A mode marker prevents silent fallback. No cloud call, new runtime dependency, service or login change.
 
 [[90 System/Runs/2026-11-19 213300 Submission Selfie v6]] - [[90 System/Tasks/Records/TASK-20261119-004]] - [[40 Knowledge/Integration Catalog]] - [[40 Knowledge/Engineering Lessons]]
+
+## Site maintenance route scope v1.1 - 2026-11-20
+
+`vnzEnforceSiteMaintenance()` now has an explicit seller-feature flag that defaults off, so ordinary public routes remain available. Twenty-eight seller-only boundaries opt in; `backend/identity_api.php` uses action-specific seller guards for `face_token`, `status`, and `submit`, and an authenticated Admin guard for `evidence` and `review`. Protected Admin boundaries still require a non-null `getCurrentAdmin()` to bypass. The source inventory asserts all 87 guarded entries and the mixed endpoint's action scopes. Direct HTTP fixture checks distinguish public reachability, seller 503, authenticated Admin bypass, and invalid-admin blocking. This is not a live-account or deployment verification; maintenance was not activated by this follow-up. [[90 System/Tasks/Records/TASK-20261120-016]] · [[90 System/Runs/2026-11-20 175641 Branded Seller Maintenance Follow-up]]
+
+### Admin maintenance PDO include scope - 2026-11-20
+
+When `auth.php` is first required from inside `vnzEnforceSiteMaintenance()`, its nested database bootstrap executes in that function's local scope. Since `getCurrentAdmin()` reads global `$pdo`, import the global before the require so initialization reaches the handle the helper uses. The isolated HTTP regression copies the real auth helper and verifies an active Admin lookup with SQLite, plus invalid/inactive actors; no live database claim. [[90 System/Tasks/Records/TASK-20261120-016]] · [[90 System/Runs/2026-11-20 180944 Admin Maintenance PDO Scope Fix]]
+
+## Maintenance service scopes v1.3-R2 - 2026-11-20
+
+`vnzEnforceSiteMaintenance()` accepts a validated service scope, and `vnzSiteMaintenanceAffectsScope()` is the server-side boundary. The seven Admin choices map to explicit page/action scopes; the mixed identity API and shared messaging endpoints retain their distinct Admin/seller behavior. The existing state JSON stores `service_mode`, avoiding a schema migration. Older active snapshots with no mode default to `seller_portal`, not the public `sell_page`. The all-services scope includes `sell.php`; the page renderer receives the current route scope so this public route continues to use the public theme under that combined mode. The seller shell recognizes a scoped JSON 503 and presents the maintenance reason without turning it into a generic page-load failure. Service, route and isolated HTTP fixtures pass; no live DB, activation, or deployment was performed. [[90 System/Tasks/Records/TASK-20261120-016]] · [[90 System/Runs/2026-11-20 193429 Admin Site Updates and Service Modes v1.3-R2]]

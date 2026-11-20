@@ -1,9 +1,11 @@
 <?php
 
+
+require_once __DIR__ . '/../../backend/site_status.php';
+vnzEnforceSiteMaintenance('auto', false, true, 'account_settings');
 require_once __DIR__ . '/../../backend/database.php';
 require_once __DIR__ . '/../../backend/session.php';
 require_once __DIR__ . '/../../backend/csrf.php';
-require_once __DIR__ . '/../../backend/email_verification.php';
 
 if (
     empty($_SESSION['user_logged_in']) ||
@@ -39,11 +41,7 @@ if ($userId <= 0) {
 try {
     $stmt = $pdo->prepare("
         SELECT
-            u.email,
-            u.email_verified_at,
             u.language,
-            u.totp_enabled_at,
-            u.totp_login_required,
             COALESCE(p.submission_updates, 0) AS submission_updates,
             COALESCE(p.offer_updates, 0) AS offer_updates,
             COALESCE(p.transaction_updates, 0) AS transaction_updates
@@ -96,16 +94,7 @@ function settingsEscape($value): string
     );
 }
 
-$emailVerified =
-    !empty($user['email_verified_at']);
-
-$csrfToken =
-    generateCsrfToken();
-
-$verificationNotice =
-    ($_GET['verification'] ?? '') === 'success'
-        ? 'Your email address has been verified.'
-        : '';
+$csrfToken = generateCsrfToken();
 
 ?>
 
@@ -123,7 +112,7 @@ $verificationNotice =
             </h1>
 
             <p>
-                Manage your account security and notification preferences.
+                Manage appearance, language and email notification preferences.
             </p>
         </div>
 
@@ -175,139 +164,6 @@ $verificationNotice =
             </div>
         </div>
     </section>
-
-    <section class="profile-form-section settings-email-card">
-
-        <div class="profile-section-title">
-            Email Address
-        </div>
-
-        <div class="settings-email-row">
-
-            <div>
-                <strong class="settings-email-address">
-                    <?= settingsEscape($user['email']) ?>
-                </strong>
-
-                <p class="settings-supporting-text">
-                    Your email is used for account-related communication.
-                </p>
-            </div>
-
-            <span class="settings-verification-badge <?= $emailVerified ? 'is-verified' : 'is-unverified' ?>">
-                <?= $emailVerified ? 'Verified' : 'Not verified' ?>
-            </span>
-
-        </div>
-
-        <?php if ($verificationNotice !== ''): ?>
-            <div class="profile-message show success" role="status">
-                <?= settingsEscape($verificationNotice) ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if (!$emailVerified): ?>
-            <p class="settings-inline-notice">
-                This email address has not been verified. The verification link
-                expires after 30 minutes and can only be used once.
-            </p>
-
-            <form
-                id="sellerEmailVerificationForm"
-                class="settings-verification-form"
-                action="/VNZ-TECH/backend/request_email_verification.php"
-                method="POST"
-            >
-                <input
-                    type="hidden"
-                    name="csrf_token"
-                    value="<?= settingsEscape($csrfToken) ?>"
-                >
-
-                <div
-                    id="verificationMessage"
-                    class="profile-message"
-                    role="status"
-                    aria-live="polite"
-                ></div>
-
-                <button
-                    type="submit"
-                    class="profile-save-button"
-                    id="sellerVerificationSubmit"
-                >
-                    SEND VERIFICATION EMAIL
-                </button>
-            </form>
-        <?php endif; ?>
-
-    </section>
-
-    <section class="profile-form-section seller-2fa-section">
-        <div class="profile-section-title">
-            Two-Factor Authentication
-        </div>
-        <p class="settings-supporting-text">
-            <?= !empty($user['totp_enabled_at'])
-                ? 'Authenticator is set up and can be used for account recovery. Requiring its code at every login is optional.'
-                : 'Set up an authenticator app for account recovery. Requiring its code at every login is a separate choice.' ?>
-        </p>
-        <div class="seller-2fa-status <?= !empty($user['totp_enabled_at']) ? 'is-enabled' : 'is-disabled' ?>">
-            <?= !empty($user['totp_enabled_at']) ? 'Authenticator enabled' : 'Authenticator not set up' ?>
-        </div>
-        <?php if (!empty($user['totp_enabled_at'])): ?>
-            <form id="seller2faLoginRequirementForm" class="seller-2fa-form" action="/VNZ-TECH/backend/seller_2fa.php" method="POST">
-                <input type="hidden" name="csrf_token" value="<?= settingsEscape($csrfToken) ?>">
-                <input type="hidden" name="action" value="set_login_requirement">
-                <div class="seller-2fa-controls">
-                    <div class="seller-2fa-login-choice">
-                        <label for="seller2faLoginRequired">Authenticator code at every login</label>
-                        <select id="seller2faLoginRequired" name="login_required">
-                            <option value="1" <?= (int) $user['totp_login_required'] === 1 ? 'selected' : '' ?>>Yes, require the 6-digit code</option>
-                            <option value="0" <?= (int) $user['totp_login_required'] !== 1 ? 'selected' : '' ?>>No, use password-only login</option>
-                        </select>
-                    </div>
-                    <button class="profile-save-button seller-preference-save-button" type="submit">SAVE LOGIN PREFERENCE</button>
-                </div>
-                <small class="seller-login-preference-help">Your authenticator stays set up for password recovery when login codes are off.</small>
-            </form>
-        <?php endif; ?>
-        <div
-            id="seller2faMessage"
-            class="profile-message"
-            role="status"
-            aria-live="polite"
-        ></div>
-        <?php if (empty($user['totp_enabled_at'])): ?>
-            <form id="seller2faSetupForm" class="seller-2fa-form" action="/VNZ-TECH/backend/seller_2fa.php" method="POST">
-                <input type="hidden" name="csrf_token" value="<?= settingsEscape($csrfToken) ?>">
-                <input type="hidden" name="action" value="setup">
-                <div class="seller-2fa-controls">
-                    <label for="seller2faCurrentPassword">Confirm your current password</label>
-                    <input id="seller2faCurrentPassword" name="current_password" type="password" autocomplete="current-password" required>
-                    <button class="profile-save-button" type="submit">SET UP AUTHENTICATOR</button>
-                </div>
-            </form>
-            <div id="seller2faSetupStep" class="seller-2fa-setup-step" hidden></div>
-        <?php else: ?>
-            <form id="seller2faDisableForm" class="seller-2fa-form" action="/VNZ-TECH/backend/seller_2fa.php" method="POST">
-                <input type="hidden" name="csrf_token" value="<?= settingsEscape($csrfToken) ?>">
-                <input type="hidden" name="action" value="disable">
-                <div class="seller-2fa-controls seller-2fa-disable-controls">
-                    <div>
-                        <label for="seller2faDisablePassword">Current password</label>
-                        <input id="seller2faDisablePassword" name="current_password" type="password" autocomplete="current-password" required>
-                    </div>
-                    <div>
-                        <label for="seller2faDisableCode">Authenticator code</label>
-                        <input id="seller2faDisableCode" name="two_factor_code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
-                    </div>
-                    <button class="profile-save-button seller-2fa-disable-button" type="submit">DISABLE 2FA</button>
-                </div>
-            </form>
-        <?php endif; ?>
-    </section>
-
 
     <form
         id="sellerNotificationForm"
@@ -508,132 +364,6 @@ $verificationNotice =
         'Notification preferences saved.'
     );
 
-    bindForm(
-        'sellerEmailVerificationForm',
-        'verificationMessage',
-        'sellerVerificationSubmit',
-        'SENDING...',
-        'SEND VERIFICATION EMAIL',
-        'Verification email sent. Check your inbox and spam folder.'
-    );
-
-    const twoFactorMessage = document.getElementById('seller2faMessage');
-    const setupForm = document.getElementById('seller2faSetupForm');
-    const disableForm = document.getElementById('seller2faDisableForm');
-    const loginRequirementForm = document.getElementById('seller2faLoginRequirementForm');
-    const setupStep = document.getElementById('seller2faSetupStep');
-
-    async function submitTwoFactorForm(form, action) {
-        const button = form.querySelector('button[type="submit"]');
-        const initialText = button.textContent;
-        button.disabled = true;
-        button.textContent = 'PLEASE WAIT...';
-        twoFactorMessage.className = 'profile-message';
-        twoFactorMessage.textContent = '';
-
-        try {
-            const endpoint = form.getAttribute('action');
-            if (!endpoint) {
-                throw new Error('The 2FA settings endpoint is missing.');
-            }
-
-            const response = await fetch(endpoint, {
-                method: 'POST',
-                body: new FormData(form),
-                headers: {
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                credentials: 'same-origin'
-            });
-            const responseText = await response.text();
-            let result;
-            try {
-                result = JSON.parse(responseText);
-            } catch (parseError) {
-                console.error('Seller 2FA endpoint returned a non-JSON response.', {
-                    status: response.status,
-                    contentType: response.headers.get('content-type'),
-                    response: responseText.slice(0, 1000)
-                });
-                throw new Error(
-                    response.redirected
-                        ? 'Your seller session expired. Sign in again, then retry 2FA setup.'
-                        : `The server returned an unexpected response (HTTP ${response.status}). Refresh Settings and try again.`
-                );
-            }
-            if (!response.ok || !result.success) {
-                throw new Error(result.message || 'Unable to update two-factor authentication.');
-            }
-
-            if (action === 'setup') {
-                setupStep.innerHTML = `
-                    <p class="settings-supporting-text">Scan this QR code with your authenticator app. Then enter its current 6-digit code to enable two-factor authentication.</p>
-                    <div class="seller-2fa-qr" data-seller-2fa-qr></div>
-                    <details class="seller-2fa-manual">
-                        <summary>Can't scan? Enter the setup key manually</summary>
-                        <code data-seller-2fa-secret></code>
-                    </details>
-                    <form data-seller-2fa-confirm action="/VNZ-TECH/backend/seller_2fa.php" method="POST">
-                        <input type="hidden" name="csrf_token" value="${form.elements.csrf_token.value}">
-                        <input type="hidden" name="action" value="confirm_setup">
-                        <label for="seller2faConfirmCode">Authenticator code</label>
-                        <input id="seller2faConfirmCode" name="two_factor_code" type="text" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="one-time-code" required>
-                        <button class="profile-save-button" type="submit">VERIFY AND ENABLE</button>
-                    </form>
-                `;
-                setupStep.querySelector('[data-seller-2fa-secret]').textContent = result.secret;
-                try {
-                    const { qrcode } = await import('/VNZ-TECH/assets/js/qrcode-generator.mjs');
-                    const qrCode = qrcode(0, 'M');
-                    qrCode.addData(result.otpauth_uri);
-                    qrCode.make();
-                    setupStep.querySelector('[data-seller-2fa-qr]').innerHTML =
-                        qrCode.createSvgTag(5, 4, 'Authenticator setup QR code');
-                } catch (error) {
-                    const qrContainer = setupStep.querySelector('[data-seller-2fa-qr]');
-                    qrContainer.textContent = 'The QR code could not be generated. Use the manual setup key below.';
-                    qrContainer.setAttribute('role', 'alert');
-                }
-                setupStep.querySelector('[data-seller-2fa-confirm]').addEventListener('submit', event => {
-                    event.preventDefault();
-                    submitTwoFactorForm(event.currentTarget, 'confirm_setup');
-                });
-                form.hidden = true;
-                setupStep.hidden = false;
-                return;
-            }
-
-            twoFactorMessage.classList.add('show', 'success');
-            twoFactorMessage.textContent = result.message;
-            window.location.href = '/VNZ-TECH/account/dashboard.php?page=settings';
-        } catch (error) {
-            twoFactorMessage.classList.add('show', 'error');
-            twoFactorMessage.textContent = error.message || 'Unable to update two-factor authentication.';
-        } finally {
-            button.disabled = false;
-            button.textContent = initialText;
-        }
-    }
-
-    if (setupForm) {
-        setupForm.addEventListener('submit', event => {
-            event.preventDefault();
-            submitTwoFactorForm(event.currentTarget, 'setup');
-        });
-    }
-    if (disableForm) {
-        disableForm.addEventListener('submit', event => {
-            event.preventDefault();
-            submitTwoFactorForm(event.currentTarget, 'disable');
-        });
-    }
-    if (loginRequirementForm) {
-        loginRequirementForm.addEventListener('submit', event => {
-            event.preventDefault();
-            submitTwoFactorForm(event.currentTarget, 'set_login_requirement');
-        });
-    }
 
 })();
 </script>
