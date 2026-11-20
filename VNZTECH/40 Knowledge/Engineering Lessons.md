@@ -180,3 +180,8 @@ Evidence:621 full checks and187 focused checks; four final theme/layout previews
 - Geometry assertions alone are insufficient: verify message/composer content, safe avatar crop, rail hit regions, resize/draft retention and fullscreen separately. Match reference viewport height for useful previews.
 
 Evidence:755 full assertions, three inspected reference previews; code/checks and actual limits: [[90 System/Tasks/Records/TASK-20261120-010]] - [[90 System/Runs/2026-11-20 092635 Seller Topbar v1]]. Relevant Iris/Echo/Quinn roles reuse shared notes; this is memory, not model retraining.
+
+
+## Git credential cleanup v1 - 2026-11-20T11:24:01+08:00
+
+Use placeholder names, never real credentials, as setup-template replacement keys. Check keys against example template. Fixing current files alone leaves secrets in earlier commits. Back up before approved rewriting; preserve unrelated files/refs and scan without printing values. Backups/other refs retain old secrets: do not upload backup or push all refs. Rotate provider secrets separately; rewriting history does not rotate them. [[90 System/Tasks/Records/TASK-20261120-011]].

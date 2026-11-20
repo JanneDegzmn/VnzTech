@@ -241,3 +241,8 @@ PASS:621 full actual-component/assets synthetic browser assertions,187 focused a
 Same logical TASK010; owner **"I-apply ang Chat v5"** approved. Normal boxes now~360x500px/12px gaps, responsive up to4 visible with reserved right-side avatar/initial rail and +N remaining selector. Existing v4 persistence/Back/sidebar/contact/draft/call-owner behaviors and mounted10 cap preserved. Attributable files: assets/js/floating-messages.js, assets/css/seller_topbar.css, tests/seller_topbar_browser_test.mjs. No PHP/backend/API/config/provider/migration/deployment edits or live sends/calls.
 
 PASS:755 full actual-component/assets synthetic Chrome assertions covering wide reference/phone/short viewports in both themes; three reference previews inspected. Changed JS syntax(2), three-file UTF-8/trailing whitespace and git whitespace pass. No live seller/provider/real photo/call/physical-phone acceptance. UI/Messaging/QA, Integration Catalog/Lessons and task/run/index/approval records updated; owner result review pending. [[90 System/Tasks/Records/TASK-20261120-010]] - [[90 System/Runs/2026-11-20 092635 Seller Topbar v1]]
+
+
+## Git credential cleanup v1 - 2026-11-20T11:24:01+08:00
+
+Completed approved cleanup: scripts/configure-social-login.ps1 uses four existing template placeholders instead of credential literals; 3 of 26 commits rewritten on VnzTech only. Verified local bundle; known-value reachable-history scan, PowerShell syntax, five replacement keys, ignored/untracked private config and whitespace PASS. No live OAuth, config change or push. Facebook rotation/private config update remain owner actions. [[90 System/Tasks/Records/TASK-20261120-011]].

@@ -56,3 +56,8 @@ User checklist: [[10 Projects/Second Brain Setup]]. Idagdag dito ang links sa su
 - [[90 System/Runs/2026-11-19 212807 Face-Only Submission Revision]] - actual-source reconciliation and concrete replacement proposal; approval pending.
 
 - [[90 System/Runs/2026-11-19 213300 Submission Selfie v6]] - owner-approved implementation and local activation after checks.
+
+
+## Git credential cleanup v1 - 2026-11-20T11:24:01+08:00
+
+Local credential cleanup v1 run: [[90 System/Runs/2026-11-20 1122 Git Credential Cleanup]]. Backup/source/history verified; no push. [[90 System/Tasks/Records/TASK-20261120-011]].

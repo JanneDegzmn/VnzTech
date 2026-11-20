@@ -57,3 +57,8 @@ Imported from existing coding/run notes. These are source reports, not fresh ver
 - This is instruction-driven task memory for runners using the same accessible/synchronized workspace; it does not watch arbitrary manual edits or start AI tasks in the background.
 
 [[90 System/Company Operations]] · [[Agent Office]] · [[Home]]
+
+
+## Git credential cleanup v1 - 2026-11-20T11:24:01+08:00
+
+Local credential cleanup v1 approved with owner "alright"; backup and source/history checks complete. No push; private config update/Facebook rotation remain. [[90 System/Tasks/Records/TASK-20261120-011]].

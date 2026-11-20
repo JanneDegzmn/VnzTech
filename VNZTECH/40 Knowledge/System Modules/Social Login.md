@@ -61,3 +61,8 @@ ID v2 adds exact guest-attempt reservation to backend/social_signup_complete.php
 ### Activation follow-up - 2026-11-19 17:07
 
 Earlier disabled/setup-pending state is historical. Owner Administrator setup completed; independent live form/API/private health and successful daily03:00 cleanup readback confirm local activation. No personal ID/device/human-review test or owner acceptance inferred. [[90 System/Runs/2026-11-19 163005 Identity Verification v2]]
+
+
+## Git credential cleanup v1 - 2026-11-20T11:24:01+08:00
+
+Setup script now matches four REPLACE_WITH credential keys from backend/social_auth_config.example.php. Existing runtime prompts/ignored backend/social_auth_config.local.php retained; private config not read/changed. Known-value history cleanup/syntax/template/ignore PASS; live OAuth/new local secret unverified. [[90 System/Tasks/Records/TASK-20261120-011]].

@@ -88,3 +88,8 @@ No new API/package/provider/license or data destination. Native DOM/Pointer Even
 ### Chat v5 local avatar rail / layout - 2026-11-20
 
 No new package/API/provider/account/license or external data destination. Native DOM/CSS responsive layout and rail reuse current authorized widget's local peer-picture value; only safe existing uploads paths are rendered, with initials fallback for remote/unsafe/missing URLs and image errors. Existing local image GET is the only extra asset read; no profile-fetch endpoint or biometric data. Existing chat transport/unread/call APIs unchanged. Display slots1..4 differ from10 mounted cap. Screenshot is an owner-provided visual reference only, no Facebook SDK/connection.755 synthetic assertions include one local SVG fixture asset, unsafe URL refusal and available-width layout; no real avatar/provider verification claimed. [[90 System/Tasks/Records/TASK-20261120-010]] - [[90 System/Runs/2026-11-20 092635 Seller Topbar v1]]
+
+
+## Git credential cleanup v1 - 2026-11-20T11:24:01+08:00
+
+No new package/API/provider/data destination. Existing Google/Facebook OAuth setup uses native PowerShell prompts and ignored private PHP configuration. Placeholder keys restored; installed Git/Python used locally for targeted known-value cleanup. No external upload/provider test; rotation and live local configuration unverified. [[90 System/Tasks/Records/TASK-20261120-011]].
