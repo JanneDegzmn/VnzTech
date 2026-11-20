@@ -113,3 +113,8 @@ No new cloud/third-party/API package/provider/license or data destination. Nativ
 ## Header Alignment v1 - 2026-11-20T14:55:00+08:00
 
 No API/provider/package/data destination change. Native CSS shared header-height/border tokens and existing measured-header popup positioning. Two CSS files only for runtime; three existing browser suites verify geometry/theme. [[90 System/Tasks/Records/TASK-20261120-014]].
+
+
+## Site Updates internal PHP/PDO integration - TASK016 base
+
+No new API provider/SDK/package, license obligation or external announcement/biometric data destination. Existing PHP/PDO with same-origin escaped announcements and bounded visible-only status polling; two privileged internal admin actions and public published-only reader. Native dialog/DOM plus private local file/DB state; local recovery is CLI-only. Local migration/setup actually applied and maintenance stays OFF. Current health +16 MySQL temporary-table checks PASS; later service scopes/palettes follow their own records. File/DB changes compensate ordinary failures but are not crash-atomic. [[90 System/Runs/2026-11-20 220602 Site Updates Base Delivery Reconciliation]]

@@ -276,3 +276,14 @@ For page-specific black card styling under a global light theme, override not ju
 
 - **Do:** verify overlay stacking against every fixed/sticky shell sibling, not only the modal's local `z-index`. Assert viewport bounds and use element hit-testing over the topbar/sidebar to prove the backdrop actually covers them.
 - **Evidence:** TASK-20261120-020: transaction modal's old `9999` layer was below the `11010` Admin topbar and `11030` sidebar. The Admin-scoped `11035` override passes 81 light/dark responsive viewport, paint-order and close assertions; three synthetic previews inspected. No live Admin/device acceptance. [[90 System/Tasks/Records/TASK-20261120-020]] · [[90 System/Runs/2026-11-20 212655 Admin Transaction Modal Layering v1.0]].
+
+
+## TASK016 base implementation and shared-workspace lessons
+
+- Separate identity details, sign-in security and personal display preferences; moving controls requires backend permission/CSRF and old-link checks, not just HTML relocation. Preserve omitted persisted fields.
+- Maintenance needs explicit request-boundary coverage and verified active-admin recovery; UI hiding/session-key checks alone are insufficient. Keep deployment/default state OFF and test using temporary state.
+- Native dialog close events are asynchronous; wait for completion before resubmit. Admin reset CSS can remove native centering, so inspect actual previews and measure geometry.
+- Private local table/data/trigger backups are not complete server restore images. Record actual migration/config application separately from source and synthetic checks; never copy backups/private rows to the vault.
+- A shared checkout can advance during a long run. Re-read Git/task ownership before final edits; preserve newer owner-approved scopes, remove only your exact stale additions and append attributable historical evidence instead of claiming another runner work.
+
+Evidence: [[90 System/Runs/2026-11-20 220602 Site Updates Base Delivery Reconciliation]]; current health/16 MySQL fixture checks PASS, historical counts scoped in run. No automatic model retraining or live maintenance activation.

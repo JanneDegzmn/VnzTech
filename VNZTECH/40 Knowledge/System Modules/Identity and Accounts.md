@@ -2,7 +2,7 @@
 type: system-module
 status: source-reviewed
 created: 2026-11-14
-updated: 2026-11-19
+updated: 2026-11-20
 tags: [vnz-tech, system-module]
 owner: "[[90 System/Agents/Aegis]]"
 ---
@@ -99,3 +99,8 @@ Earlier disabled/setup-pending state is historical. Owner Administrator setup co
 Current local mode is `face_submission_v6`, activated and live-verified21:50 Asia/Manila. ID enrollment/manual approvals are retired for new submissions; signup/email/login remain separate and existing email claims remain intact. Guest/account sellers take a new selfie per submission. No reference matching, Face++, face template or durable identity approval. Source: backend/submission_security_face.php, identity_automation.php, identity_verification.php and identity_api.php. Nonce/actor/CSRF and server presence gate replace old ID authority; old histories remain historical.
 
 [[90 System/Runs/2026-11-19 213300 Submission Selfie v6]] - [[90 System/Tasks/Records/TASK-20261119-004]] - [[40 Knowledge/Integration Catalog]] - [[40 Knowledge/Engineering Lessons]]
+
+
+## TASK016 original base and local setup evidence - 2026-11-20 22:06:02 Asia/Manila
+
+Original TASK016 moved seller/admin personal details into Profile, password/authenticator/login preference into Security, and personal appearance/language/notifications into Settings. Seller email verification is in Profile; omitted profile language no longer resets the stored preference; profile CSRF added. Admin self-service acts only on session account; global tools retain separate permission gates. Later account UI refinements remain authoritative. Historical156 seller +42/103 admin checks passed before later changes; no provider-only password bypass or new auth provider. [[90 System/Runs/2026-11-20 220602 Site Updates Base Delivery Reconciliation]] - [[90 System/Tasks/Records/TASK-20261120-016]]

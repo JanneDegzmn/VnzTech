@@ -181,3 +181,8 @@ The browser/HTTP cases are synthetic; malformed snapshot logs are expected fixtu
 ## Admin transaction modal layering v1.0 - 2026-11-20
 
 `tests/admin_transactions_modal_browser_test.mjs` loads the production Admin shell and transaction modal CSS with a synthetic modal fixture. Its **81 assertions PASS** across light/dark at 375/768/1440px: fixed backdrop covers the viewport, modal layer is above topbar/sidebar, hit-testing reaches the backdrop over the shell, theme-specific panel surfaces remain correct, no overflow occurs, and close state toggles. Three previews inspected (light 375/1440, dark 1440). No live Admin transaction/account/API, physical-device, screen-reader, or deployment check. [[90 System/Tasks/Records/TASK-20261120-020]] · [[90 System/Runs/2026-11-20 212655 Admin Transaction Modal Layering v1.0]]
+
+
+## TASK016 original base and local setup evidence - 2026-11-20 22:06:02 Asia/Manila
+
+Original TASK016 historical suite counts and inspected source previews are captured in the base reconciliation run, distinct from later Copilot revisions. New current-source recheck: local --health valid/OFF,16 MySQL service checks on temporary shadow tables/private fixture state PASS. Earlier99 PHP lint/11JS syntax and whitespace passed. No real notice publication, maintenance activation, persistent service-row test writes, device/screen-reader or production verification claimed. [[90 System/Runs/2026-11-20 220602 Site Updates Base Delivery Reconciliation]] - [[90 System/Tasks/Records/TASK-20261120-016]]

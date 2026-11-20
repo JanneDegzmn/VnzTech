@@ -246,3 +246,8 @@ Reuse the Reports `operations-header` markup and stylesheet when aligning Site U
 ## Admin transaction modal layering v1.0 - 2026-11-20
 
 Keep Admin modals above the global shell using the established Admin overlay layer; a viewport-sized backdrop must also receive hit tests over the topbar and sidebar. The transaction modal now uses `z-index: 11035`, matching the existing Admin submission modal and exceeding the topbar/sidebar layers. PASS: 81 browser assertions at 375/768/1440px in both themes; synthetic mobile and desktop previews inspected. No live Admin/device/screen-reader result. [[90 System/Tasks/Records/TASK-20261120-020]] · [[90 System/Runs/2026-11-20 212655 Admin Transaction Modal Layering v1.0]]
+
+
+## TASK016 original base and local setup evidence - 2026-11-20 22:06:02 Asia/Manila
+
+TASK016 original account split and Site Updates UI were delivered with rem text/proportion-based layout, active theme support, escaped announcement previews, themed maintenance confirmation and draft-preserving overlay. Dialog UA centering was defeated by the admin reset; explicit margin:auto fixed it and browser geometry checks caught it. Historical original preview/check coverage is in the base run; later Copilot palette/layout/service-mode decisions supersede old screenshots. Current task ownership retained. [[90 System/Runs/2026-11-20 220602 Site Updates Base Delivery Reconciliation]] - [[90 System/Tasks/Records/TASK-20261120-016]]

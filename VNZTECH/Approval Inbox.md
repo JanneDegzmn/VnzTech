@@ -12,7 +12,7 @@ tags: [approvals, tasks]
 
 ## Waiting for owner decision
 
-**Site Updates and Account UX v1 - pending:** [[90 System/Tasks/Records/TASK-20261120-016|Full scope/checks/local setup/recovery]]. New announcements/maintenance module, consistent Profile/Security/Settings, separate Chat Moderation/Activity Log, precise self-service admin permissions, additive local migration/private state/default-off, theme/mobile checks and Obsidian knowledge. No implementation authorization yet.
+**Site Updates and Account UX v1 - approved; later amendments separately recorded:** [[90 System/Tasks/Records/TASK-20261120-016|Full scope/checks/local setup/recovery]]. New announcements/maintenance module, consistent Profile/Security/Settings, separate Chat Moderation/Activity Log, precise self-service admin permissions, additive local migration/private state/default-off, theme/mobile checks and Obsidian knowledge. Owner explicitly said "Alright apply mo safely." for the complete v1 scope; original local setup applied/default OFF, evidence in [[90 System/Runs/2026-11-20 220602 Site Updates Base Delivery Reconciliation]]. Owner acceptance remains pending.
 
 **Chat v5 explicitly approved:** owner **"I-apply ang Chat v5"** in this chat. screenshot-reference size/organization: about360x500px normal docks/12px gaps, responsive up to4 desktop/1 phone, bounded vertical avatar/initial rail with +N selector. VNZ theme and v4 behavior preserved. [[90 System/Tasks/Records/TASK-20261120-010|Concrete v5 scope/checks]]. Size/slot/rail implementation/checks/docs complete;755 full browser assertions pass. Owner result acceptance pending.
 

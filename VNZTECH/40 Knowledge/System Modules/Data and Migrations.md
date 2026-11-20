@@ -89,3 +89,8 @@ Earlier disabled/setup-pending state is historical. Owner Administrator setup co
 Applied additive submission_security_faces table and vnz_submission_face_terminal_v6 AFTER UPDATE trigger after encrypted private config/schema backup; no existing rows rewritten. Local submissions.id is BIGINT(20) UNSIGNED, so CLI renders its exact type into the new FK column rather than blindly applying INT. Trigger latches first accepted/declined UTC timestamp and30-day purge; seen/notification updates cannot extend it. Same submission transaction + unique nonce enforce binding/replay; cleanup preserves referenced photos and removes expired/orphan evidence. Existing daily03 cleanup remains Ready/enabled.
 
 [[90 System/Runs/2026-11-19 213300 Submission Selfie v6]] - [[90 System/Tasks/Records/TASK-20261119-004]] - [[40 Knowledge/Integration Catalog]] - [[40 Knowledge/Engineering Lessons]]
+
+
+## TASK016 original base and local setup evidence - 2026-11-20 22:06:02 Asia/Manila
+
+TASK016 local setup was actually applied by Codex: database/migrations/20261120_create_site_updates.sql created site_announcements/site_maintenance and two Super Admin-only initial permissions after a private base-table/data/trigger backup. Private snapshot/readiness configured outside htdocs; maintenance OFF. Current --health PASS and16 MySQL temporary-table assertions PASS without persistent test rows. Backup excludes server/files/views/routines/events; keep it private. tools/site_updates_setup.php supports health/local recovery; snapshot/DB publication is not crash-atomic. [[90 System/Runs/2026-11-20 220602 Site Updates Base Delivery Reconciliation]] - [[90 System/Tasks/Records/TASK-20261120-016]]

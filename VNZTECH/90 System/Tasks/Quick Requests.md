@@ -26,3 +26,8 @@ Correction recorded21:28: Q002 referenced a newer Copilot V6 checkpoint seen ear
 ## Q-20261120-004 CSS unit rules
 
 2026-11-20 15:17 Asia/Manila - Codex. Owner: "Apply these rules in obsidian: rem = text; % = layouts; vw = full screen sections; px = borders." Completed vault/instruction-only maintenance: canonical Interface and Portal UX guidance, repository/vault AGENTS instructions, Iris reference and Engineering Lessons. Checked exact mappings and new note links. No application CSS changes or runtime checks; no coding-ledger entry required. Copilot-owned [[90 System/Tasks/Records/TASK-20261120-015]] and Current Task pointer preserved. Next: use the convention in future approved UI changes.
+
+
+## Q-20261120-005 Git non-fast-forward
+
+2026-11-20 22:06:02 Asia/Manila - Owner asks how to push after rejection on VnzTech. Read-only current checkout: clean app source after exact removal of seven stale own additions; local658a2e2 tracks newrepo/VnzTech with28ahead/1behind. Remote-tracking ba4f3da contains README.md only; merge-base exits1 (unrelated roots). Correct generic rebase advice to explicit merge using `git pull newrepo VnzTech --no-rebase --allow-unrelated-histories` after committing pending notes; resolve any conflict before normal push. No fetch/merge/rebase/commit/push/reset executed by Codex. Current Task/TASK021 ownership preserved; base documentation reconciliation [[90 System/Runs/2026-11-20 220602 Site Updates Base Delivery Reconciliation]].

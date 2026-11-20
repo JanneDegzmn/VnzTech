@@ -124,3 +124,8 @@ The Site Updates header removes only the logo/wordmark/tagline, keeps its `ADMIN
 ## Admin transaction modal layering v1.0 - 2026-11-20
 
 The transaction details modal now shares the existing Admin overlay layer at `z-index: 11035`, above the Admin topbar (`11010`) and sidebar (`11030`). Its fixed viewport backdrop dims the complete shell; no transaction content, permission, API, or close behavior changed. PASS: 81 actual-browser fixture assertions across light/dark and 375/768/1440px, with production Admin/modal CSS; three synthetic previews inspected. No live transaction/API, device, screen-reader, or deployment check; owner review pending. [[90 System/Tasks/Records/TASK-20261120-020]] · [[90 System/Runs/2026-11-20 212655 Admin Transaction Modal Layering v1.0]]
+
+
+## TASK016 original base and local setup evidence - 2026-11-20 22:06:02 Asia/Manila
+
+TASK016 original base added Profile/Security personal pages, separated Chat Moderation/Activity Log, and introduced Site Updates with dedicated publish/maintenance grants. Codex actually applied the approved local additive setup after private backup; current health confirms both tables/permissions/private state and maintenance OFF. Publishing/activation/live authenticated UX were not exercised. Later TASK016 amendments and TASK017-021 retain their source/acceptance evidence. [[90 System/Runs/2026-11-20 220602 Site Updates Base Delivery Reconciliation]] - [[90 System/Tasks/Records/TASK-20261120-016]]
